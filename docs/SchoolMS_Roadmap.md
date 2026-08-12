@@ -181,8 +181,8 @@ edutrack-africa/
 - [x] Node.js 20 LTS
 - [ ] Rust (required for Tauri)
 - [ ] Tauri CLI
-- [ ] PostgreSQL (local dev instance)
-- [ ] TablePlus or DBeaver (database GUI for development)
+- [x] PostgreSQL (local dev instance)
+- [x] TablePlus or DBeaver (database GUI for development)
 
 ---
 
@@ -194,16 +194,16 @@ Write a `CONTRIBUTING.md` with:
 - [x] File structure: one component per file, one service per file.
 - [x] Commit message format: `feat:`, `fix:`, `chore:`, `docs:`, `test:` prefixes.
 - [x] Branch strategy: `main` (production), `develop` (integration), `feature/xxx` (features), `fix/xxx` (bug fixes).
-- [ ] Required: all API endpoints must have input validation. No raw DB queries in route handlers.
-- [ ] Required: all amounts (fees, salaries, grades) stored as integers in cents/hundredths to avoid floating point errors. Display layer handles formatting.
-- [ ] Language: all user-facing strings go through i18n keys. No hardcoded French strings in components.
+- [x] Required: all API endpoints must have input validation. No raw DB queries in route handlers.
+- [x] Required: all amounts (fees, salaries, grades) stored as integers in cents/hundredths to avoid floating point errors. Display layer handles formatting.
+- [x] Language: all user-facing strings go through i18n keys. No hardcoded French strings in components.
 
 ---
 
 ### 0.4 - Set Up Development Tooling
 
 - [x] ESLint + Prettier (code quality and formatting)
-- [ ] GitHub Actions workflow for CI: run tests on every push to `develop`
+- [x] GitHub Actions workflow for CI: run tests on every push to `develop`
 - [x] Environment variables: `.env.example` file with all required variables documented
 - [x] Create `docs/decisions/` folder - write an ADR (Architecture Decision Record) for every major choice. Example: `ADR-001-why-tauri-over-electron.md`
 
@@ -212,10 +212,10 @@ Write a `CONTRIBUTING.md` with:
 ### 0.5 - Set Up the Database Project
 
 - [x] Initialize Drizzle ORM in `packages/db/`
-- [ ] Write the migration for the first 3 tables: `school`, `academic_year`, `user`
-- [ ] Set up `seed.ts` script that creates a demo school with test data
-- [ ] Confirm migrations run on both SQLite (local/desktop) and PostgreSQL (cloud)
-- [ ] Document all table schemas in `docs/database/`
+- [x] Write the migration for the first 3 tables: `school`, `academic_year`, `user`
+- [x] Set up `seed.ts` script that creates a demo school with test data
+- [x] Confirm migrations run on both SQLite (local/desktop) and PostgreSQL (cloud)
+- [x] Document all table schemas in `docs/database/`
 
 **Deliverable at end of Phase 0:**
 A developer can clone the repo, run `pnpm install && pnpm db:migrate && pnpm db:seed` and have a working local database. They can run `pnpm dev` and see a "Hello EduTrack" screen on both the web app and the desktop app.
