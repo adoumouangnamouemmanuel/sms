@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "noEmit": true,
+    "types": ["node", "react", "react-dom", "vite/client", "vitest/globals"]
+  },
+  "include": [
+    "*.config.ts",
+    "*.config.mjs",
+    "eslint.config.mjs",
+    "apps/**/*.ts",
+    "apps/**/*.tsx",
+    "apps/**/*.mjs",
+    "packages/**/*.ts",
+    "packages/**/*.tsx",
+    "tests/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist", "build", "coverage", "docs/archive", "packages/db/migrations"]
+}

@@ -1,0 +1,11 @@
+node_modules
+dist
+build
+coverage
+.next
+.expo
+playwright-report
+test-results
+docs/archive
+packages/db/migrations
+pnpm-lock.yaml

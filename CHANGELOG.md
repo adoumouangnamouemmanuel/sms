@@ -8,10 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Monorepo Setup**: Initialized `pnpm` workspaces with root configuration (`pnpm-workspace.yaml`, `package.json`).
-- **Tech Stack locked**: Node.js/Fastify, Next.js, React Native (Expo), Tauri, Drizzle ORM, SQLite/PostgreSQL.
-- **App Scaffolding**: Generated base structures for `@edutrack/web`, `@edutrack/mobile`, `@edutrack/desktop`, and `@edutrack/api`.
-- **Database Setup**: Initialized `@edutrack/db` with Drizzle and base schemas (`school`, `academic_year`, `user`).
-- **Tooling**: Added base `tsconfig`, `.prettierrc`, and `.gitignore`.
-- **Documentation**: Added `CONTRIBUTING.md`, merged UML into `sms.md`, and recorded Tech Stack ADR (`ADR-001`).
-- **Docker**: Local PostgreSQL testing configured to run on port `5234`.
+
+- **Repository foundation**: Added Node 24 pinning through `.nvmrc`, package engines, `.npmrc`, and CI.
+- **Quality checks**: Added strict workspace TypeScript references, root ESLint import-boundary rules, Prettier checks, Vitest unit tests, Testing Library setup, and Playwright smoke tests.
+- **CI**: Added GitHub Actions for format, lint, typecheck, unit tests, builds, Playwright smoke tests, and Gitleaks secret scanning.
+- **Architecture records**: Accepted ADRs for Vite product UI, Tauri desktop shell, Fastify sidecar, and SQLite-only Version 1.
+- **Workspace packages**: Added `@edutrack/domain`, `@edutrack/shared`, and `@edutrack/ui` package boundaries.
+
+### Changed
+
+- **Web app**: Replaced the generated Next.js scaffold with the Version 1 Vite React shell and French-first i18n.
+- **API app**: Replaced the generated hello-world route with a local sidecar foundation, loopback defaults, and redacted logging.
+- **Database package**: Limited the active Version 1 database surface to SQLite.
+
+### Removed
+
+- **Out-of-scope scaffolds**: Removed the Expo/mobile app and PostgreSQL/docker setup from the active Version 1 workspace.

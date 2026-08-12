@@ -3,11 +3,26 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "lib": ["ES2022"],
+    "baseUrl": ".",
+    "paths": {
+      "@edutrack/domain": ["packages/domain/src/index.ts"],
+      "@edutrack/shared": ["packages/shared/src/index.ts"],
+      "@edutrack/ui": ["packages/ui/src/index.ts"],
+      "@edutrack/db": ["packages/db/src/index.ts"]
+    },
     "esModuleInterop": true,
     "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true
   }
 }

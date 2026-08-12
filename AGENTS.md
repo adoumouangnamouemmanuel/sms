@@ -13,7 +13,8 @@ Build for real school staff, not for a demo. Correctness, data isolation, recove
 Before making a meaningful change, read only the documentation relevant to the task:
 
 - `SchoolMS_Roadmap.md` (or `docs/SchoolMS_Roadmap.md`): delivery order, milestones, acceptance criteria, risks, and phase-level definition of done.
-- `sms.md` (or `docs/sms.md`): combined UML design and domain model, relationships, state machines, role permissions, module boundaries, and architecture.
+- `sms.md` (or `docs/sms.md`): approved Version 1 product, domain, permission, module-boundary and architecture specification.
+- `SchoolMS_UML_Design.md` (or `docs/SchoolMS_UML_Design.md`): legacy domain model snapshot. Do not let it override the approved Version 1 `sms.md`.
 - `docs/decisions/`: approved Architecture Decision Records (ADRs). An accepted ADR overrides older option-level recommendations in the roadmap or UML document.
 - Existing schemas, migrations, tests, and public API contracts: inspect these before changing implemented behavior. If they conflict with the written design, report the conflict; do not silently choose one.
 
@@ -33,16 +34,15 @@ Do not edit a canonical rule merely to make an implementation easier. Record int
 Unless the repository already contains an approved ADR stating otherwise, use this coherent baseline:
 
 - Monorepo: `pnpm` workspaces.
-- Runtime: Node.js 20 LTS.
+- Runtime: Node.js 24 LTS.
 - Language: strict TypeScript for application and shared package code; Rust only where required by Tauri.
-- Frontend: Next.js, Tailwind CSS, `i18next`/`react-i18next`.
-- Desktop: Tauri using the shared Next.js frontend (static export).
-- Mobile: React Native.
+- Frontend: React, Vite, Tailwind CSS, `i18next`/`react-i18next`.
+- Desktop: Tauri using the shared React frontend.
 - API: Node.js with Fastify.
 - Validation: Zod schemas shared where practical between UI and API.
 - ORM: Drizzle ORM.
 - Local persistence: SQLite for the desktop app.
-- Cloud persistence: PostgreSQL; Supabase may host development environments but must not become a hard dependency for authentication or core domain behavior.
+- Version 1 persistence: SQLite only. PostgreSQL, Supabase, cloud sync and remote web access require later evidence and ADR approval.
 - Authentication: self-hosted JWT access tokens, rotating refresh-token flow, and bcrypt password hashing.
 - Tests: Vitest and Testing Library for unit/component/integration tests; Playwright for end-to-end tests.
 - Documents: `@react-pdf/renderer` for transcript PDFs unless an ADR approves another engine.
@@ -57,10 +57,11 @@ Do not introduce a competing framework, ORM, package manager, database, auth pro
 apps/
   api/                  Fastify REST API and application services
   desktop/              Tauri shell and desktop integration
-  web/                  React web/PWA entry point
+  web/                  React/Vite product frontend
 packages/
+  domain/               Pure domain rules, calculations, transitions
   db/                   Drizzle schemas, migrations, adapters, seeds
-  shared/               Domain types, enums, constants, validation, pure logic
+  shared/               Transport types, constants, validation schemas
   ui/                   Reusable accessible UI components
 docs/
   decisions/            ADRs
@@ -167,7 +168,7 @@ Build complete, testable slices within the active roadmap phase. Do not scaffold
 - Enforce integrity in both Zod/application validation and database constraints. The backend remains authoritative.
 - Add required `NOT NULL`, `UNIQUE`, foreign-key, check, and index constraints. Choose cascade/restrict behavior deliberately; never blanket-apply cascading deletes to academic or financial history.
 - Academic, grade, payment, and signature history should be archived or soft-deactivated rather than destructively deleted.
-- Schema changes require a forward migration, a tested rollback or documented irreversible rationale, updated seed data, and compatibility checks for both SQLite and PostgreSQL.
+- Schema changes require a forward migration, a tested rollback or documented irreversible rationale, updated seed data, and compatibility checks for SQLite. Add PostgreSQL compatibility checks only after a later ADR introduces PostgreSQL into the active runtime.
 - Migrations must work against realistic existing data, not only an empty database.
 - Keep seeds deterministic and idempotent: rerunning a seed must not duplicate existing users or records. Preserve the realistic demo school data defined in the roadmap.
 - Do not expose ORM records directly as public API responses. Map them to explicit transport/domain types.
@@ -288,7 +289,7 @@ Every behavior change needs the lowest-cost test that proves it, plus regression
 ### Required layers
 
 - Unit: pure calculations, appreciation boundaries, fixed-point conversion, state transitions, permission decisions, validation schemas, code/receipt generation.
-- Integration: repositories against SQLite and PostgreSQL where behavior can differ; transactions; tenant scoping; auth refresh/logout; grade workflow; payments; import; sync application.
+- Integration: repositories against SQLite; transactions; tenant scoping; auth refresh/logout; grade workflow; import; backup/restore. Add PostgreSQL-specific coverage only after a later ADR introduces PostgreSQL into the active runtime.
 - Component: French labels, validation, keyboard grade entry, loading/empty/error states, accessibility.
 - End-to-end: setup wizard; full class grade entry; transcript initialization through signed PDF; student self-view; Excel import; offline restart and recovery.
 
@@ -368,7 +369,7 @@ A change is complete only when all applicable conditions are met:
 - All visible text is localized, with French complete and no placeholder strings.
 - Backend and database validation enforce the domain rules; client validation improves usability but is not trusted.
 - Seed data remains deterministic and runnable.
-- Migrations are safe for non-empty SQLite and PostgreSQL databases.
+- Migrations are safe for non-empty SQLite databases, and for PostgreSQL only after a later ADR introduces PostgreSQL into the active runtime.
 - Relevant accessibility, low-spec performance, and failure states were checked.
 - Documentation, ADRs, `.env.example`, and `CHANGELOG.md` were updated when applicable.
 - The final diff contains no unrelated edits, secrets, debug artifacts, or generated junk.
