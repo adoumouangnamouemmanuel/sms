@@ -138,7 +138,7 @@ Do not change the stack mid-project. Make decisions now and commit.
 - [x] **Desktop shell**: Tauri (Rust-based).
 - [x] **Mobile app**: React Native.
 - [x] **Styling**: Tailwind CSS.
-- [x] **Backend**: Node.js + Fastify (TypeScript).
+- [x] **Backend**: Node.js + Fastify (TypeScript) with `@fastify/swagger` for auto-docs.
 - [x] **Database (local)**: SQLite via `better-sqlite3`.
 - [x] **Database (cloud & testing)**: PostgreSQL. (Docker to be used for local DB testing only, exposed on port 5234).
 - [x] **ORM**: Drizzle ORM.
