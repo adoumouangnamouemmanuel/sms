@@ -6,6 +6,6 @@ export default {
   out: './migrations/sqlite',
   driver: 'better-sqlite',
   dbCredentials: {
-    url: process.env.DATABASE_URL_SQLITE || './edutrack.db',
+    url: process.env.EDUTRACK_SQLITE_PATH ?? './.data/edutrack.sqlite',
   },
 } satisfies Config;

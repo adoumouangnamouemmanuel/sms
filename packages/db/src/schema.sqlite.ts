@@ -14,7 +14,9 @@ export const school = sqliteTable('school', {
 
 export const academic_year = sqliteTable('academic_year', {
   id: text('id').primaryKey(),
-  school_id: text('school_id').references(() => school.id).notNull(),
+  school_id: text('school_id')
+    .references(() => school.id)
+    .notNull(),
   label: text('label').notNull(),
   start_date: text('start_date'),
   end_date: text('end_date'),
@@ -23,7 +25,9 @@ export const academic_year = sqliteTable('academic_year', {
 
 export const user = sqliteTable('user', {
   id: text('id').primaryKey(),
-  school_id: text('school_id').references(() => school.id).notNull(),
+  school_id: text('school_id')
+    .references(() => school.id)
+    .notNull(),
   username: text('username').notNull().unique(),
   password_hash: text('password_hash').notNull(),
   role: text('role').notNull(), // school_master, teacher, student

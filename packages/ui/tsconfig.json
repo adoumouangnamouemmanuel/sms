@@ -4,9 +4,10 @@
     "composite": true,
     "declaration": true,
     "declarationMap": true,
+    "jsx": "react-jsx",
     "outDir": "dist",
     "rootDir": "src",
-    "types": ["node"]
+    "types": ["react"]
   },
   "include": ["src/**/*"]
 }
