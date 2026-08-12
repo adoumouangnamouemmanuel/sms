@@ -1,1621 +1,832 @@
-# 🏫 EduTrack Africa - School Management System
+# EduTrack Africa - Product and System Specification
 
-## Complete UML & Architecture Design Document
+**Document version:** 2.0  
+**Status:** Approved baseline for Version 1 implementation  
+**Updated:** August 2026  
+**Owner:** Emmanuel  
+**Related documents:** `SchoolMS_Roadmap.md`, `AGENTS.md`, accepted ADRs in `docs/decisions/`
 
-### Designed for Schools in Chad and Across Africa
+## 1. Purpose and authority
 
----
+This document is the authoritative product, domain and system-design specification for EduTrack Africa. It replaces the previous `sms.md` and supersedes `SchoolMS_UML_Design.md`, which remains only as a legacy design snapshot if it is retained in the repository.
 
-## Table of Contents
+Use this document to answer what the system must do and how its core boundaries behave. Use `SchoolMS_Roadmap.md` for when the work is delivered and the evidence required at each phase. Use accepted Architecture Decision Records (ADRs) for decisions that deliberately override this baseline.
 
-1. [System Overview](#1-system-overview)
-2. [Architecture Overview](#2-architecture-overview)
-3. [Module Map](#3-module-map)
-4. [Entity-Relationship Diagram (ERD)](#4-entity-relationship-diagram-erd)
-5. [Class Diagrams by Module](#5-class-diagrams-by-module)
-   - 5.1 [Core / School Configuration Module](#51-core--school-configuration-module)
-   - 5.2 [User & Authentication Module](#52-user--authentication-module)
-   - 5.3 [Student Module](#53-student-module)
-   - 5.4 [Teacher Module](#54-teacher-module)
-   - 5.5 [Class & Curriculum Module](#55-class--curriculum-module)
-   - 5.6 [Grades & Transcript Module](#56-grades--transcript-module)
-   - 5.7 [Finance Module](#57-finance-module)
-   - 5.8 [Timetable & Academic Calendar Module](#58-timetable--academic-calendar-module)
-   - 5.9 [Resources & Learning Module](#59-resources--learning-module)
-   - 5.10 [Reporting & Analytics Module](#510-reporting--analytics-module)
-   - 5.11 [Import / Export Module](#511-import--export-module)
-   - 5.12 [Notification Module](#512-notification-module)
-6. [Relationship Summary](#6-relationship-summary)
-7. [Use Case Diagrams](#7-use-case-diagrams)
-8. [Sequence Diagrams](#8-sequence-diagrams)
-9. [State Diagrams](#9-state-diagrams)
-10. [Database Schema Overview](#10-database-schema-overview)
-11. [System Roles & Permissions Matrix](#11-system-roles--permissions-matrix)
-12. [Scalability & Modularity Notes](#12-scalability--modularity-notes)
-13. [Technology Stack Recommendation](#13-technology-stack-recommendation)
+When implementation and this specification conflict, report the conflict. Do not silently reinterpret an official grade, authorization, audit, backup or record-lifecycle rule to fit existing code.
 
----
+## 2. Product definition
 
-## 1. System Overview
+EduTrack Africa is a French-first, offline-first school administration product designed initially for secondary schools in Chad. Version 1 runs locally on Windows and gives school staff a dependable path from academic setup to official printed term bulletins.
 
-**EduTrack Africa** is a comprehensive, multi-functional School Management System (SMS) designed primarily for African schools - starting with Chad - where digital school management infrastructure is limited or absent.
+The product is designed for:
 
-### Key Principles
+- unreliable or absent internet;
+- Windows 10 and 11 computers with modest hardware;
+- staff who may have limited technical experience;
+- French as the default working language;
+- academic records that must remain correct, reviewable and recoverable for years.
 
-- **Multi-tenant**: Each school is configured independently with its own name, logo, classes, and fee structures.
-- **Role-based**: Distinct interfaces and access levels for School Master, Teachers, and Students.
-- **Offline-first Desktop + Web**: Primary desktop application (Electron/Tauri), with a synchronized web interface.
-- **Modular**: Every feature is a pluggable module. Schools can enable/disable modules per their needs.
-- **Scalable**: Designed to grow from a single school to a network of schools (multi-school federation).
-- **Localizable**: Supports French (primary), Arabic, and English interfaces.
+The product promise is narrow and concrete: a school can set up its academic structure, manage students and teaching assignments, collect and validate official term results, calculate deterministic outcomes, print correct bulletins and recover the data after a machine failure.
 
----
+## 3. Version 1 scope
 
-## 2. Architecture Overview
+### 3.1 Included capabilities
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          EduTrack Africa System                          │
-│                                                                         │
-│  ┌──────────────────────────────────────────────────────────────────┐   │
-│  │                      Presentation Layer                          │   │
-│  │  ┌─────────────────┐   ┌──────────────────┐  ┌───────────────┐  │   │
-│  │  │  Desktop App     │   │  Web App (Mobile)│  │ Web App (PC)  │  │   │
-│  │  │  (Electron/Tauri)│   │  (Responsive PWA)│  │  (Browser)    │  │   │
-│  │  └────────┬────────┘   └────────┬─────────┘  └───────┬───────┘  │   │
-│  └───────────┼────────────────────┼───────────────────── ┼──────────┘   │
-│              └────────────────────┴──────────────────────┘              │
-│                                   │                                     │
-│  ┌────────────────────────────────▼────────────────────────────────┐   │
-│  │                        API Gateway / REST Layer                   │   │
-│  │              (Authentication • Rate Limiting • Routing)           │   │
-│  └────────────────────────────────┬────────────────────────────────┘   │
-│                                   │                                     │
-│  ┌────────────────────────────────▼────────────────────────────────┐   │
-│  │                         Business Logic Layer                      │   │
-│  │                                                                   │   │
-│  │  ┌───────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐ ┌────────┐  │   │
-│  │  │  Student  │ │ Teacher  │ │  Grades  │ │Finance │ │Timetbl │  │   │
-│  │  │  Module   │ │  Module  │ │  Module  │ │ Module │ │ Module │  │   │
-│  │  └───────────┘ └──────────┘ └──────────┘ └────────┘ └────────┘  │   │
-│  │  ┌───────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐ ┌────────┐  │   │
-│  │  │  Class &  │ │ Resource │ │ Reporting│ │Import/ │ │Notific-│  │   │
-│  │  │Curriculum │ │ Module   │ │ Module   │ │Export  │ │ ation  │  │   │
-│  │  └───────────┘ └──────────┘ └──────────┘ └────────┘ └────────┘  │   │
-│  └────────────────────────────────┬────────────────────────────────┘   │
-│                                   │                                     │
-│  ┌────────────────────────────────▼────────────────────────────────┐   │
-│  │                         Data Access Layer                         │   │
-│  │              (ORM • Repository Pattern • Query Builder)           │   │
-│  └────────────────────────────────┬────────────────────────────────┘   │
-│                                   │                                     │
-│  ┌────────────────────────────────▼────────────────────────────────┐   │
-│  │                        Persistence Layer                          │   │
-│  │   ┌─────────────────┐            ┌──────────────────────────┐    │   │
-│  │   │  Local Database │            │   Cloud Database (Sync)   │    │   │
-│  │   │  (SQLite)       │◄──sync────►│   (PostgreSQL / Supabase) │    │   │
-│  │   └─────────────────┘            └──────────────────────────┘    │   │
-│  └────────────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+Version 1 includes:
 
----
+1. School installation and initial setup.
+2. School identity, logo and bulletin configuration.
+3. Academic years and non-overlapping terms.
+4. SchoolMaster and Teacher accounts.
+5. Student, guardian and teacher records.
+6. Class levels, classrooms, subjects, coefficients and teacher assignments.
+7. Class enrollment and optional-subject enrollment.
+8. Spreadsheet preview, validation and confirmed import for core records.
+9. One official subject result per student, class-subject and term.
+10. Teacher draft entry, submission and SchoolMaster validation/return.
+11. Fixed-point average, appreciation, pass/fail and competition ranking.
+12. Provisional transcript review and finalized official PDF bulletins.
+13. CSV/XLSX export, append-only audit history and verified backup/restore.
+14. A Windows installer and documented fully offline installation path.
 
-## 3. Module Map
+### 3.2 Explicit exclusions
 
-```
-EduTrack Africa
-│
-├── 📦 MOD-01: Core / School Configuration
-│   ├── School Profile (name, logo, address, academic year)
-│   ├── Class Levels & Sections
-│   ├── Academic Year & Term Configuration
-│   └── Fee Schedule per Level
-│
-├── 📦 MOD-02: User & Authentication
-│   ├── Role Management (SchoolMaster, Teacher, Student)
-│   ├── Login / Session Management
-│   └── Digital Signature Infrastructure
-│
-├── 📦 MOD-03: Student Management
-│   ├── Student Profile (personal info, parents)
-│   ├── Enrollment & Class Assignment
-│   └── Status Tracking (active, graduated, transferred)
-│
-├── 📦 MOD-04: Teacher Management
-│   ├── Teacher Profile (personal, family info)
-│   ├── Course & Class Assignments
-│   └── Payroll / Salary Tracking
-│
-├── 📦 MOD-05: Class & Curriculum
-│   ├── Class Roster Management
-│   ├── Subject / Course Definitions
-│   └── Coefficient Definitions per Subject
-│
-├── 📦 MOD-06: Grades & Transcripts
-│   ├── Grade Entry Interface (Teacher)
-│   ├── Automatic Average Computation
-│   ├── Automatic Appreciation (mention)
-│   ├── Transcript Generation (PDF)
-│   └── Digital Signature on Transcript
-│
-├── 📦 MOD-07: Finance
-│   ├── Fee Structure per Level
-│   ├── Payment Recording
-│   ├── Payment Status per Student
-│   └── Financial Reports
-│
-├── 📦 MOD-08: Timetable & Academic Calendar
-│   ├── Weekly Timetable per Class
-│   ├── Academic Year Timeline
-│   ├── Term / Semester Dates
-│   └── Event Management
-│
-├── 📦 MOD-09: Resources & Learning
-│   ├── Document Library (PDFs, notes)
-│   ├── Subject-wise Resource Categorization
-│   └── Student Access Portal
-│
-├── 📦 MOD-10: Reporting & Analytics
-│   ├── Pass/Fail Reports
-│   ├── Class Rankings
-│   ├── Subject Rankings
-│   ├── School-wide Best Students
-│   └── Custom Report Builder
-│
-├── 📦 MOD-11: Import / Export
-│   ├── Excel Import (students, teachers, grades)
-│   ├── PDF Export (transcripts, reports)
-│   └── Data Backup & Restore
-│
-└── 📦 MOD-12: Notifications
-    ├── In-App Alerts
-    ├── SMS Gateway (optional)
-    └── Announcement Board
-```
+Version 1 does not include:
 
----
+- cloud synchronization or cloud hosting;
+- web access from multiple devices;
+- finance, fees, payments, receipts or accounting;
+- attendance;
+- payroll or human-resources workflows;
+- timetable generation;
+- learning-resource management;
+- parent or student accounts and portals;
+- native mobile applications;
+- SMS, WhatsApp or email automation;
+- online subscription billing;
+- cryptographic document signatures;
+- a platform-wide SuperAdmin workflow.
 
-## 4. Entity-Relationship Diagram (ERD)
+Excluded modules must not appear as unfinished navigation, dormant endpoints or speculative data flows. They require evidence from the pilot, explicit approval and usually an ADR before implementation.
 
-```
-┌──────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                    ENTITY RELATIONSHIP DIAGRAM                                 │
-└──────────────────────────────────────────────────────────────────────────────────────────────┘
+## 4. Actors and permissions
 
-┌─────────────┐         ┌─────────────────────┐         ┌────────────────────┐
-│   SCHOOL    │────1:N──►│    ACADEMIC_YEAR     │────1:N──►│       TERM         │
-│─────────────│         │─────────────────────│         │────────────────────│
-│ id (PK)     │         │ id (PK)             │         │ id (PK)            │
-│ name        │         │ school_id (FK)      │         │ academic_year_id   │
-│ logo_url    │         │ label               │         │ label              │
-│ address     │         │ start_date          │         │ start_date         │
-│ phone       │         │ end_date            │         │ end_date           │
-│ motto       │         │ is_current          │         │ term_number        │
-│ created_at  │         └─────────────────────┘         └────────────────────┘
-└──────┬──────┘
-       │1
-       │
-       │N
-┌──────▼──────┐         ┌─────────────────────┐         ┌────────────────────┐
-│CLASS_LEVEL  │────1:N──►│   CLASSROOM         │────1:N──►│  CLASS_ENROLLMENT  │
-│─────────────│         │─────────────────────│         │────────────────────│
-│ id (PK)     │         │ id (PK)             │         │ id (PK)            │
-│ school_id   │         │ class_level_id (FK) │         │ classroom_id (FK)  │
-│ name        │         │ academic_year_id(FK)│         │ student_id (FK)    │
-│ description │         │ section             │         │ enrollment_date    │
-│ order_index │         │ room_number         │         │ is_active          │
-│ fee_amount  │         │ capacity            │         └────────────────────┘
-└──────┬──────┘         └──────────┬──────────┘
-       │                           │
-       │                           │N
-       │                    ┌──────▼──────────────┐
-       │                    │  CLASS_SUBJECT       │◄──────────────┐
-       │                    │─────────────────────│               │
-       │                    │ id (PK)             │               │
-       │                    │ classroom_id (FK)   │               │
-       │                    │ subject_id (FK)     │               │
-       │                    │ teacher_id (FK)     │               │
-       │                    │ coefficient         │               │
-       │                    │ hours_per_week      │               │
-       │                    └──────────┬──────────┘               │
-       │                               │N                         │
-       │                    ┌──────────▼──────────┐               │
-       │                    │     SUBJECT          │               │
-       │                    │─────────────────────│               │
-       │                    │ id (PK)             │               │
-       │                    │ school_id (FK)      │               │
-       │                    │ name                │               │
-       │                    │ code                │               │
-       │                    │ category            │               │
-       │                    └─────────────────────┘               │
-       │                                                          │
-┌──────▼──────────────────────────┐      ┌────────────────────────┴──────┐
-│           STUDENT               │      │           TEACHER              │
-│─────────────────────────────────│      │───────────────────────────────│
-│ id (PK)                         │      │ id (PK)                       │
-│ user_id (FK)                    │      │ user_id (FK)                  │
-│ school_id (FK)                  │      │ school_id (FK)                │
-│ first_name                      │      │ first_name                    │
-│ last_name                       │      │ last_name                     │
-│ date_of_birth                   │      │ date_of_birth                 │
-│ gender                          │      │ gender                        │
-│ address                         │      │ address                       │
-│ phone                           │      │ phone                         │
-│ email                           │      │ email                         │
-│ student_code (unique)           │      │ employee_code (unique)        │
-│ profile_photo_url               │      │ profile_photo_url             │
-│ nationality                     │      │ hire_date                     │
-│ status [active|graduated|trans] │      │ years_of_experience           │
-│ created_at                      │      │ qualification                 │
-│ updated_at                      │      │ status [active|on_leave|term] │
-└──────┬──────────────────────────┘      │ created_at                    │
-       │1                                └──────────┬────────────────────┘
-       │                                            │1
-       │N                                           │N
-┌──────▼──────────────────────────┐      ┌──────────▼────────────────────┐
-│         STUDENT_PARENT          │      │       TEACHER_FAMILY           │
-│─────────────────────────────────│      │───────────────────────────────│
-│ id (PK)                         │      │ id (PK)                       │
-│ student_id (FK)                  │      │ teacher_id (FK)               │
-│ first_name                      │      │ relation [spouse|child|parent]│
-│ last_name                       │      │ first_name                    │
-│ relation [father|mother|tutor]  │      │ last_name                     │
-│ phone                           │      │ date_of_birth                 │
-│ email                           │      │ phone                         │
-│ address                         │      └───────────────────────────────┘
-│ occupation                      │
-│ is_emergency_contact            │      ┌───────────────────────────────┐
-└─────────────────────────────────┘      │         SALARY                │
-                                         │───────────────────────────────│
-                                         │ id (PK)                       │
-                                         │ teacher_id (FK)               │
-                                         │ amount                        │
-                                         │ effective_date                │
-                                         │ payment_date                  │
-                                         │ payment_method                │
-                                         │ status [paid|pending|partial] │
-                                         │ notes                         │
-                                         └───────────────────────────────┘
+### 4.1 SchoolMaster
 
-┌──────────────────────────────────────────────────────────────────────────┐
-│                         GRADES & TRANSCRIPT CLUSTER                       │
-└──────────────────────────────────────────────────────────────────────────┘
+The SchoolMaster is the authorized school administrator for one school. The role may:
 
-┌─────────────────────┐      ┌──────────────────────┐      ┌────────────────────────┐
-│     TRANSCRIPT      │──1:N─►│   TRANSCRIPT_LINE    │──N:1─►│    CLASS_SUBJECT       │
-│─────────────────────│      │──────────────────────│      │ (see above)            │
-│ id (PK)             │      │ id (PK)              │      └────────────────────────┘
-│ student_id (FK)     │      │ transcript_id (FK)   │
-│ classroom_id (FK)   │      │ class_subject_id(FK) │      ┌────────────────────────┐
-│ term_id (FK)        │      │ grade_value          │      │  GRADE_ENTRY           │
-│ academic_year_id(FK)│      │ max_grade (20)       │──────►│────────────────────────│
-│ overall_average     │      │ coefficient          │      │ id (PK)                │
-│ appreciation        │      │ weighted_score       │      │ transcript_line_id (FK)│
-│ rank_in_class       │      │ appreciation         │      │ teacher_id (FK)        │
-│ is_passed           │      │ absence_hours        │      │ entry_date             │
-│ is_finalized        │      └──────────────────────┘      │ is_validated           │
-│ digital_signature   │                                     └────────────────────────┘
-│ signed_by (FK)      │
-│ signed_at           │
-│ generated_at        │
-└─────────────────────┘
+- complete school and academic setup;
+- create, deactivate and reset Teacher accounts;
+- manage students, guardians, teachers, classes, subjects and enrollments;
+- assign teachers to class-subjects;
+- import and export permitted school data;
+- view all grade-entry progress within the school;
+- validate or return submitted grade sets;
+- reopen validated grades with a required reason;
+- review and finalize bulletins;
+- reopen finalized transcripts with a required reason;
+- create, inspect and restore backups;
+- view the school's audit history.
 
-┌──────────────────────────────────────────────────────────────────────────┐
-│                              FINANCE CLUSTER                               │
-└──────────────────────────────────────────────────────────────────────────┘
+The SchoolMaster may not cross the school's tenant boundary, erase append-only audit history or silently rewrite finalized records.
 
-┌─────────────────────┐      ┌──────────────────────┐
-│   FEE_SCHEDULE      │──1:N─►│    FEE_PAYMENT        │
-│─────────────────────│      │──────────────────────│
-│ id (PK)             │      │ id (PK)              │
-│ class_level_id (FK) │      │ student_id (FK)      │
-│ academic_year_id(FK)│      │ fee_schedule_id (FK) │
-│ total_amount        │      │ amount_paid          │
-│ description         │      │ payment_date         │
-│ due_date            │      │ receipt_number       │
-│ installments_allowed│      │ payment_method       │
-└─────────────────────┘      │ recorded_by (FK)     │
-                              │ notes                │
-                              └──────────────────────┘
+### 4.2 Teacher
+
+A Teacher may:
+
+- sign in to the local installation;
+- see only assigned class-subjects and relevant enrolled students;
+- enter, save and recover draft results for those assignments;
+- submit a complete class-subject term result set;
+- respond to a returned submission while it is editable;
+- view the final validated status relevant to their assignments.
+
+A Teacher may not manage accounts, change academic structure, validate their own submission, view unrelated class-subjects, finalize bulletins, restore backups or access another school.
+
+### 4.3 Student and guardian
+
+Students and guardians are managed records, not authenticated users in Version 1. Their information appears only where the SchoolMaster or an assigned Teacher is authorized to use it.
+
+## 5. System context and deployment
+
+### 5.1 Runtime topology
+
+The Version 1 desktop installation contains:
+
+1. A Tauri 2 desktop shell.
+2. The compiled React/Vite frontend.
+3. A packaged Fastify TypeScript/Node sidecar.
+4. One local SQLite database.
+5. Tenant-scoped application-data folders for backups, temporary imports and generated records.
+
+The frontend communicates with the sidecar over loopback HTTP only. The sidecar binds to `127.0.0.1` on a random available port and authenticates all requests using installation/session material unavailable to ordinary web pages. It must not bind to the LAN.
+
+The exact self-contained packaging mechanism for the Node sidecar is an implementation decision proven during the roadmap's deployment spike and captured in an ADR. The accepted mechanism must work on a clean supported Windows machine without requiring the school to install Node.js or use the internet.
+
+### 5.2 Persistence semantics
+
+SQLite is the Version 1 system of record. A UI action is confirmed only after the corresponding database transaction commits. The application must never display a successful save when data exists only in component state or an uncommitted request.
+
+Core work remains available without internet after installation. No Version 1 workflow may wait for a cloud service.
+
+### 5.3 Future-ready boundaries
+
+Every tenant-owned record carries `school_id`, and critical mutable records may carry version/synchronization metadata. These fields protect boundaries and reduce future migration risk; they do not make Version 1 a sync product.
+
+PostgreSQL repositories, cloud APIs, synchronization queues and conflict resolution belong to Version 2 and require separate design evidence.
+
+## 6. Technical baseline
+
+| Concern              | Approved baseline                                  |
+| -------------------- | -------------------------------------------------- |
+| Workspace            | `pnpm` monorepo                                    |
+| Runtime              | Node.js 24 LTS                                     |
+| Language             | Strict TypeScript; Rust only for Tauri integration |
+| UI                   | React and Vite                                     |
+| Routing              | React Router                                       |
+| Server state         | TanStack Query                                     |
+| Forms                | React Hook Form                                    |
+| Validation           | Zod                                                |
+| Styling              | Tailwind CSS                                       |
+| Localization         | `i18next` and `react-i18next`                      |
+| Desktop              | Tauri 2                                            |
+| Local service        | Fastify sidecar                                    |
+| ORM                  | Drizzle ORM                                        |
+| Version 1 database   | SQLite via `better-sqlite3`                        |
+| Authentication       | `jose`, rotating refresh sessions, bcrypt          |
+| PDF                  | `@react-pdf/renderer`                              |
+| Spreadsheet          | SheetJS (`xlsx`)                                   |
+| Unit/component tests | Vitest and Testing Library                         |
+| End-to-end tests     | Playwright                                         |
+| CI                   | GitHub Actions                                     |
+
+Next.js is not part of the product stack. The shared product interface is a client-rendered Vite application because the desktop runtime is central and Version 1 needs no server-rendering features.
+
+## 7. Logical architecture
+
+Use these responsibility boundaries:
+
+```text
+React UI
+  -> transport and Zod validation
+    -> Fastify route
+      -> application service
+        -> domain policy / pure calculation
+          -> repository
+            -> SQLite
 ```
 
----
+### 7.1 UI layer
 
-## 5. Class Diagrams by Module
+The UI renders localized workflows, captures input and communicates persistence state. It may calculate a non-authoritative preview using shared domain functions but never becomes the source of official authorization or persisted results.
 
-### 5.1 Core / School Configuration Module
+### 7.2 Transport layer
 
-```
-┌──────────────────────────────────────────────────────┐
-│                      <<entity>>                       │
-│                       School                          │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - name: String                                        │
-│ - short_name: String                                  │
-│ - logo_url: String                                    │
-│ - address: String                                     │
-│ - city: String                                        │
-│ - country: String                                     │
-│ - phone: String                                       │
-│ - email: String                                       │
-│ - motto: String                                       │
-│ - ministry_code: String                               │
-│ - school_type: Enum[public, private, mission]         │
-│ - default_language: Enum[fr, ar, en]                  │
-│ - created_at: DateTime                                │
-├──────────────────────────────────────────────────────┤
-│ + getActiveAcademicYear(): AcademicYear               │
-│ + getClassLevels(): List<ClassLevel>                  │
-│ + configure(settings: SchoolSettings): void           │
-└──────────────────────────────────────────────────────┘
-                           │1
-                           │ has
-                           │N
-┌──────────────────────────▼───────────────────────────┐
-│                      <<entity>>                       │
-│                    AcademicYear                       │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - school_id: UUID                                     │
-│ - label: String               (e.g. "2024-2025")     │
-│ - start_date: Date                                    │
-│ - end_date: Date                                      │
-│ - is_current: Boolean                                 │
-│ - grading_system: Enum[term, semester]                │
-├──────────────────────────────────────────────────────┤
-│ + getTerms(): List<Term>                              │
-│ + isActive(): Boolean                                 │
-└──────────────────────────────────────────────────────┘
-                           │1
-                           │ divided into
-                           │N
-┌──────────────────────────▼───────────────────────────┐
-│                      <<entity>>                       │
-│                        Term                           │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - academic_year_id: UUID                              │
-│ - label: String               (e.g. "Trimestre 1")   │
-│ - term_number: Integer                                │
-│ - start_date: Date                                    │
-│ - end_date: Date                                      │
-│ - is_current: Boolean                                 │
-│ - exam_start_date: Date                               │
-│ - exam_end_date: Date                                 │
-├──────────────────────────────────────────────────────┤
-│ + isActive(): Boolean                                 │
-│ + getDurationWeeks(): Integer                         │
-└──────────────────────────────────────────────────────┘
+Fastify routes authenticate requests, validate path/query/header/body data, map transport types and call one or more application services. They contain no raw database access and no official academic calculation.
 
-┌──────────────────────────────────────────────────────┐
-│                      <<entity>>                       │
-│                     ClassLevel                        │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - school_id: UUID                                     │
-│ - name: String                (e.g. "Terminale", "3e")│
-│ - code: String                (e.g. "TLE", "3EME")   │
-│ - order_index: Integer        (for sorting)           │
-│ - description: String                                 │
-│ - is_exam_year: Boolean       (national exam year?)   │
-├──────────────────────────────────────────────────────┤
-│ + getClassrooms(yearId): List<Classroom>              │
-│ + getFeeSchedule(yearId): FeeSchedule                 │
-└──────────────────────────────────────────────────────┘
+### 7.3 Application layer
 
-┌──────────────────────────────────────────────────────┐
-│                   <<service>>                         │
-│               SchoolConfigService                     │
-├──────────────────────────────────────────────────────┤
-│ + setupSchool(data: SchoolSetupDto): School           │
-│ + uploadLogo(file: File): String                      │
-│ + createAcademicYear(data): AcademicYear              │
-│ + createClassLevel(data): ClassLevel                  │
-│ + setCurrentYear(yearId): void                        │
-└──────────────────────────────────────────────────────┘
+Application services enforce permissions, tenant boundaries, lifecycle transitions, transactions, idempotency and audit creation. They orchestrate domain and repository interfaces.
+
+### 7.4 Domain layer
+
+Pure domain code owns grade parsing, fixed-point arithmetic, appreciation, pass/fail, ranking, completeness checks and allowed state transitions. It has no React, HTTP, filesystem or database dependency.
+
+### 7.5 Persistence layer
+
+Repositories own queries, row mapping and persistence-specific behavior. Tenant-owned repository methods require a trusted tenant context. ORM rows are never returned directly from public routes.
+
+## 8. Repository topology
+
+```text
+apps/
+  api/                  Fastify sidecar and application services
+  web/                  React/Vite product frontend
+  desktop/              Tauri shell and desktop integration
+packages/
+  domain/               Pure domain rules, calculations, transitions
+  db/                   Drizzle schema, migrations, repositories, seeds
+  shared/               Transport types, constants, validation schemas
+  ui/                   Reusable localized accessible components
+docs/
+  decisions/            Accepted ADRs
+  database/             Schema and migration documentation
+scripts/                Repeatable development, build and release tasks
 ```
 
----
+Dependencies point inward. Domain code does not import from applications or adapters. Cross-module interaction uses typed service interfaces rather than direct access to another module's tables.
 
-### 5.2 User & Authentication Module
+## 9. Domain modules
 
-```
-┌──────────────────────────────────────────────────────┐
-│                      <<entity>>                       │
-│                        User                           │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - school_id: UUID                                     │
-│ - username: String            (unique per school)     │
-│ - password_hash: String                               │
-│ - role: Enum[school_master, teacher, student]         │
-│ - is_active: Boolean                                  │
-│ - last_login: DateTime                                │
-│ - created_at: DateTime                                │
-│ - digital_signature_cert: String (base64 / cert path)│
-├──────────────────────────────────────────────────────┤
-│ + authenticate(password): Boolean                     │
-│ + generateToken(): String                             │
-│ + hasPermission(permission): Boolean                  │
-│ + sign(document: Document): DigitalSignature          │
-└──────────────────────────────────────────────────────┘
-         △                  △                  △
-         │                  │                  │
-         │ extends           │ extends           │ extends
-┌────────┴──────┐  ┌────────┴──────┐  ┌────────┴──────┐
-│ SchoolMaster  │  │  TeacherUser  │  │  StudentUser  │
-│ User          │  │               │  │               │
-├───────────────┤  ├───────────────┤  ├───────────────┤
-│(full access)  │  │(class access) │  │(self access)  │
-└───────────────┘  └───────────────┘  └───────────────┘
+Version 1 contains six product modules:
 
-┌──────────────────────────────────────────────────────┐
-│                   <<service>>                         │
-│                  AuthService                          │
-├──────────────────────────────────────────────────────┤
-│ + login(username, password): AuthToken                │
-│ + logout(token): void                                 │
-│ + refreshToken(token): AuthToken                      │
-│ + resetPassword(userId, newPwd): void                 │
-│ + createUser(data, role): User                        │
-│ + generateDigitalCertificate(userId): Certificate     │
-└──────────────────────────────────────────────────────┘
+1. Installation, school and academic configuration.
+2. Authentication, authorization and auditing.
+3. People: students, guardians and teachers.
+4. Curriculum: levels, classrooms, subjects, assignments and enrollments.
+5. Results: entry, submission, validation, computation, ranking and transcripts.
+6. Data safety: import, export, backup and restore.
 
-┌──────────────────────────────────────────────────────┐
-│                   <<value object>>                    │
-│                   DigitalSignature                    │
-├──────────────────────────────────────────────────────┤
-│ - signer_id: UUID                                     │
-│ - signer_role: String                                 │
-│ - signed_at: DateTime                                 │
-│ - signature_hash: String                              │
-│ - certificate: String                                 │
-├──────────────────────────────────────────────────────┤
-│ + verify(): Boolean                                   │
-│ + toString(): String                                  │
-└──────────────────────────────────────────────────────┘
-```
+The modules excluded from Version 1 are not empty shells. Version 2 introduces new modules only after their dependencies and policies are accepted.
 
----
+## 10. Data model conventions
 
-### 5.3 Student Module
+### 10.1 General conventions
 
-```
-┌──────────────────────────────────────────────────────┐
-│                      <<entity>>                       │
-│                       Student                         │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - user_id: UUID                                       │
-│ - school_id: UUID                                     │
-│ - student_code: String        (auto-generated unique) │
-│ - first_name: String                                  │
-│ - last_name: String                                   │
-│ - date_of_birth: Date                                 │
-│ - gender: Enum[male, female]                          │
-│ - address: String                                     │
-│ - phone: String                                       │
-│ - email: String                                       │
-│ - nationality: String                                 │
-│ - profile_photo_url: String                           │
-│ - status: Enum[active, graduated, transferred, drop]  │
-│ - enrollment_date: Date                               │
-│ - created_at: DateTime                                │
-├──────────────────────────────────────────────────────┤
-│ + getFullName(): String                               │
-│ + getCurrentClass(): Classroom                        │
-│ + getTranscripts(): List<Transcript>                  │
-│ + getFeeStatus(): FeeStatus                           │
-│ + getParents(): List<Parent>                          │
-└──────────────────────────────────────────────────────┘
-                     │1
-                     │ has
-                     │N
-┌────────────────────▼─────────────────────────────────┐
-│                      <<entity>>                       │
-│                        Parent                         │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - student_id: UUID                                    │
-│ - relation: Enum[father, mother, guardian, tutor]     │
-│ - first_name: String                                  │
-│ - last_name: String                                   │
-│ - phone: String                                       │
-│ - email: String                                       │
-│ - address: String                                     │
-│ - occupation: String                                  │
-│ - is_emergency_contact: Boolean                       │
-├──────────────────────────────────────────────────────┤
-│ + getContactInfo(): ContactInfo                       │
-└──────────────────────────────────────────────────────┘
+- Primary keys are UUIDs.
+- Database fields use `snake_case`; TypeScript uses `camelCase`.
+- Tenant-owned tables contain a non-null `school_id` foreign key.
+- Times are stored in UTC and displayed using the school's configured timezone.
+- Business dates use date-only values where time-of-day has no meaning.
+- Archivable records use an explicit active/archived state and timestamps.
+- Critical mutable records use `version` or equivalent optimistic-concurrency metadata.
+- Created/updated timestamps are present where history or synchronization may depend on them.
+- User-visible codes are stable, unique within a school and never inferred from names.
+- Real student or school data is forbidden in seeds and tests.
 
-┌──────────────────────────────────────────────────────┐
-│                      <<entity>>                       │
-│                   ClassEnrollment                     │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - student_id: UUID                                    │
-│ - classroom_id: UUID                                  │
-│ - academic_year_id: UUID                              │
-│ - enrollment_date: Date                               │
-│ - is_active: Boolean                                  │
-│ - transfer_reason: String                             │
-├──────────────────────────────────────────────────────┤
-│ + getClassroom(): Classroom                           │
-│ + getStudent(): Student                               │
-└──────────────────────────────────────────────────────┘
+### 10.2 Fixed-point academic values
 
-┌──────────────────────────────────────────────────────┐
-│                   <<service>>                         │
-│                 StudentService                        │
-├──────────────────────────────────────────────────────┤
-│ + createStudent(data: StudentDto): Student            │
-│ + updateStudent(id, data): Student                    │
-│ + enrollInClass(studentId, classroomId): Enrollment   │
-│ + transferStudent(studentId, newClassId): void        │
-│ + getStudentProfile(studentId): StudentProfile        │
-│ + searchStudents(query): List<Student>                │
-│ + importFromExcel(file): ImportResult                 │
-│ + getPassedStudents(classId, termId): List<Student>   │
-│ + getFailedStudents(classId, termId): List<Student>   │
-└──────────────────────────────────────────────────────┘
-```
+Persist official numeric academic values as scaled integers:
 
----
+- grade/result `10.25` is stored as `1025` hundredths;
+- coefficient `2.00` is stored as `200` hundredths;
+- official average `13.47` is stored as `1347` hundredths.
 
-### 5.4 Teacher Module
+The domain library defines the exact intermediate scale and safe-integer checks for multiplication/division. Official records must never depend on unbounded binary floating-point arithmetic.
 
-```
-┌──────────────────────────────────────────────────────┐
-│                      <<entity>>                       │
-│                       Teacher                         │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - user_id: UUID                                       │
-│ - school_id: UUID                                     │
-│ - employee_code: String       (auto-generated unique) │
-│ - first_name: String                                  │
-│ - last_name: String                                   │
-│ - date_of_birth: Date                                 │
-│ - gender: Enum[male, female]                          │
-│ - address: String                                     │
-│ - phone: String                                       │
-│ - email: String                                       │
-│ - nationality: String                                 │
-│ - qualification: String       (highest degree)        │
-│ - specialization: String                              │
-│ - hire_date: Date                                     │
-│ - profile_photo_url: String                           │
-│ - status: Enum[active, on_leave, terminated]          │
-│ - created_at: DateTime                                │
-├──────────────────────────────────────────────────────┤
-│ + getFullName(): String                               │
-│ + getYearsOfService(): Integer                        │
-│ + getAssignedClasses(): List<Classroom>               │
-│ + getAssignedSubjects(): List<Subject>                │
-│ + getSalaryHistory(): List<Salary>                    │
-│ + getFamilyMembers(): List<FamilyMember>              │
-└──────────────────────────────────────────────────────┘
-                     │1
-            ┌────────┴──────────────────┐
-            │N                          │N
-┌───────────▼───────────┐   ┌───────────▼──────────────┐
-│   <<entity>>           │   │   <<entity>>              │
-│   FamilyMember        │   │       Salary              │
-├───────────────────────┤   ├──────────────────────────┤
-│ - id: UUID            │   │ - id: UUID               │
-│ - teacher_id: UUID    │   │ - teacher_id: UUID       │
-│ - relation: Enum      │   │ - gross_amount: Decimal  │
-│   [spouse,child,      │   │ - net_amount: Decimal    │
-│    parent, sibling]   │   │ - deductions: Decimal    │
-│ - first_name: String  │   │ - pay_period: String     │
-│ - last_name: String   │   │   (e.g. "Janvier 2025") │
-│ - date_of_birth: Date │   │ - payment_date: Date     │
-│ - phone: String       │   │ - payment_method: Enum   │
-├───────────────────────┤   │ - status: Enum           │
-│ + getAge(): Integer   │   │   [paid,pending,partial] │
-└───────────────────────┘   │ - notes: String          │
-                             ├──────────────────────────┤
-                             │ + computeNet(): Decimal  │
-                             └──────────────────────────┘
+## 11. Core entities and relationships
 
-┌──────────────────────────────────────────────────────┐
-│                   <<service>>                         │
-│                 TeacherService                        │
-├──────────────────────────────────────────────────────┤
-│ + createTeacher(data: TeacherDto): Teacher            │
-│ + updateTeacher(id, data): Teacher                    │
-│ + assignToClass(teacherId, classSubjectId): void      │
-│ + recordSalary(teacherId, data): Salary               │
-│ + getSalaryHistory(teacherId): List<Salary>           │
-│ + getTeacherWorkload(teacherId): WorkloadReport       │
-│ + importFromExcel(file): ImportResult                 │
-└──────────────────────────────────────────────────────┘
+This section specifies required concepts, not final SQL column spelling. The implemented schema and migrations must preserve these constraints.
+
+### 11.1 School and academic structure
+
+#### `school`
+
+Represents one tenant and installation owner. Important attributes include name, stable code, address, contact details, logo reference, locale, timezone, bulletin settings and active state.
+
+#### `academic_year`
+
+Belongs to one school and contains label, start date, end date and status. Constraints:
+
+- start precedes end;
+- tenant-local label is unique;
+- at most one academic year is current per school;
+- historical years are preserved.
+
+#### `term`
+
+Belongs to an academic year and school. Contains label/order, start/end dates and status. Constraints:
+
+- term dates fall inside the academic year;
+- terms in the same academic year do not overlap;
+- ordering is unique within the academic year;
+- at most one term is current within the school's current academic context.
+
+#### `class_level`
+
+Represents a curriculum level such as `6e` or `Terminale`. The tenant-local code/name is unique. Levels can be deactivated but historical references remain.
+
+#### `classroom`
+
+Represents a cohort/section within an academic year, such as `3e A`. It belongs to a school, academic year and class level. Its tenant/year code is unique.
+
+### 11.2 Identity, sessions and audit
+
+#### `user`
+
+Belongs to a school and has role `SCHOOL_MASTER` or `TEACHER`, username/login identifier, password hash, active/locked state, failed-attempt metadata and timestamps. A Teacher user links to exactly one teacher record when active.
+
+#### `refresh_session`
+
+Tracks a hashed rotating refresh token/session family, user, expiry, revocation, replacement relationship and safe device metadata. Reuse of a rotated token revokes the affected family.
+
+#### `audit_log`
+
+Append-only event containing school, actor, action, target type/id, time, request/correlation ID and redacted structured metadata. Audit rows are never updated or deleted by normal product workflows.
+
+### 11.3 People
+
+#### `student`
+
+Belongs to a school. Contains stable tenant-local student code, legal/display name fields, sex where lawfully required, date/place of birth, contact/address data where approved, status and archival timestamps. Duplicate names are permitted. The code, not the name, identifies the student in operational workflows.
+
+#### `guardian`
+
+Belongs to a school and represents a parent or responsible adult. Contains name, relationship/contact information and active state.
+
+#### `student_guardian`
+
+Many-to-many link between student and guardian. Records relationship type, primary-contact flag and authorization/notes allowed by the privacy policy. A guardian may relate to several students and a student may have several guardians.
+
+#### `teacher`
+
+Belongs to a school and contains stable staff code, names, contact details, active state and optional linked user account. Payroll data is out of scope.
+
+### 11.4 Curriculum and enrollment
+
+#### `subject`
+
+Belongs to a school. Contains stable code, localized name, optional short label and active state.
+
+#### `class_subject`
+
+Assigns one subject to one classroom for an academic year/term policy. Contains coefficient, required/optional policy, active state and optional assigned Teacher. The classroom/subject combination is tenant-locally unique in the relevant academic context.
+
+Changing a coefficient after validated results exist requires explicit policy and audit; it must never silently alter finalized transcripts.
+
+#### `class_enrollment`
+
+Links student, classroom and academic year, with enrollment status and dates. Constraints:
+
+- historical enrollments are retained;
+- a student has at most one active classroom enrollment in a given academic year unless an ADR explicitly supports another model;
+- promotion, transfer, dropout and graduation use controlled status transitions rather than destructive updates.
+
+#### `student_subject_enrollment`
+
+Links a student/class enrollment to an optional class-subject. Required subjects are applicable by class configuration; optional subjects are applicable only through this active link.
+
+### 11.5 Results and transcripts
+
+#### `grade_submission`
+
+Represents a Teacher's class-subject result set for one term. It contains school, term, class-subject, assigned Teacher, status, version, submitted/validated/returned/reopened metadata and reason fields.
+
+Allowed status flow:
+
+```text
+DRAFT -> SUBMITTED -> VALIDATED
+   ^         |
+   |         v
+   +------ RETURNED
+
+VALIDATED -> REOPENED -> SUBMITTED
 ```
 
----
+Only the assigned Teacher edits draft/returned/reopened results. Only the SchoolMaster validates, returns or reopens. Every transition is authorized and audited.
 
-### 5.5 Class & Curriculum Module
+#### `transcript`
 
-```
-┌──────────────────────────────────────────────────────┐
-│                      <<entity>>                       │
-│                      Classroom                        │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - class_level_id: UUID                                │
-│ - academic_year_id: UUID                              │
-│ - section: String             (e.g. "A", "B")        │
-│ - room_number: String                                 │
-│ - capacity: Integer                                   │
-│ - head_teacher_id: UUID       (nullable)              │
-├──────────────────────────────────────────────────────┤
-│ + getFullName(): String       ("Terminale A")        │
-│ + getStudents(): List<Student>                        │
-│ + getSubjects(): List<ClassSubject>                   │
-│ + getStudentCount(): Integer                          │
-│ + getTimetable(): Timetable                           │
-└──────────────────────────────────────────────────────┘
-                     │1
-                     │ contains
-                     │N
-┌────────────────────▼─────────────────────────────────┐
-│                      <<entity>>                       │
-│                     ClassSubject                      │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - classroom_id: UUID                                  │
-│ - subject_id: UUID                                    │
-│ - teacher_id: UUID                                    │
-│ - coefficient: Integer        (preset, e.g. 4)       │
-│ - hours_per_week: Decimal                             │
-│ - is_optional: Boolean                                │
-├──────────────────────────────────────────────────────┤
-│ + getSubject(): Subject                               │
-│ + getTeacher(): Teacher                               │
-│ + getCoefficient(): Integer                           │
-└──────────────────────────────────────────────────────┘
-                     │N
-                     │ is a
-                     │1
-┌────────────────────▼─────────────────────────────────┐
-│                      <<entity>>                       │
-│                       Subject                         │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - school_id: UUID                                     │
-│ - name: String                (e.g. "Mathématiques") │
-│ - code: String                (e.g. "MATH")          │
-│ - category: Enum              [science, literature,  │
-│                                humanities, tech, art]│
-│ - default_coefficient: Integer                        │
-│ - description: String                                 │
-├──────────────────────────────────────────────────────┤
-│ + getDefaultCoefficient(): Integer                    │
-└──────────────────────────────────────────────────────┘
+Represents one student's official term result for an enrollment. Contains state, version, calculation-policy version, completeness status, official average, appreciation, pass/fail, rank, class size and finalized snapshot metadata.
 
-┌──────────────────────────────────────────────────────┐
-│                   <<service>>                         │
-│               CurriculumService                       │
-├──────────────────────────────────────────────────────┤
-│ + createSubject(data): Subject                        │
-│ + createClassroom(data): Classroom                    │
-│ + assignSubjectToClass(data): ClassSubject            │
-│ + assignTeacherToSubject(teacherId, csId): void       │
-│ + setCoefficient(classSubjectId, coeff): void         │
-│ + getClassroomRoster(classroomId): List<Student>      │
-│ + importCurriculumFromExcel(file): ImportResult       │
-└──────────────────────────────────────────────────────┘
+Allowed state flow:
+
+```text
+DRAFT -> READY_FOR_REVIEW -> FINALIZED
+                             |
+                             v
+                          REOPENED
+                             |
+                             +-> READY_FOR_REVIEW -> FINALIZED
 ```
 
----
+`DRAFT` may be incomplete. `READY_FOR_REVIEW` contains a complete calculation candidate. `FINALIZED` is immutable. `REOPENED` requires a SchoolMaster, reason, time and audit event.
 
-### 5.6 Grades & Transcript Module
+#### `transcript_line`
 
-```
-┌──────────────────────────────────────────────────────┐
-│                      <<entity>>                       │
-│                      Transcript                       │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - student_id: UUID                                    │
-│ - classroom_id: UUID                                  │
-│ - term_id: UUID                                       │
-│ - academic_year_id: UUID                              │
-│ - overall_average: Decimal    (computed, /20)         │
-│ - appreciation: String        (computed from average) │
-│ - rank_in_class: Integer      (computed)              │
-│ - total_coefficient: Integer  (computed)              │
-│ - total_weighted_score: Decimal (computed)            │
-│ - is_passed: Boolean          (avg >= 10 → passed)    │
-│ - is_finalized: Boolean                               │
-│ - digital_signature: JSON     (signature object)      │
-│ - signed_by: UUID             (school master user)    │
-│ - signed_at: DateTime                                 │
-│ - generated_at: DateTime                              │
-├──────────────────────────────────────────────────────┤
-│ + computeAverage(): Decimal                           │
-│ + computeAppreciation(): String                       │
-│ + computeRank(): Integer                              │
-│ + finalize(): void                                    │
-│ + sign(masterUser: User): DigitalSignature            │
-│ + exportToPDF(): File                                 │
-└──────────────────────────────────────────────────────┘
-                     │1
-                     │ contains
-                     │N
-┌────────────────────▼─────────────────────────────────┐
-│                      <<entity>>                       │
-│                   TranscriptLine                      │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - transcript_id: UUID                                 │
-│ - class_subject_id: UUID                              │
-│ - grade_value: Decimal        (0.00 – 20.00)         │
-│ - max_grade: Decimal          (always 20)            │
-│ - coefficient: Integer        (copied from ClassSubject)│
-│ - weighted_score: Decimal     (computed: grade × coeff)│
-│ - appreciation: String        (computed from grade)   │
-│ - absence_hours: Integer                              │
-│ - teacher_comment: String                             │
-│ - entered_by: UUID            (teacher user id)       │
-│ - entered_at: DateTime                                │
-│ - is_validated: Boolean                               │
-├──────────────────────────────────────────────────────┤
-│ + computeWeightedScore(): Decimal                     │
-│ + computeAppreciation(): String                       │
-└──────────────────────────────────────────────────────┘
+Stores one applicable class-subject line for a transcript: subject identity/label snapshot, coefficient, result, weighted value, validation source and inclusion status. It is the Version 1 official subject result record.
 
-┌──────────────────────────────────────────────────────┐
-│                   <<value object>>                    │
-│              AppreciationScale (static)               │
-├──────────────────────────────────────────────────────┤
-│ EXCELLENT   : 18.00 – 20.00                           │
-│ TRES_BIEN   : 16.00 – 17.99                           │
-│ BIEN        : 14.00 – 15.99                           │
-│ ASSEZ_BIEN  : 12.00 – 13.99                           │
-│ PASSABLE    : 10.00 – 11.99                           │
-│ INSUFFISANT :  8.00 –  9.99                           │
-│ FAIBLE      :  6.00 –  7.99                           │
-│ TRES_FAIBLE :  0.00 –  5.99                           │
-├──────────────────────────────────────────────────────┤
-│ + getAppreciation(grade: Decimal): String             │
-│ + isPassed(average: Decimal): Boolean  (>= 10)        │
-└──────────────────────────────────────────────────────┘
+The combination of transcript and class-subject is unique. A student cannot have two official values for the same class-subject/term transcript.
 
-┌──────────────────────────────────────────────────────┐
-│                   <<service>>                         │
-│               TranscriptService                       │
-├──────────────────────────────────────────────────────┤
-│ + initializeTranscripts(classroomId, termId): void   │
-│ + enterGrade(lineId, grade, teacherId): TranscriptLine│
-│ + validateGrade(lineId, teacherId): void              │
-│ + computeTranscript(transcriptId): Transcript         │
-│ + computeClassRanks(classroomId, termId): void       │
-│ + finalizeTranscript(transcriptId): void              │
-│ + signTranscript(transcriptId, masterId): Transcript  │
-│ + generatePDF(transcriptId): File                     │
-│ + bulkGeneratePDFs(classroomId, termId): ZipFile      │
-│ + getClassResults(classroomId, termId): ClassResults  │
-│ + getBestStudents(scope, termId): List<Student>       │
-│ + getPassedStudents(classroomId, termId): List<Student>│
-│ + getFailedStudents(classroomId, termId): List<Student>│
-│ + getSubjectBest(subjectId, termId): Student          │
-└──────────────────────────────────────────────────────┘
-```
+#### Supporting metadata
 
----
+Import jobs, backup manifests and generated-document records may use supporting tables when required for idempotency, provenance and verification. Their lifecycle and retention must be documented before introduction.
 
-### 5.7 Finance Module
+## 12. Academic calculation policy
 
-```
-┌──────────────────────────────────────────────────────┐
-│                      <<entity>>                       │
-│                     FeeSchedule                       │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - class_level_id: UUID                                │
-│ - academic_year_id: UUID                              │
-│ - total_amount: Decimal                               │
-│ - currency: String            (default: "XAF")       │
-│ - description: String                                 │
-│ - due_date: Date                                      │
-│ - installments_allowed: Boolean                       │
-│ - max_installments: Integer                           │
-├──────────────────────────────────────────────────────┤
-│ + getInstallmentAmount(): Decimal                     │
-└──────────────────────────────────────────────────────┘
-                     │1
-                     │ tracked via
-                     │N
-┌────────────────────▼─────────────────────────────────┐
-│                      <<entity>>                       │
-│                     FeePayment                        │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - student_id: UUID                                    │
-│ - fee_schedule_id: UUID                               │
-│ - amount_paid: Decimal                                │
-│ - payment_date: Date                                  │
-│ - receipt_number: String      (auto-generated)       │
-│ - payment_method: Enum        [cash, mobile, bank]   │
-│ - recorded_by: UUID           (user who recorded)    │
-│ - notes: String                                       │
-│ - is_validated: Boolean                               │
-├──────────────────────────────────────────────────────┤
-│ + generateReceipt(): Document                         │
-└──────────────────────────────────────────────────────┘
+### 12.1 Input parsing
 
-┌──────────────────────────────────────────────────────┐
-│                   <<value object>>                    │
-│                     FeeStatus                         │
-├──────────────────────────────────────────────────────┤
-│ - student_id: UUID                                    │
-│ - fee_schedule_id: UUID                               │
-│ - total_due: Decimal                                  │
-│ - total_paid: Decimal                                 │
-│ - balance: Decimal                                    │
-│ - status: Enum[fully_paid, partial, unpaid]           │
-│ - last_payment_date: Date                             │
-├──────────────────────────────────────────────────────┤
-│ + isFullyPaid(): Boolean                              │
-│ + getPercentagePaid(): Decimal                        │
-└──────────────────────────────────────────────────────┘
+- Accept decimal comma or period.
+- Trim harmless surrounding whitespace.
+- Reject ambiguous or malformed formats rather than guessing.
+- A supplied result must be from `0.00` to `20.00` inclusive.
+- A Version 1 coefficient is a positive whole number, represented internally at the same exact hundredths scale.
+- Accept at most the configured two official decimal places; any normalization policy beyond that requires an ADR.
+- Empty input is missing, not zero.
 
-┌──────────────────────────────────────────────────────┐
-│                   <<service>>                         │
-│                  FinanceService                       │
-├──────────────────────────────────────────────────────┤
-│ + createFeeSchedule(data): FeeSchedule                │
-│ + recordPayment(data): FeePayment                     │
-│ + getFeeStatus(studentId, yearId): FeeStatus          │
-│ + getUnpaidStudents(classId, yearId): List<Student>   │
-│ + generateFinancialReport(yearId): Report             │
-│ + exportPaymentsToExcel(filters): File                │
-└──────────────────────────────────────────────────────┘
-```
+### 12.2 Applicability
 
----
+For a student and term, include:
 
-### 5.8 Timetable & Academic Calendar Module
+- every active required class-subject for the student's class enrollment;
+- every optional class-subject with an active student-subject enrollment.
 
-```
-┌──────────────────────────────────────────────────────┐
-│                      <<entity>>                       │
-│                      Timetable                        │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - classroom_id: UUID                                  │
-│ - academic_year_id: UUID                              │
-│ - term_id: UUID                                       │
-│ - created_at: DateTime                                │
-│ - updated_at: DateTime                                │
-│ - is_published: Boolean                               │
-├──────────────────────────────────────────────────────┤
-│ + getSlots(): List<TimetableSlot>                     │
-│ + publish(): void                                     │
-└──────────────────────────────────────────────────────┘
-                     │1
-                     │ has
-                     │N
-┌────────────────────▼─────────────────────────────────┐
-│                      <<entity>>                       │
-│                    TimetableSlot                      │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - timetable_id: UUID                                  │
-│ - class_subject_id: UUID                              │
-│ - day_of_week: Enum[Mon,Tue,Wed,Thu,Fri,Sat]         │
-│ - start_time: Time                                    │
-│ - end_time: Time                                      │
-│ - room: String                                        │
-├──────────────────────────────────────────────────────┤
-│ + getDuration(): Integer      (minutes)               │
-│ + overlaps(other: Slot): Boolean                      │
-└──────────────────────────────────────────────────────┘
+Do not include inactive subjects, unrelated class assignments or optional subjects without enrollment.
 
-┌──────────────────────────────────────────────────────┐
-│                      <<entity>>                       │
-│                    AcademicEvent                      │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - school_id: UUID                                     │
-│ - title: String                                       │
-│ - description: String                                 │
-│ - event_type: Enum[holiday, exam, meeting, other]     │
-│ - start_date: DateTime                                │
-│ - end_date: DateTime                                  │
-│ - applies_to: Enum[all, class_level, classroom]       │
-│ - target_id: UUID             (nullable, specific cls)│
-│ - is_school_closed: Boolean                           │
-├──────────────────────────────────────────────────────┤
-│ + isOngoing(): Boolean                                │
-│ + getAffectedClasses(): List<Classroom>               │
-└──────────────────────────────────────────────────────┘
+### 12.3 Weighted computation
 
-┌──────────────────────────────────────────────────────┐
-│                   <<service>>                         │
-│               TimetableService                        │
-├──────────────────────────────────────────────────────┤
-│ + createTimetable(classroomId, termId): Timetable     │
-│ + addSlot(timetableId, slotData): TimetableSlot       │
-│ + removeSlot(slotId): void                            │
-│ + checkConflicts(slotData): List<Conflict>            │
-│ + publishTimetable(timetableId): void                 │
-│ + getStudentTimetable(studentId): Timetable           │
-│ + getTeacherTimetable(teacherId): List<TimetableSlot> │
-│ + createEvent(data): AcademicEvent                    │
-│ + getAcademicCalendar(yearId): List<AcademicEvent>    │
-└──────────────────────────────────────────────────────┘
+For each applicable subject:
+
+`weighted value = official result × coefficient`
+
+The unrounded overall average is:
+
+`sum(weighted values) / sum(applicable coefficients)`
+
+The official average is rounded half-up to exactly two decimal places at the final calculation boundary. Intermediate integer/rational values remain unrounded as long as practical.
+
+If the total applicable coefficient is zero, return a typed `ZERO_TOTAL_COEFFICIENT` domain error. Never generate `NaN`, infinity or an arbitrary zero average.
+
+### 12.4 Missing values and completeness
+
+- Missing is a first-class state and never becomes `0.00` automatically.
+- Provisional previews may show partial calculations only when clearly labeled incomplete and non-official.
+- A transcript cannot become `READY_FOR_REVIEW` or `FINALIZED` if an applicable required value is missing.
+- A transcript cannot be finalized while any relevant grade submission is not validated.
+- An excused/waived result policy is not invented in Version 1. If a pilot requires it, define it in a domain ADR before implementation.
+
+### 12.5 Pass/fail and appreciation
+
+An official average of `10.00` or greater passes. `9.99` fails.
+
+|     Average | Appreciation |
+| ----------: | ------------ |
+| 18.00–20.00 | Excellent    |
+| 16.00–17.99 | Très Bien    |
+| 14.00–15.99 | Bien         |
+| 12.00–13.99 | Assez Bien   |
+| 10.00–11.99 | Passable     |
+|   8.00–9.99 | Insuffisant  |
+|   6.00–7.99 | Faible       |
+|   0.00–5.99 | Très Faible  |
+
+These labels and thresholds are shared domain constants used by UI, services, tests, exports and PDFs.
+
+### 12.6 Ranking
+
+Ranking uses competition ranking based on the persisted official average:
+
+- equal averages receive the same rank;
+- the next rank skips by the number of tied students (`1, 1, 3`);
+- only complete, eligible students in the same classroom and term are ranked;
+- class size stored on a finalized transcript is the eligible ranked population at finalization;
+- a stable secondary display order such as student code may order ties but never changes their equal rank.
+
+The domain engine returns an explicit result for an empty eligible class. It never divides by zero or fabricates ranks.
+
+### 12.7 Canonical fixtures
+
+Automated tests must cover at least:
+
+`0`, `5.99`, `6`, `7.99`, `8`, `9.99`, `10`, `11.99`, `12`, `13.99`, `14`, `15.99`, `16`, `17.99`, `18`, `20`, decimal comma input, missing results, zero coefficients, an empty class, duplicate names, optional subjects and tied averages.
+
+## 13. Grade-entry workflow
+
+1. The SchoolMaster configures classroom subjects, coefficients and Teacher assignments.
+2. The assigned Teacher opens a term/class-subject grid.
+3. The service returns only applicable enrolled students for the authenticated school and assignment.
+4. The Teacher enters results. Each confirmed save is durably committed with optimistic concurrency.
+5. Draft state survives navigation and application restart.
+6. Client and server show precise row-level errors without discarding valid draft entries.
+7. Submission is blocked until every applicable student has a valid result or an approved policy explicitly says otherwise.
+8. Submission locks Teacher editing and creates an audit event.
+9. The SchoolMaster validates the complete set or returns it with a reason.
+10. Validation makes values eligible for official transcript computation.
+11. Reopening requires SchoolMaster authorization, a reason and audit metadata.
+
+Autosave must not create silent loss, duplicate writes or unclear state. The UI distinguishes unsaved, saving, saved, offline/local and failed states in French.
+
+## 14. Transcript and bulletin workflow
+
+1. The system builds a draft from the student's applicable subjects and validated results.
+2. Completeness and coefficient checks run through the canonical domain engine.
+3. The engine calculates subject weighted values, official average, pass/fail and appreciation.
+4. Eligible classmates are ranked using the same persisted calculation policy.
+5. The SchoolMaster reviews a provisional, visibly non-official preview.
+6. Finalization runs in a transaction, verifies current versions and stores immutable input/output snapshots.
+7. The PDF renderer consumes only the finalized snapshot.
+8. Repeated PDF generation produces the same academic values and identity information.
+
+An official bulletin includes at minimum:
+
+- school identity and logo if configured;
+- academic year and term;
+- student name and stable code;
+- classroom and level;
+- subject labels, results and coefficients;
+- official overall average;
+- appreciation and pass/fail;
+- rank and eligible class size;
+- finalization/version metadata appropriate for human verification;
+- printed signature/name lines approved by the school.
+
+Version 1 does not claim cryptographic authenticity. If a finalized transcript is reopened, the prior version remains traceable and the replacement receives a new version/finalization event.
+
+## 15. Authentication and session policy
+
+### 15.1 Account security
+
+- Passwords are hashed with bcrypt cost 12 or higher.
+- Login returns a short-lived access token and a rotating refresh session.
+- Web refresh material uses a secure, appropriately scoped `httpOnly` cookie.
+- Tokens are never stored in `localStorage`.
+- Refresh token hashes, not raw refresh tokens, are persisted.
+- Logout revokes the active refresh session.
+- Reuse of a rotated token invalidates the related session family.
+- Five failed login attempts lock the account for 15 minutes.
+- Login and refresh endpoints are rate-limited.
+
+### 15.2 Local offline sign-in
+
+Previously provisioned active users can authenticate against local credentials without internet. Account changes are authoritative within the local installation in Version 1.
+
+### 15.3 Installation/sidecar protection
+
+Loopback is not automatically trusted. The Tauri frontend and sidecar exchange an installation-scoped secret or equivalent authenticated bootstrap material. The design must mitigate unrelated local webpages/processes calling privileged routes and must document CORS/origin and port-discovery handling.
+
+## 16. Tenant isolation and privacy
+
+`school_id` is a mandatory boundary, not an optional query filter.
+
+- Trusted tenant context comes from the installation/session, never client-supplied school selection.
+- All tenant-owned queries, aggregates, exports, audit events and file paths are scoped.
+- Tenant-local unique constraints include `school_id`.
+- Two-school integration fixtures verify isolation even though one installation normally serves one school.
+- Version 1 has no cross-tenant administrator.
+
+Collect only data the school needs for the approved workflows. Do not put full personal records in logs, analytics, test artifacts or screenshots. Exported spreadsheets, PDFs, the SQLite database and backup archives are sensitive records and require tenant-scoped access.
+
+## 17. Audit policy
+
+Audit records are append-only and capture:
+
+- school and actor;
+- action and target;
+- UTC timestamp;
+- correlation/request ID where applicable;
+- safe before/after metadata or reason;
+- result/failure classification when useful.
+
+Mandatory audit events include:
+
+- account creation, role/status change and password reset;
+- repeated/locked authentication events without logging credentials;
+- academic structure changes that affect official computation;
+- imports and exports;
+- grade submission, return, validation and reopening;
+- transcript finalization and reopening;
+- backup creation, validation and restore.
+
+Audit metadata must not contain passwords, access/refresh tokens, installation secrets or unnecessary full PII.
+
+## 18. API contract
+
+### 18.1 General rules
+
+- Validate path parameters, query parameters, headers and bodies at the boundary.
+- Use stable machine-readable error codes.
+- Return localized user-safe messages.
+- Never expose stack traces, database errors, password hashes, tokens, secrets or internal file paths.
+- Paginate unbounded collections.
+- Enforce maximum import, export and bulk-operation sizes.
+- Bulk operations declare atomic or partial-success semantics.
+- Idempotent commands use a caller/request identifier where retry can duplicate a durable action.
+
+### 18.2 Success envelope
+
+```json
+{
+  "success": true,
+  "data": {},
+  "message": "Opération réussie",
+  "pagination": {
+    "page": 1,
+    "per_page": 20,
+    "total": 150
+  }
+}
 ```
 
----
+Omit `pagination` when it is not applicable.
 
-### 5.9 Resources & Learning Module
+### 18.3 Error envelope
 
-```
-┌──────────────────────────────────────────────────────┐
-│                      <<entity>>                       │
-│                    LearningResource                   │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - school_id: UUID                                     │
-│ - title: String                                       │
-│ - description: String                                 │
-│ - resource_type: Enum[document, video, link, exam]   │
-│ - file_url: String                                    │
-│ - subject_id: UUID            (nullable)              │
-│ - class_level_id: UUID        (nullable)              │
-│ - uploaded_by: UUID           (teacher or master)     │
-│ - is_public: Boolean          (visible to students?)  │
-│ - tags: String[]                                      │
-│ - download_count: Integer                             │
-│ - created_at: DateTime                                │
-├──────────────────────────────────────────────────────┤
-│ + getFileSize(): String                               │
-│ + isAccessibleBy(student: Student): Boolean           │
-└──────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────┐
-│                   <<service>>                         │
-│               ResourceService                         │
-├──────────────────────────────────────────────────────┤
-│ + uploadResource(file, metadata): LearningResource    │
-│ + deleteResource(id): void                            │
-│ + getResourcesBySubject(subjectId): List<Resource>    │
-│ + getResourcesByLevel(levelId): List<Resource>        │
-│ + searchResources(query): List<Resource>              │
-│ + incrementDownload(resourceId): void                 │
-│ + getStudentResources(studentId): List<Resource>      │
-└──────────────────────────────────────────────────────┘
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Le prénom est requis",
+    "fields": {
+      "first_name": "Ce champ est requis"
+    }
+  }
+}
 ```
 
----
+### 18.4 Required error categories
 
-### 5.10 Reporting & Analytics Module
+At minimum, contracts distinguish validation, authentication, authorization, not found, conflict/version mismatch, invalid transition, incomplete transcript, zero coefficient, import failure, backup incompatibility and internal failure.
 
-```
-┌──────────────────────────────────────────────────────┐
-│                   <<service>>                         │
-│                 ReportingService                      │
-├──────────────────────────────────────────────────────┤
-│ + getSchoolSummary(yearId): SchoolSummaryReport       │
-│ + getClassReport(classroomId, termId): ClassReport    │
-│ + getStudentRanking(classroomId, termId): RankingList │
-│ + getSubjectRanking(subjectId, termId): RankingList   │
-│ + getSchoolBestStudents(yearId, n): List<Student>     │
-│ + getCategoryStats(classId, termId): CategoryStats    │
-│   (passed/failed counts, percentages)                 │
-│ + getTeacherWorkloadReport(): WorkloadReport          │
-│ + getFinancialSummary(yearId): FinancialReport        │
-│ + exportReport(reportType, filters): File             │
-└──────────────────────────────────────────────────────┘
+## 19. Import and export
 
-┌──────────────────────────────────────────────────────┐
-│                   <<value object>>                    │
-│                    ClassReport                        │
-├──────────────────────────────────────────────────────┤
-│ - classroom: Classroom                                │
-│ - term: Term                                          │
-│ - total_students: Integer                             │
-│ - passed_count: Integer                               │
-│ - failed_count: Integer                               │
-│ - pass_rate: Decimal           (percentage)           │
-│ - class_average: Decimal                              │
-│ - highest_average: Decimal                            │
-│ - lowest_average: Decimal                             │
-│ - best_student: Student                               │
-│ - subject_averages: Map<Subject, Decimal>             │
-│ - student_rankings: List<StudentRank>                 │
-├──────────────────────────────────────────────────────┤
-│ + exportToPDF(): File                                 │
-│ + exportToExcel(): File                               │
-└──────────────────────────────────────────────────────┘
+### 19.1 Import state machine
 
-┌──────────────────────────────────────────────────────┐
-│                   <<value object>>                    │
-│                    StudentRank                        │
-├──────────────────────────────────────────────────────┤
-│ - student: Student                                    │
-│ - rank: Integer                                       │
-│ - average: Decimal                                    │
-│ - appreciation: String                                │
-│ - is_passed: Boolean                                  │
-└──────────────────────────────────────────────────────┘
+```text
+SELECTED -> PARSED -> PREVIEWED -> VALIDATED -> CONFIRMED -> COMPLETED
+                \-> REJECTED
 ```
 
----
+No durable school record is written before confirmation.
 
-### 5.11 Import / Export Module
+Import requirements:
 
-```
-┌──────────────────────────────────────────────────────┐
-│                   <<service>>                         │
-│                 ImportExportService                   │
-├──────────────────────────────────────────────────────┤
-│ + importStudentsFromExcel(file): ImportResult         │
-│ + importTeachersFromExcel(file): ImportResult         │
-│ + importGradesFromExcel(file, classId, termId)        │
-│           : ImportResult                              │
-│ + downloadStudentTemplate(): File                     │
-│ + downloadTeacherTemplate(): File                     │
-│ + downloadGradeTemplate(classId, termId): File        │
-│ + exportStudentsToExcel(filters): File                │
-│ + exportTranscriptsPDF(classId, termId): ZipFile      │
-│ + exportReportToExcel(reportType, params): File       │
-│ + backupDatabase(): File                              │
-│ + restoreDatabase(file): RestoreResult                │
-└──────────────────────────────────────────────────────┘
+- accept only documented templates/formats for students, teachers, subjects, classrooms, class-subjects, coefficients and assignments;
+- validate extension, MIME type, content structure, file size and row count;
+- show normalized preview before commit;
+- identify sheet/row/field failures in French;
+- define duplicate handling using stable codes and other approved identifiers, never names alone;
+- preserve valid preview data while the user corrects errors where feasible;
+- make confirmation idempotent;
+- use a full transaction or documented safe chunks with an explicit partial-success report;
+- record an audit event and result summary.
 
-┌──────────────────────────────────────────────────────┐
-│                   <<value object>>                    │
-│                    ImportResult                       │
-├──────────────────────────────────────────────────────┤
-│ - total_rows: Integer                                 │
-│ - imported: Integer                                   │
-│ - skipped: Integer                                    │
-│ - errors: List<ImportError>                           │
-│ - created_at: DateTime                                │
-├──────────────────────────────────────────────────────┤
-│ + isSuccessful(): Boolean                             │
-│ + getSummary(): String                                │
-└──────────────────────────────────────────────────────┘
-```
+### 19.2 Export requirements
 
----
+- scope every export to the authenticated school and permission;
+- include stable identifiers needed for safe re-import where appropriate;
+- escape untrusted cells that begin with spreadsheet formula-control characters;
+- bound memory use for large exports;
+- record sensitive exports in audit history;
+- use French labels by default and explicit date/decimal formats.
 
-### 5.12 Notification Module
+## 20. Backup and restore
 
-```
-┌──────────────────────────────────────────────────────┐
-│                      <<entity>>                       │
-│                     Notification                      │
-├──────────────────────────────────────────────────────┤
-│ - id: UUID                                            │
-│ - school_id: UUID                                     │
-│ - title: String                                       │
-│ - message: String                                     │
-│ - notification_type: Enum[info, warning, alert]       │
-│ - target_role: Enum[all, teachers, students, master]  │
-│ - target_id: UUID             (specific user, null=all)│
-│ - is_read: Boolean                                    │
-│ - created_by: UUID                                    │
-│ - created_at: DateTime                                │
-│ - expires_at: DateTime                                │
-├──────────────────────────────────────────────────────┤
-│ + markAsRead(userId): void                            │
-│ + isExpired(): Boolean                                │
-└──────────────────────────────────────────────────────┘
+### 20.1 Backup format
 
-┌──────────────────────────────────────────────────────┐
-│                   <<service>>                         │
-│               NotificationService                     │
-├──────────────────────────────────────────────────────┤
-│ + sendToAll(schoolId, message): void                  │
-│ + sendToRole(role, message): void                     │
-│ + sendToUser(userId, message): void                   │
-│ + getUnread(userId): List<Notification>               │
-│ + markAllRead(userId): void                           │
-│ + sendSMS(phone, message): void    (optional gateway) │
-└──────────────────────────────────────────────────────┘
+A backup is a versioned tenant-scoped archive containing:
+
+- a transactionally consistent database snapshot;
+- a manifest with product/schema version, school identity, creation time and file inventory;
+- required tenant-owned referenced assets;
+- cryptographic integrity hashes for archive members.
+
+The archive format and any optional encryption policy are captured in an ADR before release.
+
+### 20.2 Backup creation
+
+- Use SQLite's supported online backup/snapshot mechanism rather than copying a live file unsafely.
+- Write to a temporary path, verify integrity, then move atomically to the final path.
+- Never report success until verification finishes.
+- Give the operator a clear destination and safe handling guidance.
+
+### 20.3 Restore flow
+
+```text
+SELECT -> INSPECT -> VERIFY -> COMPATIBILITY CHECK -> SAFETY BACKUP
+  -> RESTORE TO STAGING -> VERIFY -> ATOMIC ACTIVATE -> RESTART/SMOKE TEST
 ```
 
----
-
-## 6. Relationship Summary
-
-```
-┌─────────────────────────────────────────────────────────────────────────────────────────┐
-│                              RELATIONSHIP MATRIX                                          │
-├─────────────────────┬──────────────────────┬──────────────┬──────────────────────────────┤
-│ Entity A            │ Entity B             │ Cardinality  │ Description                  │
-├─────────────────────┼──────────────────────┼──────────────┼──────────────────────────────┤
-│ School              │ AcademicYear         │ 1 : N        │ A school has many years      │
-│ School              │ ClassLevel           │ 1 : N        │ A school defines its levels  │
-│ School              │ Subject              │ 1 : N        │ A school defines subjects    │
-│ School              │ User                 │ 1 : N        │ A school has many users      │
-│ AcademicYear        │ Term                 │ 1 : N        │ Year divided into terms      │
-│ AcademicYear        │ Classroom            │ 1 : N        │ Classrooms per year          │
-│ ClassLevel          │ Classroom            │ 1 : N        │ Many sections per level      │
-│ ClassLevel          │ FeeSchedule          │ 1 : N        │ Fees set per level per year  │
-│ Classroom           │ ClassSubject         │ 1 : N        │ Many subjects per class      │
-│ Classroom           │ ClassEnrollment      │ 1 : N        │ Many students per class      │
-│ Classroom           │ Timetable            │ 1 : 1        │ One timetable per class/term │
-│ Subject             │ ClassSubject         │ 1 : N        │ Subject taught in many class │
-│ Teacher             │ ClassSubject         │ 1 : N        │ Teacher teaches many courses │
-│ Teacher             │ FamilyMember         │ 1 : N        │ Teacher has family members   │
-│ Teacher             │ Salary               │ 1 : N        │ Teacher's salary history     │
-│ Teacher             │ User                 │ 1 : 1        │ Teacher has one login        │
-│ Student             │ User                 │ 1 : 1        │ Student has one login        │
-│ Student             │ Parent               │ 1 : N        │ Student has 1-2 parents      │
-│ Student             │ ClassEnrollment      │ 1 : N        │ Student can re-enroll yearly │
-│ Student             │ Transcript           │ 1 : N        │ Transcript per student/term  │
-│ Student             │ FeePayment           │ 1 : N        │ Student makes many payments  │
-│ Transcript          │ TranscriptLine       │ 1 : N        │ One line per subject         │
-│ ClassSubject        │ TranscriptLine       │ 1 : N        │ One grade entry per student  │
-│ FeeSchedule         │ FeePayment           │ 1 : N        │ Many payments per schedule   │
-│ Timetable           │ TimetableSlot        │ 1 : N        │ Many slots per timetable     │
-│ LearningResource    │ Subject              │ N : 1        │ Resources linked to subject  │
-│ LearningResource    │ ClassLevel           │ N : 1        │ Resources per level (opt.)   │
-└─────────────────────┴──────────────────────┴──────────────┴──────────────────────────────┘
-```
-
----
-
-## 7. Use Case Diagrams
-
-### 7.1 School Master Use Cases
-
-```
-                        ┌─────────────────────────────────────────────────────┐
-                        │                  School Master                        │
-                        │                                                       │
-                        │  ┌──────────────────────────────────────────────┐   │
-                        │  │  School Configuration                         │   │
-                        │  │  ○ Configure school (name, logo, classes)    │   │
-                        │  │  ○ Set up academic year & terms              │   │
-                        │  │  ○ Define class levels and fee structure     │   │
-                        │  │  ○ Create & manage users (teachers, students)│   │
-                        │  └──────────────────────────────────────────────┘   │
-                        │                                                       │
-                        │  ┌──────────────────────────────────────────────┐   │
-                        │  │  Data Management                              │   │
-                        │  │  ○ Import students/teachers from Excel        │   │
-                        │  │  ○ Assign teachers to subjects/classes        │   │
-                        │  │  ○ Manage class rosters                      │   │
-                        │  └──────────────────────────────────────────────┘   │
-                        │                                                       │
-                        │  ┌──────────────────────────────────────────────┐   │
-                        │  │  Transcript & Grading                         │   │
-                        │  │  ○ View all transcripts                      │   │
-                        │  │  ○ Finalize & digitally sign transcripts     │   │
-                        │  │  ○ Bulk export transcripts to PDF            │   │
-                        │  └──────────────────────────────────────────────┘   │
-                        │                                                       │
-                        │  ┌──────────────────────────────────────────────┐   │
-                        │  │  Reporting & Analytics                        │   │
-                        │  │  ○ View pass/fail statistics                 │   │
-                        │  │  ○ See best students (school/class/subject)  │   │
-                        │  │  ○ View financial reports                    │   │
-                        │  │  ○ Export reports                            │   │
-                        │  └──────────────────────────────────────────────┘   │
-                        │                                                       │
-                        │  ┌──────────────────────────────────────────────┐   │
-                        │  │  Finance                                       │   │
-                        │  │  ○ Set fee schedules                         │   │
-                        │  │  ○ Record & view payments                    │   │
-                        │  │  ○ View unpaid students                      │   │
-                        │  └──────────────────────────────────────────────┘   │
-                        └─────────────────────────────────────────────────────┘
-
-### 7.2 Teacher Use Cases
-
-                        ┌─────────────────────────────────────────────────────┐
-                        │                     Teacher                           │
-                        │                                                       │
-                        │  ┌──────────────────────────────────────────────┐   │
-                        │  │  Grade Entry                                  │   │
-                        │  │  ○ Enter grades for assigned classes/subjects │   │
-                        │  │  ○ Add comments per student                  │   │
-                        │  │  ○ Validate grade entries                    │   │
-                        │  └──────────────────────────────────────────────┘   │
-                        │                                                       │
-                        │  ┌──────────────────────────────────────────────┐   │
-                        │  │  Class Management                             │   │
-                        │  │  ○ View class roster                         │   │
-                        │  │  ○ View class timetable                      │   │
-                        │  └──────────────────────────────────────────────┘   │
-                        │                                                       │
-                        │  ┌──────────────────────────────────────────────┐   │
-                        │  │  Profile & Resources                          │   │
-                        │  │  ○ View & update own profile                 │   │
-                        │  │  ○ Upload learning resources                 │   │
-                        │  └──────────────────────────────────────────────┘   │
-                        └─────────────────────────────────────────────────────┘
-
-### 7.3 Student Use Cases
-
-                        ┌─────────────────────────────────────────────────────┐
-                        │                     Student                           │
-                        │                                                       │
-                        │  ○ View own profile                                  │
-                        │  ○ View own transcripts (by term/year)              │
-                        │  ○ View class timetable                              │
-                        │  ○ View academic calendar & events                  │
-                        │  ○ View school fee status & payment history         │
-                        │  ○ Access learning resources (by subject/level)     │
-                        └─────────────────────────────────────────────────────┘
-```
-
----
-
-## 8. Sequence Diagrams
-
-### 8.1 Grade Entry & Transcript Generation
-
-```
-Teacher          GradeUI           TranscriptService      Database         SchoolMaster
-  │                │                      │                   │                │
-  │──select class─►│                      │                   │                │
-  │                │──getClassSubjects()─►│                   │                │
-  │                │◄─return subjects─────│                   │                │
-  │                │                      │                   │                │
-  │──enter grade──►│                      │                   │                │
-  │                │──enterGrade(lineId,  │                   │                │
-  │                │   grade, teacherId)─►│                   │                │
-  │                │                      │──save to DB──────►│                │
-  │                │                      │◄─ confirmed ──────│                │
-  │                │◄─grade saved ────────│                   │                │
-  │                │                      │                   │                │
-  │──validate────►│                      │                   │                │
-  │                │──validateGrade()────►│                   │                │
-  │                │                      │──update DB───────►│                │
-  │                │◄─validated ──────────│                   │                │
-  │                │                      │                   │                │
-  │                │      [After all grades entered]          │                │
-  │                │                      │                   │      ──────────│
-  │                │                      │                   │      Master reviews
-  │                │                      │──computeTranscript│                │
-  │                │                      │  (transcriptId)──►│                │
-  │                │                      │──computeAverage() │                │
-  │                │                      │──computeRank()    │                │
-  │                │                      │──save transcript─►│                │
-  │                │                      │                   │                │
-  │                │                      │──signTranscript()─┼───────────────►│
-  │                │                      │                   │                │──apply sig
-  │                │                      │◄──signed──────────┼────────────────│
-  │                │                      │──generatePDF()    │                │
-  │                │                      │──return PDF───────►                │
-```
-
-### 8.2 Student Import from Excel
-
-```
-SchoolMaster     ImportUI        ImportExportService      Validator        StudentService
-     │               │                  │                     │                  │
-     │──upload xlsx─►│                  │                     │                  │
-     │               │──importStudents()►│                     │                  │
-     │               │                  │──parseExcel()       │                  │
-     │               │                  │──validateRows()────►│                  │
-     │               │                  │◄─validation result──│                  │
-     │               │                  │                     │                  │
-     │               │                  │  [For each valid row]│                  │
-     │               │                  │──createStudent()────►│                  │
-     │               │                  │                     │──save student ──►│
-     │               │                  │◄──student saved──────│                  │
-     │               │                  │                     │                  │
-     │               │──return ImportResult                   │                  │
-     │               │  (imported: N, skipped: M, errors: [...])                │
-     │◄──summary────►│                  │                     │                  │
-```
-
----
-
-## 9. State Diagrams
-
-### 9.1 Transcript Lifecycle
-
-```
-                    ┌──────────┐
-                    │          │
-         ┌──────────┤ PENDING  ├──────────────────────────────┐
-         │          │          │                               │
-         │          └──────────┘                               │
-         │               │                                     │
-         │    All grades initialized                          │
-         │               ▼                                     │
-         │          ┌──────────┐                               │
-         │          │          │                               │
-         │  ◄────── │ IN_ENTRY │ ──── Teacher enters ──────── │
-         │          │          │      and validates grades     │
-         │          └──────────┘                               │
-         │               │                                     │
-         │    All lines validated                             │
-         │               ▼                                     │
-         │          ┌──────────┐                               │
-         │          │COMPUTED  │  Averages & ranks             │
-         │          │& RANKED  │  auto-computed                │
-         │          └──────────┘                               │
-         │               │                                     │
-         │    Master reviews                                  │
-         │               ▼                                     │
-         │          ┌──────────┐                               │
-         │          │FINALIZED │  Locked for edits            │
-         │          └──────────┘                               │
-         │               │                                     │
-         │    Master digitally signs                         │
-         │               ▼                                     │
-         │          ┌──────────┐                               │
-         └─────────►│  SIGNED  │  PDF ready for download     │
-                    └──────────┘                               │
-                                                              │
-                              [If error detected]            │
-                    ┌──────────┐                               │
-                    │REOPENED  │ ◄─────────────────────────── ┘
-                    └──────────┘
-```
-
-### 9.2 Student Enrollment Status
-
-```
-    [New Enrollment]
-          │
-          ▼
-    ┌───────────┐         Transfer/Promotion     ┌────────────┐
-    │  ACTIVE   │ ────────────────────────────►  │ TRANSFERRED│
-    └───────────┘                                └────────────┘
-          │
-          │ End of final year
-          ▼
-    ┌───────────┐
-    │ GRADUATED │
-    └───────────┘
-          │
-          │ Abandonment
-          ▼
-    ┌───────────┐
-    │  DROPPED  │
-    └───────────┘
-```
-
----
-
-## 10. Database Schema Overview
-
-```sql
--- Core Tables (simplified DDL)
-
-school (id, name, short_name, logo_url, address, city, country, phone, email,
-        motto, ministry_code, school_type, default_language, created_at)
-
-academic_year (id, school_id, label, start_date, end_date, is_current, grading_system)
-
-term (id, academic_year_id, label, term_number, start_date, end_date, is_current,
-      exam_start_date, exam_end_date)
-
-class_level (id, school_id, name, code, order_index, description, is_exam_year)
-
-classroom (id, class_level_id, academic_year_id, section, room_number, capacity,
-           head_teacher_id)
-
-subject (id, school_id, name, code, category, default_coefficient, description)
-
-class_subject (id, classroom_id, subject_id, teacher_id, coefficient,
-               hours_per_week, is_optional)
-
--- User & Auth
-
-user (id, school_id, username, password_hash, role, is_active, last_login,
-      created_at, digital_signature_cert)
-
--- Student Tables
-
-student (id, user_id, school_id, student_code, first_name, last_name,
-         date_of_birth, gender, address, phone, email, nationality,
-         profile_photo_url, status, enrollment_date, created_at, updated_at)
-
-parent (id, student_id, relation, first_name, last_name, phone, email,
-        address, occupation, is_emergency_contact)
-
-class_enrollment (id, student_id, classroom_id, academic_year_id,
-                  enrollment_date, is_active, transfer_reason)
-
--- Teacher Tables
-
-teacher (id, user_id, school_id, employee_code, first_name, last_name,
-         date_of_birth, gender, address, phone, email, nationality,
-         qualification, specialization, hire_date, profile_photo_url,
-         status, created_at, updated_at)
-
-family_member (id, teacher_id, relation, first_name, last_name,
-               date_of_birth, phone)
-
-salary (id, teacher_id, gross_amount, net_amount, deductions, pay_period,
-        payment_date, payment_method, status, notes)
-
--- Grades & Transcripts
-
-transcript (id, student_id, classroom_id, term_id, academic_year_id,
-            overall_average, appreciation, rank_in_class, total_coefficient,
-            total_weighted_score, is_passed, is_finalized, digital_signature,
-            signed_by, signed_at, generated_at)
-
-transcript_line (id, transcript_id, class_subject_id, grade_value, max_grade,
-                 coefficient, weighted_score, appreciation, absence_hours,
-                 teacher_comment, entered_by, entered_at, is_validated)
-
--- Finance
-
-fee_schedule (id, class_level_id, academic_year_id, total_amount, currency,
-              description, due_date, installments_allowed, max_installments)
-
-fee_payment (id, student_id, fee_schedule_id, amount_paid, payment_date,
-             receipt_number, payment_method, recorded_by, notes, is_validated)
-
--- Timetable
-
-timetable (id, classroom_id, academic_year_id, term_id, created_at,
-           updated_at, is_published)
-
-timetable_slot (id, timetable_id, class_subject_id, day_of_week,
-                start_time, end_time, room)
-
-academic_event (id, school_id, title, description, event_type, start_date,
-                end_date, applies_to, target_id, is_school_closed)
-
--- Resources
-
-learning_resource (id, school_id, title, description, resource_type,
-                   file_url, subject_id, class_level_id, uploaded_by,
-                   is_public, tags, download_count, created_at)
-
--- Notifications
-
-notification (id, school_id, title, message, notification_type, target_role,
-              target_id, is_read, created_by, created_at, expires_at)
-
--- Indexes (critical)
-CREATE INDEX idx_student_school      ON student(school_id);
-CREATE INDEX idx_enrollment_year     ON class_enrollment(academic_year_id);
-CREATE INDEX idx_transcript_student  ON transcript(student_id, term_id);
-CREATE INDEX idx_transcript_class    ON transcript(classroom_id, term_id);
-CREATE INDEX idx_grade_entry         ON transcript_line(transcript_id);
-CREATE INDEX idx_fee_student         ON fee_payment(student_id);
-```
-
----
-
-## 11. System Roles & Permissions Matrix
-
-```
-┌────────────────────────────────────┬──────────────┬─────────────┬──────────────┐
-│ Action / Feature                   │ SchoolMaster │   Teacher   │   Student    │
-├────────────────────────────────────┼──────────────┼─────────────┼──────────────┤
-│ Configure school settings          │      ✅      │     ❌      │      ❌      │
-│ Create/edit academic year          │      ✅      │     ❌      │      ❌      │
-│ Manage class levels                │      ✅      │     ❌      │      ❌      │
-│ Create/edit students               │      ✅      │     ❌      │      ❌      │
-│ Create/edit teachers               │      ✅      │     ❌      │      ❌      │
-│ View all students                  │      ✅      │  Own class  │  Own only    │
-│ View all teachers                  │      ✅      │     ❌      │      ❌      │
-│ Assign teachers to subjects        │      ✅      │     ❌      │      ❌      │
-│ Enter grades                       │      ✅      │  Own subj.  │      ❌      │
-│ Validate grades                    │      ✅      │  Own subj.  │      ❌      │
-│ Finalize transcripts               │      ✅      │     ❌      │      ❌      │
-│ Sign transcripts (digital)         │      ✅      │     ❌      │      ❌      │
-│ View transcripts                   │      ✅      │  Own class  │  Own only    │
-│ Export transcripts PDF             │      ✅      │  Own class  │  Own only    │
-│ Manage fee schedules               │      ✅      │     ❌      │      ❌      │
-│ Record fee payments                │      ✅      │     ❌      │      ❌      │
-│ View fee status                    │      ✅      │     ❌      │  Own only    │
-│ Manage timetables                  │      ✅      │     ❌      │      ❌      │
-│ View timetable                     │      ✅      │  Own class  │  Own class   │
-│ Manage academic calendar           │      ✅      │     ❌      │  View only   │
-│ Upload learning resources          │      ✅      │     ✅      │      ❌      │
-│ Access learning resources          │      ✅      │     ✅      │      ✅      │
-│ View analytics/reports             │      ✅      │  Own class  │      ❌      │
-│ Import from Excel                  │      ✅      │     ❌      │      ❌      │
-│ Export reports                     │      ✅      │  Own class  │      ❌      │
-│ Backup/restore database            │      ✅      │     ❌      │      ❌      │
-│ Send notifications                 │      ✅      │     ❌      │      ❌      │
-│ View own profile                   │      ✅      │     ✅      │      ✅      │
-│ Edit own profile                   │      ✅      │     ✅      │      ❌      │
-└────────────────────────────────────┴──────────────┴─────────────┴──────────────┘
-```
-
----
-
-## 12. Scalability & Modularity Notes
-
-### Multi-Tenant Architecture
-
-Each `school_id` acts as a tenant boundary. All queries are scoped to the school, enabling future:
-
-- **School Network / Federation**: A single deployment serving multiple schools under one administration.
-- **SaaS Mode**: Cloud deployment where each school subscribes and has isolated data.
-
-### Module Activation System
-
-Each school can enable or disable modules via a `SchoolModuleConfig` table:
-
-```
-school_module_config (school_id, module_name, is_enabled, config_json)
-```
-
-Disabled modules are hidden from the UI. This keeps the system lightweight for schools that don't need all features.
-
-### Extensibility Points
-
-| Extension Point        | How to Extend                                       |
-| ---------------------- | --------------------------------------------------- |
-| New grading system     | Add new AppreciationScale or override per school    |
-| New user role          | Add to Role enum + permission matrix                |
-| New report type        | Implement new method in ReportingService            |
-| New file import format | Add new parser in ImportExportService               |
-| New subject category   | Extend Subject.category enum                        |
-| New payment method     | Extend FeePayment.payment_method enum               |
-| SMS providers          | Implement NotificationGateway interface             |
-| Multiple languages     | i18n keys stored per school, override per UI string |
-
-### Offline-First Sync Strategy
-
-```
-Desktop App (SQLite) ◄──► Sync Engine ◄──► Cloud DB (PostgreSQL)
-                            │
-                            ├── Conflict resolution: last-write-wins per record
-                            ├── Queue offline mutations
-                            └── Sync on reconnect
-```
-
----
-
-## 13. Technology Stack Recommendation
-
-```
-┌───────────────────────────────────────────────────────────────────────┐
-│                     RECOMMENDED TECH STACK                             │
-├──────────────────────┬────────────────────────────────────────────────┤
-│ Layer                │ Technology                                      │
-├──────────────────────┼────────────────────────────────────────────────┤
-│ Desktop App Shell    │ Tauri (Rust + WebView) - lightweight, offline  │
-│ Web Frontend         │ React + TypeScript + Tailwind CSS              │
-│ State Management     │ Zustand or Redux Toolkit                       │
-│ PDF Generation       │ React-PDF or Puppeteer (for transcripts)      │
-│ Excel Import/Export  │ SheetJS (xlsx)                                 │
-│ Local Database       │ SQLite via libsql / Turso                     │
-│ Cloud Database       │ PostgreSQL (Supabase for easy hosting)        │
-│ ORM                  │ Prisma or Drizzle ORM                         │
-│ Backend API          │ Node.js + Express / Fastify OR                │
-│                      │ Python + FastAPI (for easy African deployment) │
-│ Authentication       │ JWT + bcrypt (self-hosted, no third-party dep) │
-│ Digital Signatures   │ node-forge or Web Crypto API (RSA/ECDSA)     │
-│ File Storage         │ Local filesystem (desktop) + S3 (cloud)       │
-│ Sync Engine          │ CRDTs (Yjs) or custom queue-based sync        │
-│ Notifications        │ In-app + optional Africa's Talking SMS API    │
-│ i18n                 │ i18next (French primary, Arabic, English)     │
-│ Build System         │ Vite + Tauri CLI                              │
-│ Testing              │ Vitest (unit) + Playwright (e2e)              │
-│ CI/CD                │ GitHub Actions                                │
-└──────────────────────┴────────────────────────────────────────────────┘
-```
-
----
-
-## Document Information
-
-| Field         | Value                                  |
-| ------------- | -------------------------------------- |
-| Project Name  | EduTrack Africa                        |
-| Document Type | UML Architecture Design                |
-| Version       | 1.0.0                                  |
-| Target Region | Chad (primary) · Africa (scalable) │   |
-| Language      | French (primary UI) · English (docs) │ |
-| Author        | System Architect                       |
-| Date          | May 2026                               |
-| Status        | Initial Design - Ready for Development |
-
----
-
-_This document is the complete UML and architecture foundation for EduTrack Africa. Each module is designed to be independently developed, tested, and deployed. The system scales from a single classroom to a nationwide school network._
+Restore requirements:
+
+- require SchoolMaster authorization and explicit French confirmation;
+- reject corrupt, incomplete, wrong-school or unsupported-future backups safely;
+- never modify the live database before validation;
+- preserve a recovery copy of current data;
+- never leave a partially activated database;
+- record the operation after successful activation;
+- provide a documented recovery path if application restart fails.
+
+Version 1 release evidence includes restoring a realistic non-empty backup on another supported Windows machine and verifying representative students, assignments, results, transcripts and audit records.
+
+## 21. Localization, UX and accessibility
+
+### 21.1 Localization
+
+- French is the default and must be complete.
+- Arabic and English are supported locales but may follow the roadmap's delivery sequencing.
+- All UI, validation, empty/error/loading states, accessibility labels, desktop messages and PDF strings use i18n keys.
+- Arabic supports right-to-left layout without component-specific directional hacks.
+- Dates, decimal commas, names and academic-year labels are locale-aware.
+
+### 21.2 Grade-entry usability
+
+- Optimize the grid for keyboard use on 1366×768 displays.
+- Tab and Enter movement is predictable.
+- Student identity remains visible while entering grades.
+- Missing, invalid, unsaved, saving, saved, submitted and locked states are distinct in text and appearance.
+- Navigation and restart do not discard confirmed work.
+- Recovery messages explain what was restored.
+
+### 21.3 Accessibility
+
+- Use semantic HTML and native controls where possible.
+- Every input has a programmatically associated label.
+- Focus is visible and logical.
+- All workflows are keyboard operable.
+- Color is never the only indicator of result, failure, validation or state.
+- Contrast meets WCAG AA for ordinary interface content.
+- Dialogs manage focus and destructive operations explain consequences.
+
+## 22. Reliability and performance budgets
+
+Target environment: supported Windows 10/11, Intel Core i3-class CPU, 4 GB RAM, HDD storage and 1366×768 display.
+
+| Budget                               |                            Version 1 target |
+| ------------------------------------ | ------------------------------------------: |
+| Cold desktop startup to usable login |                                 ≤ 8 seconds |
+| Ordinary UI acknowledgement          |     ≤ 300 ms excluding deliberate bulk work |
+| Grade-entry class size               |              60 students without typing lag |
+| Student import preview               |        1,000 rows without memory exhaustion |
+| Finalized bulletin batch             | 60 PDFs within 2 minutes on target hardware |
+| Offline startup                      |   100% of core workflows after installation |
+| Confirmed save durability            |  Survives restart and defined failure tests |
+
+Measure using reproducible fixtures and document the hardware. Avoid N+1 queries, unbounded collections, synchronous bulk work on the UI thread, repeated PDF calculations and full-table reloads after a row update.
+
+## 23. Testing strategy
+
+### 23.1 Unit tests
+
+Cover parsing, fixed-point arithmetic, rounding, appreciation bands, pass/fail, applicability, ranking, transitions, permission decisions, stable-code validation and safe export-cell encoding.
+
+### 23.2 Integration tests
+
+Cover SQLite repositories, transactions, optimistic concurrency, tenant isolation, auth rotation/logout/lockout, enrollment invariants, grade workflow, transcript finalization, imports, migrations, backup and restore.
+
+### 23.3 Component tests
+
+Cover localized labels, keyboard entry, row-level validation, persistence indicators, recovery, loading/empty/error states, focus and accessibility.
+
+### 23.4 End-to-end tests
+
+Cover:
+
+1. First installation and school setup.
+2. Account creation and offline restart/sign-in.
+3. Student/class/assignment setup.
+4. Spreadsheet preview and confirmed import.
+5. Teacher entry, restart recovery and submission.
+6. SchoolMaster return/validation/reopening.
+7. Complete transcript computation, ties and finalization.
+8. Repeatable PDF generation.
+9. Backup, clean-machine restore and smoke verification.
+
+### 23.5 Security and failure tests
+
+Cover same-school unauthorized access, cross-school isolation, loopback request protection, token reuse, repeated idempotent commands, interrupted transactions, stale versions, malformed uploads, formula injection, corrupt backups, disk/write failures and crash/restart around grade saves.
+
+## 24. Version 2 architecture direction
+
+Version 2 begins only after Version 1 operates through a real academic term and evidence supports expansion.
+
+Dependency order:
+
+1. Domain and schema corrections discovered by the pilot.
+2. PostgreSQL repository adapter and cloud operational foundation.
+3. Durable synchronization protocol, idempotency and observability.
+4. Conflict handling proven specifically for grades and finalized records.
+5. Only then, remote web access and stakeholder portals.
+
+Future sync must include:
+
+- durable local mutation identifiers;
+- per-record version and deletion/tombstone semantics;
+- idempotent push and pull;
+- retry/backoff and restart-safe queues;
+- explicit conflict detection and durable conflict logs;
+- field/module-specific rules for critical academic records;
+- honest visible sync state;
+- no blocking of the local core workflow.
+
+Last-write-wins is not automatically acceptable for validated grades, finalized transcripts, identities or future financial records. Those policies require dedicated ADRs and conflict tests.
+
+Candidate future modules-finance, attendance, portals, communications, timetable, payroll, mobile and cryptographic signing-are prioritized only from measured school demand, willingness to pay and support cost.
+
+## 25. Required ADRs
+
+At minimum, create or accept ADRs before their related implementation is considered stable:
+
+1. Tauri/Fastify sidecar packaging and clean-machine Windows strategy.
+2. Loopback authentication, port discovery and origin protection.
+3. SQLite backup archive, integrity and optional encryption format.
+4. Official fixed-point intermediate arithmetic and round-half-up implementation.
+5. Transcript snapshot/versioning and reopening semantics.
+6. Import duplicate and partial-success policy.
+7. Windows installer signing, WebView2 and update policy.
+8. Version 2 cloud repository and sync protocol, when that work begins.
+
+An ADR records context, decision, alternatives, consequences and migration/rollback implications. It does not merely restate the selected library.
+
+## 26. Version 1 acceptance baseline
+
+Version 1 is releasable only when:
+
+- one pilot school can complete setup without developer database edits;
+- Teacher and SchoolMaster permissions are enforced at UI and service layers;
+- the full grade-to-finalized-bulletin path works offline;
+- canonical calculations and tie ranking pass shared fixtures;
+- PDFs reproduce persisted finalized snapshots;
+- 1,000-row import preview and 60-student grade/PDF workflows meet target-machine budgets;
+- confirmed grade edits survive navigation, restart and defined failure tests;
+- a non-empty backup restores successfully on a second supported Windows machine;
+- installation and offline startup pass the Windows target matrix;
+- two-school fixtures demonstrate tenant isolation;
+- audit history covers all mandatory critical actions;
+- French content is complete and the core workflow is keyboard-accessible;
+- no known critical data-loss, wrong-calculation, authorization, privacy or startup defect remains;
+- the product completes a monitored school-term pilot before being described as validated.
+
+## 27. Governing principle
+
+When speed, scope and trust conflict, protect the school record. The system is successful only when staff can enter results, print a bulletin, recover the database after failure and confidently explain why every official value is correct.
