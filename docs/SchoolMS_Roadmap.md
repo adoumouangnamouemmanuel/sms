@@ -297,15 +297,15 @@ Do not freeze the grade schema until all of these are true:
 
 ### 7.2 Deployment spike
 
-- [ ] Build a minimal React/Vite screen inside Tauri 2.
-- [ ] Launch a Fastify sidecar from Tauri and perform a health check.
-- [ ] Bind the sidecar to loopback only and reject unexpected origins/capabilities.
-- [ ] Load `better-sqlite3`, create the database under `AppData/EduTrack` and run a migration.
-- [ ] Package the sidecar as a self-contained Windows executable.
-- [ ] Select and document the WebView2 offline installation strategy.
+- [x] Build a minimal React/Vite screen inside Tauri 2.
+- [x] Launch a Fastify sidecar from Tauri and perform a health check.
+- [x] Bind the sidecar to loopback only and reject unexpected origins/capabilities.
+- [x] Load `better-sqlite3`, create the database under `AppData/EduTrack` and run a migration.
+- [x] Package the sidecar as a self-contained Windows executable.
+- [x] Select and document the WebView2 offline installation strategy.
 - [ ] Install on a clean offline Windows 10/11 machine without Node, Rust or developer tools.
 - [ ] Restart the application and verify persisted data remains intact.
-- [ ] Record the proven packaging mechanism in an ADR.
+- [x] Record the proven packaging mechanism in an ADR.
 
 ### 7.3 Database foundation
 
