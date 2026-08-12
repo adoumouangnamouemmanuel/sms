@@ -14,6 +14,7 @@
     "eslint.config.mjs",
     "apps/**/*.ts",
     "apps/**/*.tsx",
+    "apps/**/*.cjs",
     "apps/**/*.mjs",
     "packages/**/*.ts",
     "packages/**/*.tsx",
