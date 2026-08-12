@@ -303,8 +303,8 @@ Do not freeze the grade schema until all of these are true:
 - [x] Load `better-sqlite3`, create the database under `AppData/EduTrack` and run a migration.
 - [x] Package the sidecar as a self-contained Windows executable.
 - [x] Select and document the WebView2 offline installation strategy.
-- [ ] Install on a clean offline Windows 10/11 machine without Node, Rust or developer tools.
-- [ ] Restart the application and verify persisted data remains intact.
+- [x] Install on a clean offline Windows 10/11 machine without Node, Rust or developer tools.
+- [x] Restart the application and verify persisted data remains intact.
 - [x] Record the proven packaging mechanism in an ADR.
 
 ### 7.3 Database foundation
