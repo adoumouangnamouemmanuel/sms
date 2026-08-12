@@ -1,0 +1,168 @@
+import { spawn } from 'node:child_process';
+import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const scriptDir = fileURLToPath(new URL('.', import.meta.url));
+const packageRoot = resolve(scriptDir, '..');
+const workspaceRoot = resolve(packageRoot, '..', '..');
+const binariesDir = join(workspaceRoot, 'apps', 'desktop', 'src-tauri', 'binaries');
+const sidecarPath = process.env.EDUTRACK_SIDECAR_PATH ?? resolveSidecarPath();
+const verificationToken = 'phase-1-sidecar-verification-token';
+const tempDir = mkdtempSync(join(tmpdir(), 'edutrack-sidecar-'));
+const sqlitePath = join(tempDir, 'edutrack.sqlite');
+
+let sidecar;
+
+try {
+  sidecar = spawn(sidecarPath, [], {
+    cwd: packageRoot,
+    env: {
+      ...process.env,
+      EDUTRACK_API_HOST: '127.0.0.1',
+      EDUTRACK_API_PORT: '0',
+      EDUTRACK_ALLOWED_ORIGIN: 'tauri://localhost;http://127.0.0.1:5173',
+      EDUTRACK_SIDECAR_TOKEN: verificationToken,
+      EDUTRACK_SQLITE_PATH: sqlitePath,
+      LOG_LEVEL: 'error',
+      NODE_ENV: 'production',
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
+  const readyPayload = await waitForReadyPayload(sidecar);
+  const healthUrl = `http://${readyPayload.host}:${readyPayload.port}${readyPayload.healthPath}`;
+  const response = await fetch(healthUrl, {
+    headers: {
+      Origin: 'tauri://localhost',
+      'x-edutrack-capability': verificationToken,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Health check failed with HTTP ${response.status}.`);
+  }
+
+  const body = await response.json();
+  const database = body?.data?.database;
+
+  if (!body?.success || database?.migrated !== true) {
+    throw new Error(`Health check returned an unhealthy payload: ${JSON.stringify(body)}`);
+  }
+
+  if (!existsSync(sqlitePath)) {
+    throw new Error(`Expected SQLite database was not created at ${sqlitePath}.`);
+  }
+
+  console.log(`Sidecar verified at ${healthUrl}`);
+  console.log(`SQLite probe database created at ${sqlitePath}`);
+} finally {
+  if (sidecar && !sidecar.killed) {
+    sidecar.kill();
+  }
+
+  if (process.env.EDUTRACK_KEEP_VERIFY_DB !== '1') {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
+function resolveSidecarPath() {
+  if (!existsSync(binariesDir)) {
+    throw new Error('Sidecar binary directory is missing. Run build:sidecar first.');
+  }
+
+  const sidecar = readdirSync(binariesDir).find((file) =>
+    /^edutrack-api-sidecar-.+\.exe$/.test(file)
+  );
+
+  if (!sidecar) {
+    throw new Error('Sidecar executable is missing. Run build:sidecar first.');
+  }
+
+  return join(binariesDir, sidecar);
+}
+
+function waitForReadyPayload(child) {
+  return new Promise((resolveReady, rejectReady) => {
+    let settled = false;
+    let stdout = '';
+    let stderr = '';
+    let lineBuffer = '';
+
+    const timer = setTimeout(() => {
+      rejectOnce(
+        new Error(
+          `Timed out waiting for the sidecar ready payload.\nstdout:\n${stdout}\nstderr:\n${stderr}`
+        )
+      );
+    }, 15_000);
+
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk;
+      lineBuffer += chunk;
+
+      const lines = lineBuffer.split(/\r?\n/);
+      lineBuffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        const payload = parseReadyLine(line);
+
+        if (payload) {
+          resolveOnce(payload);
+          return;
+        }
+      }
+    });
+
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk;
+    });
+
+    child.on('error', rejectOnce);
+    child.on('exit', (code, signal) => {
+      rejectOnce(
+        new Error(
+          `Sidecar exited before it became ready. code=${code} signal=${signal}\nstdout:\n${stdout}\nstderr:\n${stderr}`
+        )
+      );
+    });
+
+    function resolveOnce(payload) {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      clearTimeout(timer);
+      resolveReady(payload);
+    }
+
+    function rejectOnce(error) {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      clearTimeout(timer);
+      rejectReady(error);
+    }
+  });
+}
+
+function parseReadyLine(line) {
+  try {
+    const payload = JSON.parse(line);
+
+    if (payload?.type === 'edutrack-sidecar-ready') {
+      return payload;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
