@@ -287,13 +287,13 @@ Do not freeze the grade schema until all of these are true:
 
 ### 7.1 Repository and quality foundation
 
-- [ ] Initialize the `pnpm` monorepo and intended directories.
-- [ ] Pin Node.js 24 LTS through `.nvmrc`, `package.json#engines` and CI.
-- [ ] Configure strict TypeScript, ESLint, Prettier and import boundaries.
-- [ ] Configure Vitest, Testing Library and Playwright smoke tests.
-- [ ] Add `.env.example`, secret scanning and safe logging defaults.
-- [ ] Add GitHub Actions for format, lint, typecheck, unit tests and builds.
-- [ ] Create ADRs for Vite, Tauri, the Fastify sidecar and SQLite-only Version 1.
+- [x] Initialize the `pnpm` monorepo and intended directories.
+- [x] Pin Node.js 24 LTS through `.nvmrc`, `package.json#engines` and CI.
+- [x] Configure strict TypeScript, ESLint, Prettier and import boundaries.
+- [x] Configure Vitest, Testing Library and Playwright smoke tests.
+- [x] Add `.env.example`, secret scanning and safe logging defaults.
+- [x] Add GitHub Actions for format, lint, typecheck, unit tests and builds.
+- [x] Create ADRs for Vite, Tauri, the Fastify sidecar and SQLite-only Version 1.
 
 ### 7.2 Deployment spike
 
