@@ -67,6 +67,12 @@ Start only the API sidecar in watch mode:
 pnpm --filter @edutrack/api run dev
 ```
 
+Start the desktop shell in development mode:
+
+```bash
+pnpm --filter @edutrack/desktop run dev
+```
+
 ## Quality Commands
 
 ```bash
@@ -115,6 +121,18 @@ pnpm run build
 
 Builds all active packages and apps.
 
+```bash
+pnpm run check:desktop
+```
+
+Builds the Windows sidecar executable and runs the Tauri/Rust compile check.
+
+```bash
+pnpm run verify:sidecar
+```
+
+Starts the packaged Windows sidecar, calls `/health` with the local capability header, and confirms the SQLite probe database is created.
+
 ## Database Commands
 
 Generate SQLite migrations from the Drizzle schema:
@@ -151,11 +169,21 @@ Runs web-only development, build, tests, and preview.
 ```bash
 pnpm --filter @edutrack/api run dev
 pnpm --filter @edutrack/api run build
+pnpm --filter @edutrack/api run build:sidecar
+pnpm --filter @edutrack/api run verify:sidecar
 pnpm --filter @edutrack/api run start
 pnpm --filter @edutrack/api run test
 ```
 
-Runs API-only development, build, compiled start, and tests.
+Runs API-only development, build, packaged Windows sidecar build, packaged sidecar verification, compiled start, and tests.
+
+```bash
+pnpm --filter @edutrack/desktop run dev
+pnpm --filter @edutrack/desktop run check
+pnpm --filter @edutrack/desktop run build
+```
+
+Runs the Tauri desktop shell, sidecar-backed Rust/Tauri compile check, and Windows installer build.
 
 ```bash
 pnpm --filter @edutrack/domain run build
@@ -185,3 +213,5 @@ docs/
 ## Version 1 Scope Notes
 
 Version 1 is local and SQLite-only. Next.js, mobile apps, cloud sync, PostgreSQL runtime configuration, finance, attendance, parent/student portals, notifications, and remote web access are intentionally out of scope unless a later ADR approves them.
+
+The Phase 1 deployment spike is documented in `docs/deployment/phase-1-deployment-spike.md`.
