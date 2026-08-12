@@ -2,8 +2,8 @@
 import type { Config } from 'drizzle-kit';
 
 export default {
-  schema: './src/schema.ts',
-  out: './migrations',
+  schema: './src/schema.pg.ts',
+  out: './migrations/pg',
   driver: 'pg', // Can be dynamically switched based on env
   dbCredentials: {
     connectionString: process.env.DATABASE_URL || 'postgres://postgres:password@localhost:5234/edutrack',

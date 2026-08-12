@@ -6,8 +6,13 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:generate": "pnpm run db:generate:pg && pnpm run db:generate:sqlite",
+    "db:generate:pg": "drizzle-kit generate:pg --config=drizzle.pg.config.ts",
+    "db:generate:sqlite": "drizzle-kit generate:sqlite --config=drizzle.sqlite.config.ts",
+    "db:migrate": "pnpm run db:migrate:pg && pnpm run db:migrate:sqlite",
+    "db:migrate:pg": "drizzle-kit push:pg --config=drizzle.pg.config.ts",
+    "db:migrate:sqlite": "drizzle-kit push:sqlite --config=drizzle.sqlite.config.ts",
+    "db:seed": "tsx src/seed.ts"
   },
   "dependencies": {
     "better-sqlite3": "^9.0.0",
@@ -15,9 +20,13 @@
     "postgres": "^3.4.0"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/better-sqlite3": "^7.6.9",
     "@types/node": "^26.2.0",
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.4.2",
     "drizzle-kit": "^0.20.14",
+    "tsx": "^4.23.12",
     "typescript": "^5.0.0"
   }
 }
