@@ -6,7 +6,11 @@
   "packageManager": "pnpm@10.33.2",
   "scripts": {
     "dev": "pnpm --filter @edutrack/web run dev",
+    "dev:desktop": "pnpm --filter @edutrack/desktop run dev",
     "build": "pnpm --filter @edutrack/domain run build && pnpm --filter @edutrack/shared run build && pnpm --filter @edutrack/ui run build && pnpm --filter @edutrack/db run build && pnpm --filter @edutrack/api run build && pnpm --filter @edutrack/web run build",
+    "build:desktop": "pnpm --filter @edutrack/desktop run build",
+    "check:desktop": "pnpm --filter @edutrack/desktop run check",
+    "verify:sidecar": "pnpm --filter @edutrack/api run verify:sidecar",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "lint": "eslint . --max-warnings=0",
