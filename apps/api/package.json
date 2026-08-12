@@ -2,19 +2,23 @@
   "name": "@edutrack/api",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --config vitest.config.ts"
   },
   "dependencies": {
-    "fastify": "^4.26.0",
-    "@edutrack/db": "workspace:*"
+    "@edutrack/db": "workspace:*",
+    "@edutrack/shared": "workspace:*",
+    "fastify": "^4.26.0"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "tsx": "^4.7.1",
-    "@types/node": "^20.0.0"
+    "@types/node": "^24.10.1",
+    "tsx": "^4.23.12",
+    "typescript": "^5.9.3"
   }
 }

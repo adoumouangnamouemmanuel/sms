@@ -1,20 +1,14 @@
-import Fastify from 'fastify';
+import { buildServer, getListenOptions } from './server.js';
 
-const fastify = Fastify({
-  logger: true
-});
+async function start() {
+  const server = buildServer();
 
-fastify.get('/', async (request, reply) => {
-  return { hello: 'world' };
-});
-
-const start = async () => {
   try {
-    const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
-    await fastify.listen({ port });
-  } catch (err) {
-    fastify.log.error(err);
+    await server.listen(getListenOptions());
+  } catch (error) {
+    server.log.error({ err: error }, 'Failed to start EduTrack API sidecar');
     process.exit(1);
   }
-};
-start();
+}
+
+void start();
