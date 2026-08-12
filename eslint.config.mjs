@@ -18,6 +18,7 @@ export default defineConfig([
       '**/test-results/**',
       '**/.corepack/**',
       'docs/archive/**',
+      'apps/desktop/src-tauri/gen/**',
       'packages/db/migrations/**',
     ],
   },
@@ -39,6 +40,14 @@ export default defineConfig([
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-floating-promises': 'error',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+    },
+  },
+  {
+    files: ['apps/api/scripts/**/*.mjs', 'apps/api/pkg.sidecar.config.cjs'],
+    ...tseslint.configs.disableTypeChecked,
+    rules: {
+      ...tseslint.configs.disableTypeChecked.rules,
+      'no-console': 'off',
     },
   },
   {
