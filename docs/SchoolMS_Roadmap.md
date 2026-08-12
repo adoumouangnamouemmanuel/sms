@@ -177,8 +177,8 @@ edutrack-africa/
 
 **Tools to install:**
 
-- [ ] pnpm (package manager - faster than npm, better for monorepos)
-- [ ] Node.js 20 LTS
+- [x] pnpm (package manager - faster than npm, better for monorepos)
+- [x] Node.js 20 LTS
 - [ ] Rust (required for Tauri)
 - [ ] Tauri CLI
 - [ ] PostgreSQL (local dev instance)
@@ -190,10 +190,10 @@ edutrack-africa/
 
 Write a `CONTRIBUTING.md` with:
 
-- [ ] Naming conventions: `camelCase` for variables, `PascalCase` for classes/components, `snake_case` for database columns.
-- [ ] File structure: one component per file, one service per file.
-- [ ] Commit message format: `feat:`, `fix:`, `chore:`, `docs:`, `test:` prefixes.
-- [ ] Branch strategy: `main` (production), `develop` (integration), `feature/xxx` (features), `fix/xxx` (bug fixes).
+- [x] Naming conventions: `camelCase` for variables, `PascalCase` for classes/components, `snake_case` for database columns.
+- [x] File structure: one component per file, one service per file.
+- [x] Commit message format: `feat:`, `fix:`, `chore:`, `docs:`, `test:` prefixes.
+- [x] Branch strategy: `main` (production), `develop` (integration), `feature/xxx` (features), `fix/xxx` (bug fixes).
 - [ ] Required: all API endpoints must have input validation. No raw DB queries in route handlers.
 - [ ] Required: all amounts (fees, salaries, grades) stored as integers in cents/hundredths to avoid floating point errors. Display layer handles formatting.
 - [ ] Language: all user-facing strings go through i18n keys. No hardcoded French strings in components.
@@ -202,17 +202,16 @@ Write a `CONTRIBUTING.md` with:
 
 ### 0.4 - Set Up Development Tooling
 
-- [ ] ESLint + Prettier (code quality and formatting)
-- [ ] Husky + lint-staged (pre-commit hooks - block bad code from entering the repo)
+- [x] ESLint + Prettier (code quality and formatting)
 - [ ] GitHub Actions workflow for CI: run tests on every push to `develop`
-- [ ] Environment variables: `.env.example` file with all required variables documented
-- [ ] Create `docs/decisions/` folder - write an ADR (Architecture Decision Record) for every major choice. Example: `ADR-001-why-tauri-over-electron.md`
+- [x] Environment variables: `.env.example` file with all required variables documented
+- [x] Create `docs/decisions/` folder - write an ADR (Architecture Decision Record) for every major choice. Example: `ADR-001-why-tauri-over-electron.md`
 
 ---
 
 ### 0.5 - Set Up the Database Project
 
-- [ ] Initialize Drizzle ORM in `packages/db/`
+- [x] Initialize Drizzle ORM in `packages/db/`
 - [ ] Write the migration for the first 3 tables: `school`, `academic_year`, `user`
 - [ ] Set up `seed.ts` script that creates a demo school with test data
 - [ ] Confirm migrations run on both SQLite (local/desktop) and PostgreSQL (cloud)
