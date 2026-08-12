@@ -1,9 +1,8 @@
-<!-- BEGIN:nextjs-agent-rules -->
+# apps/web
 
-# This is NOT the Next.js you know
+This package is the shared EduTrack Africa product UI for the browser and Tauri WebView.
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
-
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
-
-<!-- END:nextjs-agent-rules -->
+- Use Vite React. Next.js is intentionally out of scope for Version 1.
+- Keep all visible strings behind i18n keys, with French complete first.
+- Do not import API, desktop, or database adapter code into React components.
+- Keep the first screen useful as an application shell, not as a marketing landing page.
