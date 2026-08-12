@@ -139,7 +139,7 @@ PostgreSQL repositories, cloud APIs, synchronization queues and conflict resolut
 
 | Concern              | Approved baseline                                  |
 | -------------------- | -------------------------------------------------- |
-| Workspace            | `pnpm` monorepo                                  |
+| Workspace            | `pnpm` monorepo                                    |
 | Runtime              | Node.js 24 LTS                                     |
 | Language             | Strict TypeScript; Rust only for Tauri integration |
 | UI                   | React and Vite                                     |
@@ -148,14 +148,14 @@ PostgreSQL repositories, cloud APIs, synchronization queues and conflict resolut
 | Forms                | React Hook Form                                    |
 | Validation           | Zod                                                |
 | Styling              | Tailwind CSS                                       |
-| Localization         | `i18next` and `react-i18next`                  |
+| Localization         | `i18next` and `react-i18next`                      |
 | Desktop              | Tauri 2                                            |
 | Local service        | Fastify sidecar                                    |
 | ORM                  | Drizzle ORM                                        |
-| Version 1 database   | SQLite via`better-sqlite3`                       |
-| Authentication       | `jose`, rotating refresh sessions, bcrypt        |
-| PDF                  | `@react-pdf/renderer`                            |
-| Spreadsheet          | SheetJS (`xlsx`)                                 |
+| Version 1 database   | SQLite via `better-sqlite3`                        |
+| Authentication       | `jose`, rotating refresh sessions, bcrypt          |
+| PDF                  | `@react-pdf/renderer`                              |
+| Spreadsheet          | SheetJS (`xlsx`)                                   |
 | Unit/component tests | Vitest and Testing Library                         |
 | End-to-end tests     | Playwright                                         |
 | CI                   | GitHub Actions                                     |
@@ -439,16 +439,16 @@ If the total applicable coefficient is zero, return a typed `ZERO_TOTAL_COEFFICI
 
 An official average of `10.00` or greater passes. `9.99` fails.
 
-|      Average | Appreciation |
-| -----------: | ------------ |
+|     Average | Appreciation |
+| ----------: | ------------ |
 | 18.00–20.00 | Excellent    |
-| 16.00–17.99 | Très Bien   |
+| 16.00–17.99 | Très Bien    |
 | 14.00–15.99 | Bien         |
 | 12.00–13.99 | Assez Bien   |
 | 10.00–11.99 | Passable     |
 |   8.00–9.99 | Insuffisant  |
 |   6.00–7.99 | Faible       |
-|   0.00–5.99 | Très Faible |
+|   0.00–5.99 | Très Faible  |
 
 These labels and thresholds are shared domain constants used by UI, services, tests, exports and PDFs.
 
@@ -724,8 +724,8 @@ Target environment: supported Windows 10/11, Intel Core i3-class CPU, 4 GB RAM, 
 
 | Budget                               |                            Version 1 target |
 | ------------------------------------ | ------------------------------------------: |
-| Cold desktop startup to usable login |                                ≤ 8 seconds |
-| Ordinary UI acknowledgement          |    ≤ 300 ms excluding deliberate bulk work |
+| Cold desktop startup to usable login |                                 ≤ 8 seconds |
+| Ordinary UI acknowledgement          |     ≤ 300 ms excluding deliberate bulk work |
 | Grade-entry class size               |              60 students without typing lag |
 | Student import preview               |        1,000 rows without memory exhaustion |
 | Finalized bulletin batch             | 60 PDFs within 2 minutes on target hardware |
