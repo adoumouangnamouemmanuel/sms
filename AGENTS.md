@@ -13,8 +13,7 @@ Build for real school staff, not for a demo. Correctness, data isolation, recove
 Before making a meaningful change, read only the documentation relevant to the task:
 
 - `SchoolMS_Roadmap.md` (or `docs/SchoolMS_Roadmap.md`): delivery order, milestones, acceptance criteria, risks, and phase-level definition of done.
-- `SchoolMS_UML_Design.md` (or `docs/SchoolMS_UML_Design.md`): domain model, relationships, state machines, role permissions, module boundaries, and architecture.
-- `sms.md`: currently a duplicate of the UML design document. Do not treat it as an independent specification or infer extra requirements from it.
+- `sms.md` (or `docs/sms.md`): combined UML design and domain model, relationships, state machines, role permissions, module boundaries, and architecture.
 - `docs/decisions/`: approved Architecture Decision Records (ADRs). An accepted ADR overrides older option-level recommendations in the roadmap or UML document.
 - Existing schemas, migrations, tests, and public API contracts: inspect these before changing implemented behavior. If they conflict with the written design, report the conflict; do not silently choose one.
 
@@ -36,8 +35,9 @@ Unless the repository already contains an approved ADR stating otherwise, use th
 - Monorepo: `pnpm` workspaces.
 - Runtime: Node.js 20 LTS.
 - Language: strict TypeScript for application and shared package code; Rust only where required by Tauri.
-- Frontend: React, Vite, Tailwind CSS, `i18next`/`react-i18next`.
-- Desktop: Tauri using the shared React frontend.
+- Frontend: Next.js, Tailwind CSS, `i18next`/`react-i18next`.
+- Desktop: Tauri using the shared Next.js frontend (static export).
+- Mobile: React Native.
 - API: Node.js with Fastify.
 - Validation: Zod schemas shared where practical between UI and API.
 - ORM: Drizzle ORM.

@@ -132,20 +132,21 @@ This phase has zero user-facing output. It is invisible but critical. Rushing it
 
 Do not change the stack mid-project. Make decisions now and commit.
 
-**Decision checklist:**
+**Locked Tech Stack (Phase 0.1 Complete):**
 
-- [ ] **Frontend framework**: React + TypeScript (recommended). Not Vue, not Angular, not plain JS. Pick one.
-- [ ] **Desktop shell**: Tauri (Rust-based, lightweight, ~5MB app vs Electron's 150MB). Good for low-spec school computers.
-- [ ] **Styling**: Tailwind CSS. Fast, consistent, no CSS file chaos.
-- [ ] **Backend**: Node.js + Fastify OR Python + FastAPI. Pick based on your team's strongest language.
-- [ ] **Database (local)**: SQLite via `better-sqlite3` (Node) or `sqlite3` (Python).
-- [ ] **Database (cloud)**: PostgreSQL. Use Supabase for free tier hosting during development.
-- [ ] **ORM**: Drizzle ORM (TypeScript, lightweight, great SQLite + PostgreSQL support).
-- [ ] **PDF generation**: `@react-pdf/renderer` for transcript PDFs.
-- [ ] **Excel handling**: `SheetJS (xlsx)` for import/export.
-- [ ] **Auth**: JWT with `jose` library (Node) or `python-jose` (Python). No third-party auth services - schools need self-hosted.
-- [ ] **i18n**: `i18next` with `react-i18next`. French as default locale.
-- [ ] **Testing**: Vitest + Testing Library (unit/integration), Playwright (end-to-end).
+- [x] **Frontend framework**: Next.js + TypeScript.
+- [x] **Desktop shell**: Tauri (Rust-based).
+- [x] **Mobile app**: React Native.
+- [x] **Styling**: Tailwind CSS.
+- [x] **Backend**: Node.js + Fastify (TypeScript).
+- [x] **Database (local)**: SQLite via `better-sqlite3`.
+- [x] **Database (cloud & testing)**: PostgreSQL. (Docker to be used for local DB testing only, exposed on port 5234).
+- [x] **ORM**: Drizzle ORM.
+- [x] **PDF generation**: `@react-pdf/renderer`.
+- [x] **Excel handling**: `SheetJS (xlsx)`.
+- [x] **Auth**: JWT with `jose` library (Node). Self-hosted.
+- [x] **i18n**: `i18next` with `react-i18next`. French as default locale.
+- [x] **Testing**: Vitest + Testing Library, Playwright.
 
 ---
 
