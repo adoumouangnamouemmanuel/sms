@@ -1,8 +1,11 @@
+import { ensureDeploymentDatabase, type DeploymentDatabaseStatus } from '@edutrack/db';
 import { APP_NAME, REDACTED_LOG_VALUE, SENSITIVE_LOG_FIELDS } from '@edutrack/shared';
 import Fastify, { type FastifyServerOptions } from 'fastify';
 
 const DEFAULT_API_HOST = '127.0.0.1';
 const DEFAULT_API_PORT = 0;
+const DEFAULT_ALLOWED_ORIGINS = ['http://127.0.0.1:5173', 'tauri://localhost'];
+const CAPABILITY_HEADER = 'x-edutrack-capability';
 
 export interface SafeLoggerOptions {
   level: string;
@@ -10,6 +13,16 @@ export interface SafeLoggerOptions {
     paths: string[];
     censor: string;
   };
+}
+
+export interface SidecarSecurityOptions {
+  allowedOrigins: string[];
+  capabilityToken?: string;
+}
+
+export interface BuildServerOptions extends Pick<FastifyServerOptions, 'logger'> {
+  databaseStatus?: DeploymentDatabaseStatus;
+  security?: SidecarSecurityOptions;
 }
 
 export function createLoggerOptions(): SafeLoggerOptions {
@@ -22,9 +35,54 @@ export function createLoggerOptions(): SafeLoggerOptions {
   };
 }
 
-export function buildServer(options: Pick<FastifyServerOptions, 'logger'> = {}) {
+export function createSidecarSecurityOptions(
+  env: NodeJS.ProcessEnv = process.env
+): SidecarSecurityOptions {
+  const allowedOrigins = parseAllowedOrigins(env.EDUTRACK_ALLOWED_ORIGIN);
+
+  if (!env.EDUTRACK_SIDECAR_TOKEN) {
+    return { allowedOrigins };
+  }
+
+  return {
+    allowedOrigins,
+    capabilityToken: env.EDUTRACK_SIDECAR_TOKEN,
+  };
+}
+
+export function buildServer(options: BuildServerOptions = {}) {
+  const databaseStatus = options.databaseStatus ?? ensureDeploymentDatabase();
+  const security = options.security ?? createSidecarSecurityOptions();
   const server = Fastify({
     logger: options.logger ?? createLoggerOptions(),
+  });
+
+  server.addHook('onRequest', async (request, reply) => {
+    const origin = request.headers.origin;
+
+    if (origin && !security.allowedOrigins.includes(origin)) {
+      return reply.code(403).send({
+        success: false,
+        error: {
+          code: 'UNEXPECTED_ORIGIN',
+          message: "L'origine de la requête locale est refusée.",
+        },
+      });
+    }
+
+    if (security.capabilityToken) {
+      const capability = request.headers[CAPABILITY_HEADER];
+
+      if (capability !== security.capabilityToken) {
+        return reply.code(403).send({
+          success: false,
+          error: {
+            code: 'INVALID_CAPABILITY',
+            message: "La capacité locale de l'application est invalide.",
+          },
+        });
+      }
+    }
   });
 
   server.get('/health', () => ({
@@ -32,6 +90,7 @@ export function buildServer(options: Pick<FastifyServerOptions, 'logger'> = {}) 
     data: {
       service: APP_NAME,
       status: 'ok',
+      database: databaseStatus,
     },
     message: 'OK',
   }));
@@ -52,6 +111,15 @@ export function getListenOptions() {
   };
 }
 
+export function createSidecarReadyPayload(host: string, port: number) {
+  return {
+    type: 'edutrack-sidecar-ready',
+    host,
+    port,
+    healthPath: '/health',
+  };
+}
+
 function parsePort(rawPort: string | undefined) {
   if (!rawPort) {
     return DEFAULT_API_PORT;
@@ -64,4 +132,15 @@ function parsePort(rawPort: string | undefined) {
   }
 
   return port;
+}
+
+function parseAllowedOrigins(rawOrigins: string | undefined) {
+  if (!rawOrigins) {
+    return [...DEFAULT_ALLOWED_ORIGINS];
+  }
+
+  return rawOrigins
+    .split(/[;,]/)
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
 }
