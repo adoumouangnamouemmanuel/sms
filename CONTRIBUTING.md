@@ -22,3 +22,8 @@ Use conventional commits:
 - `develop`: Integration
 - `feature/*`: New features
 - `fix/*`: Bug fixes
+
+## Development Rules
+- **API Endpoints**: All API endpoints must have input validation. No raw DB queries in route handlers.
+- **Financial & Grade Amounts**: All amounts (fees, salaries, grades) must be stored as integers in cents/hundredths to avoid floating point errors. The display layer will handle formatting.
+- **Language**: All user-facing strings must go through i18n keys. No hardcoded French strings in components.
