@@ -26,11 +26,13 @@ export interface CreateUserInput {
 }
 
 export function createTenantContext(schoolId: string): TenantContext {
-  if (!schoolId.trim()) {
+  const trimmedSchoolId = schoolId.trim();
+
+  if (!trimmedSchoolId) {
     throw new Error('Tenant context requires a non-empty schoolId.');
   }
 
-  return { schoolId };
+  return { schoolId: trimmedSchoolId };
 }
 
 export class TenantScopedRepository {
@@ -47,7 +49,7 @@ export class TenantScopedRepository {
 export class UserRepository extends TenantScopedRepository {
   listActiveUsers() {
     return this.db
-      .select()
+      .select(safeUserColumns)
       .from(user)
       .where(and(eq(user.schoolId, this.schoolId), eq(user.isActive, true), isNull(user.deletedAt)))
       .all();
@@ -55,7 +57,7 @@ export class UserRepository extends TenantScopedRepository {
 
   findActiveByUsername(username: string) {
     return this.db
-      .select()
+      .select(safeUserColumns)
       .from(user)
       .where(
         and(
@@ -78,7 +80,7 @@ export class UserRepository extends TenantScopedRepository {
         passwordHash: input.passwordHash,
         role: input.role,
       })
-      .returning()
+      .returning(safeUserColumns)
       .get();
 
     return createdUser;
@@ -97,7 +99,7 @@ export class AuditLogRepository extends TenantScopedRepository {
         targetType: input.targetType,
         targetId: input.targetId ?? null,
         correlationId: input.correlationId ?? null,
-        metadataJson: JSON.stringify(input.metadata ?? {}),
+        metadataJson: serializeAuditMetadata(input.metadata),
         outcome: input.outcome ?? 'SUCCESS',
       })
       .returning()
@@ -113,4 +115,43 @@ export function createUserRepository(db: EduTrackDatabase, tenant: TenantContext
 
 export function createAuditLogRepository(db: EduTrackDatabase, tenant: TenantContext) {
   return new AuditLogRepository(db, tenant);
+}
+
+const safeUserColumns = {
+  id: user.id,
+  schoolId: user.schoolId,
+  username: user.username,
+  role: user.role,
+  isActive: user.isActive,
+  failedLoginAttempts: user.failedLoginAttempts,
+  lockedUntil: user.lockedUntil,
+  lastLoginAt: user.lastLoginAt,
+  createdAt: user.createdAt,
+  updatedAt: user.updatedAt,
+  recordVersion: user.recordVersion,
+  deletedAt: user.deletedAt,
+};
+
+function serializeAuditMetadata(metadata: Record<string, unknown> | undefined) {
+  const seen = new WeakSet();
+
+  try {
+    return JSON.stringify(metadata ?? {}, (_key: string, value: unknown) => {
+      if (typeof value === 'bigint') {
+        return value.toString();
+      }
+
+      if (typeof value === 'object' && value !== null) {
+        if (seen.has(value)) {
+          return '[Circular]';
+        }
+
+        seen.add(value);
+      }
+
+      return value;
+    });
+  } catch {
+    return JSON.stringify({ serialization: 'failed' });
+  }
 }
