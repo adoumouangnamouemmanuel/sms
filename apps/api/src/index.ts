@@ -1,10 +1,12 @@
 import { buildServer, createSidecarReadyPayload, getListenOptions } from './server.js';
 
 async function start() {
-  const server = buildServer();
-  const listenOptions = getListenOptions();
+  let server: ReturnType<typeof buildServer> | undefined;
 
   try {
+    server = buildServer();
+    const listenOptions = getListenOptions();
+
     await server.listen(listenOptions);
     const address = server.server.address();
     const port =
@@ -14,7 +16,13 @@ async function start() {
       `${JSON.stringify(createSidecarReadyPayload(listenOptions.host, port))}\n`
     );
   } catch (error) {
-    server.log.error({ err: error }, 'Failed to start EduTrack API sidecar');
+    if (server) {
+      server.log.error({ err: error }, 'Failed to start EduTrack API sidecar');
+    } else {
+      const message = error instanceof Error ? error.message : String(error);
+      process.stderr.write(`Failed to start EduTrack API sidecar: ${message}\n`);
+    }
+
     process.exit(1);
   }
 }
