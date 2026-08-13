@@ -161,6 +161,34 @@ By default, local SQLite uses:
 
 Override it with `EDUTRACK_SQLITE_PATH` in `.env`.
 
+## Git Bash Convenience Scripts
+
+These scripts only group existing `pnpm` commands for local development convenience. The source of truth remains the `package.json` scripts above.
+
+```bash
+./scripts/db-setup.sh
+```
+
+Creates `.data`, runs migrations, seeds foundation data and prints the SQLite path for DBeaver.
+
+```bash
+./scripts/db-fresh.sh
+```
+
+Resets only the local development SQLite database after an explicit `RESET` confirmation, then migrates and seeds again.
+
+```bash
+./scripts/dev-verify.sh
+```
+
+Runs formatting check, lint, typecheck, unit tests and production build.
+
+```bash
+./scripts/phase-1-check.sh
+```
+
+Runs the current Phase 1 verification flow, including database setup, sidecar verification and desktop checks.
+
 ## Package-Specific Commands
 
 ```bash
