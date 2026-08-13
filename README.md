@@ -103,7 +103,7 @@ Runs TypeScript project-reference checks across all active packages and apps.
 pnpm run test
 ```
 
-Runs the unit test suites for the API and web app.
+Runs the unit test suites for the database package, API and web app.
 
 ```bash
 pnpm run test:e2e
@@ -119,7 +119,7 @@ pnpm exec playwright install chromium
 pnpm run build
 ```
 
-Builds all active packages and apps.
+Builds the shared packages, database package, API and web app. Desktop packaging is handled separately through `pnpm run build:desktop`.
 
 ```bash
 pnpm run check:desktop
@@ -141,11 +141,13 @@ Generate SQLite migrations from the Drizzle schema:
 pnpm run db:generate
 ```
 
-Push the SQLite schema to the configured local database:
+Apply committed SQLite migrations to the configured local database:
 
 ```bash
 pnpm run db:migrate
 ```
+
+For local schema prototyping only, `pnpm --filter @edutrack/db run db:push` can push the current Drizzle schema without using committed migrations.
 
 Seed deterministic Phase 1 foundation data:
 
