@@ -317,10 +317,10 @@ Do not freeze the grade schema until all of these are true:
 
 ### 7.4 Gate
 
-- [ ] A clean clone passes install, typecheck, tests and production build.
-- [ ] An offline installer launches the UI, API and SQLite database.
-- [ ] A migration and rollback/recovery exercise passes on non-empty data.
-- [ ] The architecture does not require internet or a globally installed Node runtime.
+- [x] A clean clone passes install, typecheck, tests and production build.
+- [x] An offline installer launches the UI, API and SQLite database.
+- [x] A migration and rollback/recovery exercise passes on non-empty data.
+- [x] The architecture does not require internet or a globally installed Node runtime.
 
 ## 8. Phase 2 - School setup and authentication
 
