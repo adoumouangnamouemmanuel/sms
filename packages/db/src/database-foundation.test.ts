@@ -7,7 +7,11 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EduTrackDatabase } from './client';
 import { withTransaction } from './client';
-import { createTenantContext, createUserRepository } from './repositories';
+import {
+  createAuditLogRepository,
+  createTenantContext,
+  createUserRepository,
+} from './repositories';
 import * as schema from './schema.sqlite';
 import { foundationSeed, seedFoundation } from './seeds';
 
@@ -93,6 +97,59 @@ describe('database foundation migrations', () => {
       failed_login_attempts: 0,
       record_version: 1,
     });
+    expect(() =>
+      sqlite
+        .prepare(
+          `
+            INSERT INTO user (id, school_id, username, password_hash, role)
+            VALUES (?, ?, ?, ?, ?)
+          `
+        )
+        .run(
+          '44444444-4444-4444-8444-444444444444',
+          legacySchoolId,
+          'invalid-role',
+          'hash',
+          'administrator'
+        )
+    ).toThrow();
+    expect(() =>
+      sqlite
+        .prepare(
+          `
+            INSERT INTO audit_log (id, school_id, action, target_type, outcome)
+            VALUES (?, ?, ?, ?, ?)
+          `
+        )
+        .run('55555555-5555-4555-8555-555555555555', legacySchoolId, 'TEST', 'user', 'UNKNOWN')
+    ).toThrow();
+  });
+
+  it('rejects unmapped legacy user roles during the 7.3 migration', () => {
+    sqlite = new Database(':memory:');
+    sqlite.pragma('foreign_keys = ON');
+    applyMigration(sqlite, '0000_public_mongu.sql');
+
+    sqlite
+      .prepare(
+        `
+          INSERT INTO school (id, name, short_name, created_at)
+          VALUES (?, ?, ?, ?)
+        `
+      )
+      .run(legacySchoolId, 'Legacy School', 'Legacy', '2026-01-01 00:00:00');
+    sqlite
+      .prepare(
+        `
+          INSERT INTO user (id, school_id, username, password_hash, role, is_active)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `
+      )
+      .run(legacyUserId, legacySchoolId, 'admin', 'legacy-hash', 'administrator', 1);
+
+    expect(() => {
+      applyMigration(sqlite, '0001_aspiring_fixer.sql');
+    }).toThrow();
   });
 });
 
@@ -127,11 +184,40 @@ describe('tenant-scoped database primitives', () => {
     expect(seedVersion?.value).toBe('phase-1.3-foundation-2026-08-12');
   });
 
+  it('updates deterministic foundation rows when the seed version changes', () => {
+    const [firstSchool] = foundationSeed.schools;
+
+    db.update(schema.school)
+      .set({ name: 'Outdated demo name' })
+      .where(eq(schema.school.id, firstSchool.id))
+      .run();
+    db.update(schema.schemaMetadata)
+      .set({ value: 'older-foundation-version' })
+      .where(eq(schema.schemaMetadata.key, 'seed.foundation.version'))
+      .run();
+
+    seedFoundation(db);
+
+    const upgradedSchool = db
+      .select({ name: schema.school.name })
+      .from(schema.school)
+      .where(eq(schema.school.id, firstSchool.id))
+      .get();
+    const upgradedSeedVersion = db
+      .select({ value: schema.schemaMetadata.value })
+      .from(schema.schemaMetadata)
+      .where(eq(schema.schemaMetadata.key, 'seed.foundation.version'))
+      .get();
+
+    expect(upgradedSchool?.name).toBe(firstSchool.name);
+    expect(upgradedSeedVersion?.value).toBe('phase-1.3-foundation-2026-08-12');
+  });
+
   it('isolates the first tenant-owned user query by school', () => {
     const [firstSchool, secondSchool] = foundationSeed.schools;
     const firstTenantUsers = createUserRepository(
       db,
-      createTenantContext(firstSchool.id)
+      createTenantContext(` ${firstSchool.id} `)
     ).listActiveUsers();
     const secondTenantUser = createUserRepository(
       db,
@@ -141,8 +227,49 @@ describe('tenant-scoped database primitives', () => {
     expect(firstTenantUsers).toHaveLength(1);
     expect(firstTenantUsers[0]?.schoolId).toBe(firstSchool.id);
     expect(firstTenantUsers[0]?.username).toBe('directeur');
+    expect(firstTenantUsers[0]).not.toHaveProperty('passwordHash');
     expect(secondTenantUser?.schoolId).toBe(secondSchool.id);
     expect(secondTenantUser?.username).toBe('directeur');
+    expect(secondTenantUser).not.toHaveProperty('passwordHash');
+  });
+
+  it('returns non-sensitive user columns when creating a user', () => {
+    const [firstSchool] = foundationSeed.schools;
+    const repository = createUserRepository(db, createTenantContext(firstSchool.id));
+
+    const createdUser = repository.createUser({
+      id: '66666666-6666-4666-8666-666666666666',
+      username: 'enseignant',
+      passwordHash: 'stored-hash',
+      role: 'TEACHER',
+    });
+
+    expect(createdUser).toMatchObject({
+      id: '66666666-6666-4666-8666-666666666666',
+      schoolId: firstSchool.id,
+      username: 'enseignant',
+      role: 'TEACHER',
+    });
+    expect(createdUser).not.toHaveProperty('passwordHash');
+  });
+
+  it('serializes audit metadata defensively', () => {
+    const [firstSchool] = foundationSeed.schools;
+    const repository = createAuditLogRepository(db, createTenantContext(firstSchool.id));
+    const metadata: Record<string, unknown> = { count: 1n };
+    metadata.self = metadata;
+
+    const event = repository.createEvent({
+      action: 'TEST',
+      targetType: 'school',
+      targetId: firstSchool.id,
+      metadata,
+    });
+
+    expect(JSON.parse(event.metadataJson)).toEqual({
+      count: '1',
+      self: '[Circular]',
+    });
   });
 
   it('rolls back transaction work when an operation fails', () => {
