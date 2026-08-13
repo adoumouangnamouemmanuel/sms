@@ -4,6 +4,7 @@ import type {
   LoginRequest,
   ResetPasswordRequest,
 } from '@edutrack/shared';
+import { AuthApiError } from './authErrors';
 import { clearAccessToken, createAuthHeaders, rememberAccessToken } from './authSession';
 
 type Fetcher = typeof fetch;
@@ -85,7 +86,11 @@ async function postJson<T = unknown>(
   const payload = (await response.json()) as ApiResponse<T> | ApiErrorResponse;
 
   if (!response.ok || !payload.success) {
-    throw new Error(payload.success ? 'Requete locale refusee.' : payload.error.message);
+    throw new AuthApiError(
+      payload.success ? 'REQUEST_REJECTED' : payload.error.code,
+      payload.success ? 'Requete locale refusee.' : payload.error.message,
+      response.status
+    );
   }
 
   return payload.data;
