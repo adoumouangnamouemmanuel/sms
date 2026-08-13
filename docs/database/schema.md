@@ -4,7 +4,7 @@ SQLite is the Version 1 system of record. PostgreSQL, cloud sync and remote web 
 
 ## Conventions
 
-- Primary keys are UUID text values.
+- Primary keys are UUID text values, except explicitly keyed metadata tables such as `schema_metadata`.
 - Database columns use `snake_case`; TypeScript schema properties use `camelCase`.
 - Tenant-owned tables contain a non-null `school_id` foreign key.
 - Mutable records carry `created_at`, `updated_at`, `record_version` and `deleted_at`.
@@ -75,7 +75,7 @@ Indexes:
 
 ### `schema_metadata`
 
-Stores local schema/seed metadata that must persist with the SQLite database.
+Stores local schema/seed metadata that must persist with the SQLite database. Its `key` column is a deliberate non-UUID primary-key exception because metadata records are addressed by stable names.
 
 Key columns: `key`, `value`, `description`, `created_at`, `updated_at`, `record_version`.
 
