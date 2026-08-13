@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm';
 import type { EduTrackDatabase } from './client';
 import { schemaMetadata, school, user, type UserRole } from './schema.sqlite';
 
@@ -51,20 +52,69 @@ export const foundationSeed = {
 } as const;
 
 export function seedFoundation(db: EduTrackDatabase) {
-  for (const schoolSeed of foundationSeed.schools) {
-    db.insert(school).values(schoolSeed).onConflictDoNothing().run();
-  }
+  db.transaction((transaction) => {
+    const currentSeedVersion = transaction
+      .select({ value: schemaMetadata.value })
+      .from(schemaMetadata)
+      .where(eq(schemaMetadata.key, 'seed.foundation.version'))
+      .get();
 
-  for (const userSeed of foundationSeed.users) {
-    db.insert(user).values(userSeed).onConflictDoNothing().run();
-  }
+    if (currentSeedVersion?.value === foundationSeedVersion) {
+      return;
+    }
 
-  db.insert(schemaMetadata)
-    .values({
-      key: 'seed.foundation.version',
-      value: foundationSeedVersion,
-      description: 'Deterministic Phase 1.3 foundation seed version.',
-    })
-    .onConflictDoNothing()
-    .run();
+    for (const schoolSeed of foundationSeed.schools) {
+      transaction
+        .insert(school)
+        .values(schoolSeed)
+        .onConflictDoUpdate({
+          target: school.id,
+          set: {
+            code: schoolSeed.code,
+            name: schoolSeed.name,
+            shortName: schoolSeed.shortName,
+            city: schoolSeed.city,
+            country: schoolSeed.country,
+            phone: schoolSeed.phone,
+            locale: schoolSeed.locale,
+            timezone: schoolSeed.timezone,
+            currency: schoolSeed.currency,
+          },
+        })
+        .run();
+    }
+
+    for (const userSeed of foundationSeed.users) {
+      transaction
+        .insert(user)
+        .values(userSeed)
+        .onConflictDoUpdate({
+          target: user.id,
+          set: {
+            schoolId: userSeed.schoolId,
+            username: userSeed.username,
+            passwordHash: userSeed.passwordHash,
+            role: userSeed.role,
+            isActive: true,
+          },
+        })
+        .run();
+    }
+
+    transaction
+      .insert(schemaMetadata)
+      .values({
+        key: 'seed.foundation.version',
+        value: foundationSeedVersion,
+        description: 'Deterministic Phase 1.3 foundation seed version.',
+      })
+      .onConflictDoUpdate({
+        target: schemaMetadata.key,
+        set: {
+          value: foundationSeedVersion,
+          description: 'Deterministic Phase 1.3 foundation seed version.',
+        },
+      })
+      .run();
+  });
 }
