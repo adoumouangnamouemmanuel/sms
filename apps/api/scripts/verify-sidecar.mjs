@@ -2,7 +2,9 @@ import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
+import { CAPABILITY_HEADER } from '../dist/sidecar-contract.js';
 
 const scriptDir = fileURLToPath(new URL('.', import.meta.url));
 const packageRoot = resolve(scriptDir, '..');
@@ -14,6 +16,8 @@ const tempDir = mkdtempSync(join(tmpdir(), 'edutrack-sidecar-'));
 const sqlitePath = join(tempDir, 'edutrack.sqlite');
 
 let sidecar;
+let verificationError;
+let cleanupFailure;
 
 try {
   sidecar = spawn(sidecarPath, [], {
@@ -36,7 +40,7 @@ try {
   const response = await fetch(healthUrl, {
     headers: {
       Origin: 'tauri://localhost',
-      'x-edutrack-capability': verificationToken,
+      [CAPABILITY_HEADER]: verificationToken,
     },
   });
 
@@ -57,14 +61,47 @@ try {
 
   console.log(`Sidecar verified at ${healthUrl}`);
   console.log(`SQLite probe database created at ${sqlitePath}`);
+} catch (error) {
+  verificationError = error;
 } finally {
-  if (sidecar && !sidecar.killed) {
-    sidecar.kill();
+  const cleanupErrors = [];
+
+  if (sidecar) {
+    try {
+      await stopSidecar(sidecar);
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
   }
 
   if (process.env.EDUTRACK_KEEP_VERIFY_DB !== '1') {
-    rmSync(tempDir, { recursive: true, force: true });
+    try {
+      await removeTempDir(tempDir);
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
   }
+
+  if (cleanupErrors.length > 0) {
+    const cleanupError = new AggregateError(cleanupErrors, 'Sidecar verification cleanup failed.');
+
+    if (verificationError) {
+      console.warn(cleanupError.message);
+      for (const error of cleanupErrors) {
+        console.warn(error);
+      }
+    } else {
+      cleanupFailure = cleanupError;
+    }
+  }
+}
+
+if (verificationError) {
+  throw verificationError;
+}
+
+if (cleanupFailure) {
+  throw cleanupFailure;
 }
 
 function resolveSidecarPath() {
@@ -165,4 +202,46 @@ function parseReadyLine(line) {
   }
 
   return null;
+}
+
+async function stopSidecar(child) {
+  if (child.exitCode !== null || child.signalCode !== null) {
+    return;
+  }
+
+  const exited = waitForExit(child);
+
+  if (!child.killed) {
+    child.kill();
+  }
+
+  await exited;
+}
+
+function waitForExit(child) {
+  return new Promise((resolveExit) => {
+    const timeout = setTimeout(resolveExit, 5_000);
+
+    child.once('exit', () => {
+      clearTimeout(timeout);
+      resolveExit();
+    });
+  });
+}
+
+async function removeTempDir(path) {
+  const attempts = 3;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      rmSync(path, { recursive: true, force: true });
+      return;
+    } catch (error) {
+      if (attempt === attempts) {
+        throw error;
+      }
+
+      await sleep(100 * attempt);
+    }
+  }
 }
