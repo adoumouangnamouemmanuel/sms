@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { login, logout } from './authApi';
+import type { AuthApiError } from './authErrors';
 import {
   clearAccessToken,
   createAuthHeaders,
@@ -63,6 +64,24 @@ describe('authApi', () => {
     expect(getAccessToken()).toBeNull();
     expect(createAuthHeaders()).toEqual({});
   });
+
+  it('throws a typed API error when login is rejected', async () => {
+    await expect(
+      login(
+        'http://127.0.0.1:49152',
+        {
+          schoolCode: 'NDS-DEMO',
+          username: 'directeur',
+          password: 'wrong-password',
+        },
+        createRejectedFetch()
+      )
+    ).rejects.toMatchObject({
+      code: 'INVALID_CREDENTIALS',
+      message: "L'identifiant ou le mot de passe est incorrect.",
+      status: 401,
+    } satisfies Partial<AuthApiError>);
+  });
 });
 
 function createSuccessfulFetch(): typeof fetch {
@@ -74,5 +93,26 @@ function createSuccessfulFetch(): typeof fetch {
           'Content-Type': 'application/json',
         },
       })
+    );
+}
+
+function createRejectedFetch(): typeof fetch {
+  return () =>
+    Promise.resolve(
+      new Response(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: 'INVALID_CREDENTIALS',
+            message: "L'identifiant ou le mot de passe est incorrect.",
+          },
+        }),
+        {
+          status: 401,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      )
     );
 }
