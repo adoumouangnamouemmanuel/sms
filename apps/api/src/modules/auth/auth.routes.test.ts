@@ -1,5 +1,6 @@
 import type Database from 'better-sqlite3';
 import { readFileSync, readdirSync } from 'node:fs';
+import type { OutgoingHttpHeaders } from 'node:http';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -349,11 +350,11 @@ function applyMigration(sqlite: Database.Database, fileName: string) {
   sqlite.exec(migrationSql.replaceAll('--> statement-breakpoint', '\n'));
 }
 
-function readRefreshCookiePair(response: { headers: Record<string, string | string[] | number> }) {
+function readRefreshCookiePair(response: { headers: OutgoingHttpHeaders }) {
   return readSetCookie(response).split(';')[0] ?? '';
 }
 
-function readSetCookie(response: { headers: Record<string, string | string[] | number> }) {
+function readSetCookie(response: { headers: OutgoingHttpHeaders }) {
   const header = response.headers['set-cookie'];
 
   if (Array.isArray(header)) {
