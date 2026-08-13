@@ -1,5 +1,4 @@
 import { APP_NAME, type PublicAuthUser } from '@edutrack/shared';
-import { StatusBadge } from '@edutrack/ui';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { readDesktopDeploymentStatus, type DesktopDeploymentStatus } from './desktopStatus';
@@ -34,57 +33,42 @@ export function App() {
     };
   }, []);
 
-  const isDesktopReady = desktopStatus?.sidecarStatus === 'ready' && desktopStatus.databaseReady;
   const authApiBaseUrl = resolveAuthApiBaseUrl(desktopStatus);
 
   return (
-    <main className="app-shell">
-      <section className="workspace">
-        <header className="shell-header">
-          <div>
-            <p className="eyebrow">{t('shell.phase')}</p>
-            <h1>{APP_NAME}</h1>
-          </div>
-          <StatusBadge tone={authenticatedUser ? 'success' : 'warning'}>
-            {authenticatedUser ? t('auth.sessionActive') : t('shell.status')}
-          </StatusBadge>
-        </header>
+    <main className="app-shell auth-app-shell">
+      <section className="auth-layout">
+        <aside className="auth-hero" aria-label={t('shell.brandPanelLabel')}>
+          <header className="brand-lockup">
+            <span className="brand-mark" aria-hidden="true">
+              EA
+            </span>
+            <div>
+              <h1>{APP_NAME}</h1>
+              <p>{t('shell.brandSubtitle')}</p>
+            </div>
+          </header>
 
-        <div className="shell-grid shell-grid--auth">
-          <div className="intro-panel">
+          <div className="hero-copy">
+            <p className="eyebrow">{t('shell.eyebrow')}</p>
             <h2>{t('shell.heading')}</h2>
             <p>{t('shell.summary')}</p>
           </div>
 
-          <div className="auth-stack">
-            <LoginScreen
-              apiBaseUrl={authApiBaseUrl}
-              onAuthenticated={setAuthenticatedUser}
-              user={authenticatedUser}
-            />
-
-            <div className="status-panel" aria-label={t('shell.statusPanelLabel')}>
-              <div className="status-row">
-                <span>{t('shell.storageLabel')}</span>
-                <StatusBadge>{t('shell.sqlite')}</StatusBadge>
-              </div>
-              <div className="status-row">
-                <span>{t('shell.desktopLabel')}</span>
-                <StatusBadge tone={isDesktopReady ? 'success' : 'warning'}>
-                  {desktopStatus
-                    ? t(`shell.desktop.${desktopStatus.sidecarStatus}`)
-                    : t('shell.browser')}
-                </StatusBadge>
-              </div>
-              <div className="status-row">
-                <span>{t('shell.networkLabel')}</span>
-                <StatusBadge tone="warning">{t('shell.offline')}</StatusBadge>
-              </div>
-            </div>
+          <div className="hero-accent" aria-hidden="true">
+            <span />
+            <span />
           </div>
-        </div>
+        </aside>
 
-        <footer>{t('shell.footer')}</footer>
+        <section className="auth-form-area" aria-label={t('auth.loginPanelLabel')}>
+          <LoginScreen
+            apiBaseUrl={authApiBaseUrl}
+            onAuthenticated={setAuthenticatedUser}
+            user={authenticatedUser}
+          />
+          <p className="auth-footnote">{t('shell.footer')}</p>
+        </section>
       </section>
     </main>
   );
