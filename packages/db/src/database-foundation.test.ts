@@ -5,6 +5,10 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+  applyApplicationMigrations,
+  resolveSqliteMigrationsFolder,
+} from './application-migrations';
 import type { EduTrackDatabase } from './client';
 import { withTransaction } from './client';
 import {
@@ -150,6 +154,33 @@ describe('database foundation migrations', () => {
     expect(() => {
       applyMigration(sqlite, '0001_aspiring_fixer.sql');
     }).toThrow();
+  });
+});
+
+describe('application migration helper', () => {
+  let sqlite: Database.Database | undefined;
+
+  afterEach(() => {
+    sqlite?.close();
+    sqlite = undefined;
+  });
+
+  it('resolves the repository sqlite migration folder', () => {
+    expect(resolveSqliteMigrationsFolder()).toBe(migrationsDir.replace(/\\$/, ''));
+  });
+
+  it('applies committed application migrations to a sqlite database', () => {
+    sqlite = new Database(':memory:');
+    sqlite.close();
+    sqlite = undefined;
+
+    const status = applyApplicationMigrations(':memory:', migrationsDir);
+
+    expect(status).toEqual({
+      sqlitePath: ':memory:',
+      migrationsFolder: migrationsDir,
+      migrated: true,
+    });
   });
 });
 
