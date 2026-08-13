@@ -147,6 +147,12 @@ Push the SQLite schema to the configured local database:
 pnpm run db:migrate
 ```
 
+Seed deterministic Phase 1 foundation data:
+
+```bash
+pnpm run db:seed
+```
+
 By default, local SQLite uses:
 
 ```text
