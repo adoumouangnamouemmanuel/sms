@@ -52,6 +52,7 @@ describe('local auth routes', () => {
       databaseStatus: {
         sqlitePath: ':memory:',
         migrated: true,
+        migrationId: 'deployment-probe-0001',
       },
       database: db,
       logger: false,
