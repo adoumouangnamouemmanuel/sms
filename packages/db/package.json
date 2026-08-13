@@ -14,8 +14,10 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --config vitest.config.ts",
     "db:generate": "drizzle-kit generate:sqlite --config=drizzle.sqlite.config.ts",
-    "db:migrate": "drizzle-kit push:sqlite --config=drizzle.sqlite.config.ts"
+    "db:migrate": "drizzle-kit push:sqlite --config=drizzle.sqlite.config.ts",
+    "db:seed": "tsx scripts/seed-foundation.ts"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.2",
