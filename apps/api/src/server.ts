@@ -1,10 +1,14 @@
 import {
   applyApplicationMigrations,
   ensureDeploymentDatabase,
+  openEduTrackDatabase,
   type DeploymentDatabaseStatus,
+  type EduTrackDatabase,
+  type EduTrackDatabaseConnection,
 } from '@edutrack/db';
 import { APP_NAME, REDACTED_LOG_VALUE, SENSITIVE_LOG_FIELDS } from '@edutrack/shared';
 import Fastify, { type FastifyServerOptions } from 'fastify';
+import { AuthService, registerAuthRoutes, type AuthServiceOptions } from './modules/auth/index.js';
 export { CAPABILITY_HEADER } from './sidecar-contract.js';
 import { CAPABILITY_HEADER } from './sidecar-contract.js';
 
@@ -31,8 +35,12 @@ export interface SidecarSecurityOptions {
 
 export interface BuildServerOptions extends Pick<FastifyServerOptions, 'logger'> {
   databaseStatus?: DeploymentDatabaseStatus;
+  database?: EduTrackDatabase;
   migrateApplicationDatabase?: (sqlitePath: string) => void;
   security?: SidecarSecurityOptions;
+  auth?: AuthServiceOptions & {
+    enabled?: boolean;
+  };
 }
 
 type SecurityDowngradeWarning = (message: string) => void;
@@ -90,6 +98,10 @@ export function buildServer(options: BuildServerOptions = {}) {
       migrateApplicationDatabase(deploymentStatus.sqlitePath);
       return deploymentStatus;
     })();
+  const databaseConnection = createServerDatabaseConnection(options, databaseStatus);
+  const database = options.database ?? databaseConnection?.db;
+  const authEnabled =
+    options.auth?.enabled ?? (Boolean(options.database) || process.env.NODE_ENV !== 'test');
 
   server.addHook('onRequest', async (request, reply) => {
     const origin = request.headers.origin;
@@ -119,6 +131,18 @@ export function buildServer(options: BuildServerOptions = {}) {
     }
   });
 
+  if (authEnabled && database) {
+    registerAuthRoutes(server, {
+      authService: new AuthService(database, options.auth),
+    });
+  }
+
+  if (databaseConnection) {
+    server.addHook('onClose', () => {
+      databaseConnection.close();
+    });
+  }
+
   server.get('/health', () => ({
     success: true,
     data: {
@@ -130,6 +154,24 @@ export function buildServer(options: BuildServerOptions = {}) {
   }));
 
   return server;
+}
+
+function createServerDatabaseConnection(
+  options: BuildServerOptions,
+  databaseStatus: DeploymentDatabaseStatus
+): EduTrackDatabaseConnection | undefined {
+  const authEnabled =
+    options.auth?.enabled ?? (Boolean(options.database) || process.env.NODE_ENV !== 'test');
+
+  if (options.database || !authEnabled) {
+    return undefined;
+  }
+
+  if (options.databaseStatus && options.auth?.enabled !== true) {
+    return undefined;
+  }
+
+  return openEduTrackDatabase(databaseStatus.sqlitePath);
 }
 
 export function getListenOptions() {
