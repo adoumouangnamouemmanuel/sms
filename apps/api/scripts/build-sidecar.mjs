@@ -15,7 +15,8 @@ const pkgCliPath = require.resolve('@yao-pkg/pkg/lib-es5/bin.js');
 const bundledEntryPath = join(packageRoot, 'dist', 'sidecar.cjs');
 const pkgConfigPath = join(packageRoot, 'pkg.sidecar.config.cjs');
 
-const targetTriple = commandOutput('rustc', ['--print', 'host-tuple']);
+const rustcVersion = commandOutput('rustc', ['-vV']);
+const targetTriple = parseRustHostTriple(rustcVersion);
 
 if (!targetTriple.endsWith('windows-msvc')) {
   throw new Error(
@@ -61,7 +62,7 @@ function commandOutput(command, args) {
   });
 
   if (result.status !== 0) {
-    throw new Error(result.stderr || `Command failed: ${command} ${args.join(' ')}`);
+    throw new Error(commandFailureMessage(command, args, result));
   }
 
   return result.stdout.trim();
@@ -74,6 +75,32 @@ function run(command, args) {
   });
 
   if (result.status !== 0) {
-    throw new Error(`Command failed: ${command} ${args.join(' ')}`);
+    throw new Error(commandFailureMessage(command, args, result));
   }
+}
+
+function parseRustHostTriple(rustcVersion) {
+  const hostLine = rustcVersion.split(/\r?\n/).find((line) => line.startsWith('host:'));
+
+  if (!hostLine) {
+    throw new Error('Could not determine the Rust host triple from rustc -vV output.');
+  }
+
+  const hostTriple = hostLine.slice('host:'.length).trim();
+
+  if (!hostTriple) {
+    throw new Error('Rust host triple was empty in rustc -vV output.');
+  }
+
+  return hostTriple;
+}
+
+function commandFailureMessage(command, args, result) {
+  const invocation = `${command} ${args.join(' ')}`;
+
+  if (result.error) {
+    return `Command failed: ${invocation}\n${result.error.name}: ${result.error.message}`;
+  }
+
+  return result.stderr?.trim() || `Command failed: ${invocation}`;
 }
