@@ -12,8 +12,7 @@ const resources = {
         footer:
           'Pensé pour les écoles qui travaillent sur ordinateur local, même sans connexion fiable.',
         heading: 'Bienvenue sur EduTrack Africa',
-        summary:
-          'Connectez-vous pour gérer les dossiers scolaires avec une session locale protégée.',
+        summary: 'Gérez les dossiers scolaires avec une session locale sécurisée.',
       },
       auth: {
         apiUnavailable: "Le service local n'est pas prêt. Réessayez dans un instant.",
