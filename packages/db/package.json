@@ -21,6 +21,7 @@
     "db:seed": "tsx scripts/seed-foundation.ts"
   },
   "dependencies": {
+    "@edutrack/shared": "workspace:*",
     "better-sqlite3": "^13.0.2",
     "drizzle-orm": "^0.30.0"
   },
