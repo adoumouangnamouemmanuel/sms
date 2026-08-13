@@ -30,7 +30,7 @@ describe('LoginScreen', () => {
 
     await user.click(screen.getByRole('button', { name: 'Se connecter' }));
 
-    expect(screen.getByText('Le code ecole est requis.')).toBeInTheDocument();
+    expect(screen.getByText('Le code école est requis.')).toBeInTheDocument();
     expect(screen.getByText("Le nom d'utilisateur est requis.")).toBeInTheDocument();
     expect(screen.getByText('Le mot de passe est requis.')).toBeInTheDocument();
     expect(loginClient).not.toHaveBeenCalled();
@@ -43,7 +43,7 @@ describe('LoginScreen', () => {
 
     renderLoginScreen({ loginClient, onAuthenticated });
 
-    await user.type(screen.getByLabelText('Code ecole'), ' NDS-DEMO ');
+    await user.type(screen.getByLabelText('Code école'), ' NDS-DEMO ');
     await user.type(screen.getByLabelText("Nom d'utilisateur"), ' directeur ');
     await user.type(screen.getByLabelText('Mot de passe'), 'correct-password');
     await user.click(screen.getByRole('button', { name: 'Se connecter' }));
@@ -64,7 +64,7 @@ describe('LoginScreen', () => {
 
     renderLoginScreen({ loginClient });
 
-    await user.type(screen.getByLabelText('Code ecole'), 'NDS-DEMO');
+    await user.type(screen.getByLabelText('Code école'), 'NDS-DEMO');
     await user.type(screen.getByLabelText("Nom d'utilisateur"), 'directeur');
     await user.type(screen.getByLabelText('Mot de passe'), 'wrong-password');
     await user.click(screen.getByRole('button', { name: 'Se connecter' }));
