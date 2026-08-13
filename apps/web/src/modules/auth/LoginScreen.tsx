@@ -27,8 +27,9 @@ export function LoginScreen({ apiBaseUrl, loginClient, onAuthenticated, user }: 
 
   if (user) {
     return (
-      <section className="auth-panel auth-panel--success" aria-label={t('auth.sessionPanelLabel')}>
-        <p className="eyebrow">{t('auth.sessionActive')}</p>
+      <section className="auth-card auth-card--success" aria-label={t('auth.sessionPanelLabel')}>
+        <span className="auth-card-mark" aria-hidden="true" />
+        <p className="auth-kicker">{t('auth.sessionActive')}</p>
         <h2>{t('auth.successTitle')}</h2>
         <dl className="auth-session-details">
           <div>
@@ -45,9 +46,10 @@ export function LoginScreen({ apiBaseUrl, loginClient, onAuthenticated, user }: 
   }
 
   return (
-    <section className="auth-panel" aria-label={t('auth.loginPanelLabel')}>
+    <section className="auth-card" aria-label={t('auth.loginPanelLabel')}>
+      <span className="auth-card-mark" aria-hidden="true" />
       <div className="auth-heading">
-        <p className="eyebrow">{t('auth.phase')}</p>
+        <p className="auth-kicker">{t('auth.phase')}</p>
         <h2>{t('auth.title')}</h2>
         <p>{t('auth.subtitle')}</p>
       </div>
@@ -67,6 +69,7 @@ export function LoginScreen({ apiBaseUrl, loginClient, onAuthenticated, user }: 
           onChange={(value) => {
             form.updateField('schoolCode', value);
           }}
+          placeholder={t('auth.schoolCodePlaceholder')}
           type="text"
           value={form.values.schoolCode}
         />
@@ -78,6 +81,7 @@ export function LoginScreen({ apiBaseUrl, loginClient, onAuthenticated, user }: 
           onChange={(value) => {
             form.updateField('username', value);
           }}
+          placeholder={t('auth.usernamePlaceholder')}
           type="text"
           value={form.values.username}
         />
@@ -89,6 +93,7 @@ export function LoginScreen({ apiBaseUrl, loginClient, onAuthenticated, user }: 
           onChange={(value) => {
             form.updateField('password', value);
           }}
+          placeholder={t('auth.passwordPlaceholder')}
           type="password"
           value={form.values.password}
         />
@@ -119,13 +124,24 @@ interface LoginFieldProps {
   label: string;
   name: LoginFormField;
   onChange: (value: string) => void;
+  placeholder: string;
   type: 'password' | 'text';
   value: string;
 }
 
-function LoginField({ errorKey, id, label, name, onChange, type, value }: LoginFieldProps) {
+function LoginField({
+  errorKey,
+  id,
+  label,
+  name,
+  onChange,
+  placeholder,
+  type,
+  value,
+}: LoginFieldProps) {
   const { t } = useTranslation();
   const errorId = `${id}-error`;
+  const isPassword = name === 'password';
 
   return (
     <div className="form-field">
@@ -133,12 +149,17 @@ function LoginField({ errorKey, id, label, name, onChange, type, value }: LoginF
       <input
         aria-describedby={errorKey ? errorId : undefined}
         aria-invalid={errorKey ? 'true' : 'false'}
-        autoComplete={name === 'password' ? 'current-password' : undefined}
+        autoCapitalize={name === 'schoolCode' ? 'characters' : 'none'}
+        autoComplete={isPassword ? 'current-password' : undefined}
+        autoCorrect="off"
         id={id}
         name={name}
         onChange={(event) => {
           onChange(event.target.value);
         }}
+        placeholder={placeholder}
+        required
+        spellCheck={false}
         type={type}
         value={value}
       />
