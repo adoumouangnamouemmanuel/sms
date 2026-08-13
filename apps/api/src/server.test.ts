@@ -58,6 +58,7 @@ describe('api sidecar foundation', () => {
 
   it('applies application migrations before reporting database readiness', async () => {
     const migratedPaths: string[] = [];
+    const previousSqlitePath = process.env.EDUTRACK_SQLITE_PATH;
     tempDir = mkdtempSync(join(tmpdir(), 'edutrack-api-test-'));
     process.env.EDUTRACK_SQLITE_PATH = join(tempDir, 'edutrack.sqlite');
 
@@ -82,7 +83,11 @@ describe('api sidecar foundation', () => {
       expect(migratedPaths).toEqual([body.data.database.sqlitePath]);
       expect(body.data.database.migrated).toBe(true);
     } finally {
-      delete process.env.EDUTRACK_SQLITE_PATH;
+      if (previousSqlitePath === undefined) {
+        delete process.env.EDUTRACK_SQLITE_PATH;
+      } else {
+        process.env.EDUTRACK_SQLITE_PATH = previousSqlitePath;
+      }
     }
   });
 
