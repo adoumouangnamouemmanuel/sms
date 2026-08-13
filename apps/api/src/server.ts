@@ -1,4 +1,8 @@
-import { ensureDeploymentDatabase, type DeploymentDatabaseStatus } from '@edutrack/db';
+import {
+  applyApplicationMigrations,
+  ensureDeploymentDatabase,
+  type DeploymentDatabaseStatus,
+} from '@edutrack/db';
 import { APP_NAME, REDACTED_LOG_VALUE, SENSITIVE_LOG_FIELDS } from '@edutrack/shared';
 import Fastify, { type FastifyServerOptions } from 'fastify';
 export { CAPABILITY_HEADER } from './sidecar-contract.js';
@@ -27,6 +31,7 @@ export interface SidecarSecurityOptions {
 
 export interface BuildServerOptions extends Pick<FastifyServerOptions, 'logger'> {
   databaseStatus?: DeploymentDatabaseStatus;
+  migrateApplicationDatabase?: (sqlitePath: string) => void;
   security?: SidecarSecurityOptions;
 }
 
@@ -76,7 +81,15 @@ export function buildServer(options: BuildServerOptions = {}) {
     createSidecarSecurityOptions(process.env, (message) => {
       server.log.warn({ code: 'SIDECAR_CAPABILITY_DISABLED' }, message);
     });
-  const databaseStatus = options.databaseStatus ?? ensureDeploymentDatabase();
+  const databaseStatus =
+    options.databaseStatus ??
+    (() => {
+      const deploymentStatus = ensureDeploymentDatabase();
+      const migrateApplicationDatabase =
+        options.migrateApplicationDatabase ?? applyApplicationMigrations;
+      migrateApplicationDatabase(deploymentStatus.sqlitePath);
+      return deploymentStatus;
+    })();
 
   server.addHook('onRequest', async (request, reply) => {
     const origin = request.headers.origin;
