@@ -6,6 +6,13 @@ import * as schema from './schema.sqlite';
 
 export type EduTrackDatabase = BetterSQLite3Database<typeof schema>;
 export type EduTrackTransaction = Parameters<Parameters<EduTrackDatabase['transaction']>[0]>[0];
+type SyncTransactionOperation<T extends (transaction: EduTrackTransaction) => unknown> = [
+  ReturnType<T>,
+] extends [never]
+  ? T
+  : ReturnType<T> extends PromiseLike<unknown>
+    ? never
+    : T;
 
 export interface EduTrackDatabaseConnection {
   db: EduTrackDatabase;
@@ -27,9 +34,9 @@ export function openEduTrackDatabase(sqlitePath: string): EduTrackDatabaseConnec
   };
 }
 
-export function withTransaction<T>(
+export function withTransaction<T extends (transaction: EduTrackTransaction) => unknown>(
   db: EduTrackDatabase,
-  operation: (transaction: EduTrackTransaction) => T
-) {
-  return db.transaction(operation);
+  operation: SyncTransactionOperation<T>
+): ReturnType<T> {
+  return db.transaction(operation) as ReturnType<T>;
 }
