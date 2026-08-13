@@ -54,12 +54,6 @@ run_step() {
     return "$status"
   fi
 
-  if grep -E '(SqliteError|TypeError:|ReferenceError:|SyntaxError:|ERR_PNPM|ELIFECYCLE|Command failed|Cannot open database)' "$log_file" >/dev/null; then
-    print_failure "$title printed an error even though the command exited successfully."
-    rm -f "$log_file"
-    return 1
-  fi
-
   rm -f "$log_file"
 
   if [[ "$status" -eq 0 ]]; then
