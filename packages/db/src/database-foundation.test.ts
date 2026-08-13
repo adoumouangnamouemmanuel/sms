@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { count, eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
@@ -166,7 +166,7 @@ describe('application migration helper', () => {
   });
 
   it('resolves the repository sqlite migration folder', () => {
-    expect(resolveSqliteMigrationsFolder()).toBe(migrationsDir.replace(/\\$/, ''));
+    expect(resolveSqliteMigrationsFolder()).toBe(resolve(migrationsDir));
   });
 
   it('applies committed application migrations to a sqlite database', () => {
