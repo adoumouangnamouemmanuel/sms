@@ -50,16 +50,10 @@ export function ensureDeploymentDatabase(sqlitePath = resolveConfiguredSqlitePat
       );
     `);
 
-    const migration = database
-      .prepare('SELECT id FROM __edutrack_deployment_migrations WHERE id = ?')
-      .get(DEPLOYMENT_MIGRATION_ID);
-
     const transaction = database.transaction(() => {
-      if (!migration) {
-        database
-          .prepare('INSERT INTO __edutrack_deployment_migrations (id) VALUES (?)')
-          .run(DEPLOYMENT_MIGRATION_ID);
-      }
+      database
+        .prepare('INSERT OR IGNORE INTO __edutrack_deployment_migrations (id) VALUES (?)')
+        .run(DEPLOYMENT_MIGRATION_ID);
 
       database
         .prepare(
