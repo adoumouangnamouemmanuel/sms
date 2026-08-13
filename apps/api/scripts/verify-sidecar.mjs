@@ -1,11 +1,13 @@
 import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { CAPABILITY_HEADER } from '../dist/sidecar-contract.js';
 
+const require = createRequire(import.meta.url);
 const scriptDir = fileURLToPath(new URL('.', import.meta.url));
 const packageRoot = resolve(scriptDir, '..');
 const workspaceRoot = resolve(packageRoot, '..', '..');
@@ -58,6 +60,8 @@ try {
   if (!existsSync(sqlitePath)) {
     throw new Error(`Expected SQLite database was not created at ${sqlitePath}.`);
   }
+
+  verifyApplicationTables(sqlitePath);
 
   console.log(`Sidecar verified at ${healthUrl}`);
   console.log(`SQLite probe database created at ${sqlitePath}`);
@@ -243,5 +247,34 @@ async function removeTempDir(path) {
 
       await sleep(100 * attempt);
     }
+  }
+}
+
+function verifyApplicationTables(databasePath) {
+  const Database = require('better-sqlite3');
+  const sqlite = new Database(databasePath, { readonly: true });
+
+  try {
+    const expectedTables = ['school', 'user', 'audit_log', 'schema_metadata'];
+    const rows = sqlite
+      .prepare(
+        `
+          SELECT name
+          FROM sqlite_master
+          WHERE type = 'table'
+            AND name IN (${expectedTables.map(() => '?').join(', ')})
+        `
+      )
+      .all(...expectedTables);
+    const tableNames = new Set(rows.map((row) => row.name));
+    const missingTables = expectedTables.filter((tableName) => !tableNames.has(tableName));
+
+    if (missingTables.length > 0) {
+      throw new Error(
+        `Packaged sidecar did not apply application migrations. Missing tables: ${missingTables.join(', ')}`
+      );
+    }
+  } finally {
+    sqlite.close();
   }
 }
