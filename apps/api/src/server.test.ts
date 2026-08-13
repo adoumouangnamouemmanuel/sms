@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   buildServer,
   CAPABILITY_HEADER,
@@ -14,7 +17,25 @@ const databaseStatus = {
   migrationId: 'deployment-probe-0001',
 };
 
+interface HealthResponseBody {
+  data: {
+    database: {
+      sqlitePath: string;
+      migrated: boolean;
+    };
+  };
+}
+
 describe('api sidecar foundation', () => {
+  let tempDir: string | undefined;
+
+  afterEach(() => {
+    if (tempDir) {
+      rmSync(tempDir, { recursive: true, force: true });
+      tempDir = undefined;
+    }
+  });
+
   it('returns the health response envelope', async () => {
     const server = buildServer({ databaseStatus, logger: false });
 
@@ -33,6 +54,36 @@ describe('api sidecar foundation', () => {
       },
       message: 'OK',
     });
+  });
+
+  it('applies application migrations before reporting database readiness', async () => {
+    const migratedPaths: string[] = [];
+    tempDir = mkdtempSync(join(tmpdir(), 'edutrack-api-test-'));
+    process.env.EDUTRACK_SQLITE_PATH = join(tempDir, 'edutrack.sqlite');
+
+    try {
+      const server = buildServer({
+        logger: false,
+        security: {
+          allowedOrigins: ['tauri://localhost'],
+        },
+        migrateApplicationDatabase: (sqlitePath) => {
+          migratedPaths.push(sqlitePath);
+        },
+      });
+
+      const response = await server.inject({
+        method: 'GET',
+        url: '/health',
+      });
+      const body = response.json<HealthResponseBody>();
+
+      expect(response.statusCode).toBe(200);
+      expect(migratedPaths).toEqual([body.data.database.sqlitePath]);
+      expect(body.data.database.migrated).toBe(true);
+    } finally {
+      delete process.env.EDUTRACK_SQLITE_PATH;
+    }
   });
 
   it('redacts sensitive fields from logs by default', () => {
