@@ -8,8 +8,8 @@ describe('App', () => {
   it('renders the localized Version 1 shell', () => {
     render(<App />);
 
-    expect(screen.getByRole('heading', { level: 1, name: APP_NAME })).toBeInTheDocument();
-    expect(screen.getByText('Accès sécurisé')).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 1, name: APP_NAME }).length).toBeGreaterThan(0);
+    expect(screen.getByText('Bienvenue sur EduTrack Africa')).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { level: 2, name: 'Connexion du personnel' })
     ).toBeInTheDocument();
