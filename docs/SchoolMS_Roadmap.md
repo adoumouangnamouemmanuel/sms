@@ -309,11 +309,11 @@ Do not freeze the grade schema until all of these are true:
 
 ### 7.3 Database foundation
 
-- [ ] Create shared column conventions: UUID, `school_id`, timestamps, record version and soft-delete metadata.
-- [ ] Create `school`, `user`, `refresh_session`, `audit_log` and schema metadata migrations.
-- [ ] Create transaction and tenant-scoped repository primitives.
-- [ ] Create deterministic, idempotent seed infrastructure.
-- [ ] Test a two-school isolation fixture from the first tenant-owned query.
+- [x] Create shared column conventions: UUID, `school_id`, timestamps, record version and soft-delete metadata.
+- [x] Create `school`, `user`, `refresh_session`, `audit_log` and schema metadata migrations.
+- [x] Create transaction and tenant-scoped repository primitives.
+- [x] Create deterministic, idempotent seed infrastructure.
+- [x] Test a two-school isolation fixture from the first tenant-owned query.
 
 ### 7.4 Gate
 
