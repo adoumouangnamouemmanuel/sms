@@ -100,6 +100,7 @@ CREATE TABLE `__new_user` (
 	`updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	`record_version` integer DEFAULT 1 NOT NULL,
 	`deleted_at` text,
+	CONSTRAINT `user_role_check` CHECK(`role` in ('SCHOOL_MASTER', 'TEACHER')),
 	FOREIGN KEY (`school_id`) REFERENCES `school`(`id`) ON UPDATE cascade ON DELETE restrict
 );--> statement-breakpoint
 INSERT INTO `__new_user` (
@@ -121,7 +122,7 @@ SELECT
 	CASE `role`
 		WHEN 'school_master' THEN 'SCHOOL_MASTER'
 		WHEN 'teacher' THEN 'TEACHER'
-		ELSE `role`
+		ELSE NULL
 	END,
 	coalesce(`is_active`, true),
 	coalesce(`created_at`, CURRENT_TIMESTAMP),
@@ -141,6 +142,7 @@ CREATE TABLE `audit_log` (
 	`metadata_json` text DEFAULT '{}' NOT NULL,
 	`outcome` text DEFAULT 'SUCCESS' NOT NULL,
 	`occurred_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	CONSTRAINT `audit_log_outcome_check` CHECK(`outcome` in ('SUCCESS', 'FAILURE')),
 	FOREIGN KEY (`school_id`) REFERENCES `school`(`id`) ON UPDATE cascade ON DELETE restrict,
 	FOREIGN KEY (`actor_user_id`) REFERENCES `user`(`id`) ON UPDATE cascade ON DELETE restrict
 );--> statement-breakpoint
