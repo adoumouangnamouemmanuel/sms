@@ -4,6 +4,8 @@ export const SENSITIVE_LOG_FIELDS = [
   "req.headers['x-edutrack-capability']",
   "res.headers['set-cookie']",
   'body.password',
+  'body.currentPassword',
+  'body.newPassword',
   'body.passwordHash',
   'body.password_hash',
   'body.token',
