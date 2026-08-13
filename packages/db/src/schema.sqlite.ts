@@ -1,3 +1,4 @@
+import { AUTH_USER_ROLES, type AuthUserRole } from '@edutrack/shared';
 import { sql } from 'drizzle-orm';
 import {
   check,
@@ -11,8 +12,8 @@ import {
 
 const currentTimestamp = sql`CURRENT_TIMESTAMP`;
 
-export const userRoles = ['SCHOOL_MASTER', 'TEACHER'] as const;
-export type UserRole = (typeof userRoles)[number];
+export const userRoles = AUTH_USER_ROLES;
+export type UserRole = AuthUserRole;
 
 export const auditOutcomes = ['SUCCESS', 'FAILURE'] as const;
 export type AuditOutcome = (typeof auditOutcomes)[number];
