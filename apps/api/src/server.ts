@@ -1,8 +1,20 @@
+import {
+  applyApplicationMigrations,
+  ensureDeploymentDatabase,
+  type DeploymentDatabaseStatus,
+} from '@edutrack/db';
 import { APP_NAME, REDACTED_LOG_VALUE, SENSITIVE_LOG_FIELDS } from '@edutrack/shared';
 import Fastify, { type FastifyServerOptions } from 'fastify';
+export { CAPABILITY_HEADER } from './sidecar-contract.js';
+import { CAPABILITY_HEADER } from './sidecar-contract.js';
 
 const DEFAULT_API_HOST = '127.0.0.1';
 const DEFAULT_API_PORT = 0;
+const DEFAULT_ALLOWED_ORIGINS = [
+  'http://127.0.0.1:5173',
+  'http://tauri.localhost',
+  'tauri://localhost',
+];
 
 export interface SafeLoggerOptions {
   level: string;
@@ -11,6 +23,19 @@ export interface SafeLoggerOptions {
     censor: string;
   };
 }
+
+export interface SidecarSecurityOptions {
+  allowedOrigins: string[];
+  capabilityToken?: string;
+}
+
+export interface BuildServerOptions extends Pick<FastifyServerOptions, 'logger'> {
+  databaseStatus?: DeploymentDatabaseStatus;
+  migrateApplicationDatabase?: (sqlitePath: string) => void;
+  security?: SidecarSecurityOptions;
+}
+
+type SecurityDowngradeWarning = (message: string) => void;
 
 export function createLoggerOptions(): SafeLoggerOptions {
   return {
@@ -22,9 +47,76 @@ export function createLoggerOptions(): SafeLoggerOptions {
   };
 }
 
-export function buildServer(options: Pick<FastifyServerOptions, 'logger'> = {}) {
+export function createSidecarSecurityOptions(
+  env: NodeJS.ProcessEnv = process.env,
+  warn?: SecurityDowngradeWarning
+): SidecarSecurityOptions {
+  const allowedOrigins = parseAllowedOrigins(env.EDUTRACK_ALLOWED_ORIGIN);
+  const capabilityToken = env.EDUTRACK_SIDECAR_TOKEN?.trim();
+
+  if (!capabilityToken) {
+    if (env.NODE_ENV === 'production') {
+      throw new Error('EDUTRACK_SIDECAR_TOKEN is required in production.');
+    }
+
+    warn?.(
+      'EDUTRACK_SIDECAR_TOKEN is not set; local API capability checks are disabled outside production.'
+    );
+
+    return { allowedOrigins };
+  }
+
+  return {
+    allowedOrigins,
+    capabilityToken,
+  };
+}
+
+export function buildServer(options: BuildServerOptions = {}) {
   const server = Fastify({
     logger: options.logger ?? createLoggerOptions(),
+  });
+  const security =
+    options.security ??
+    createSidecarSecurityOptions(process.env, (message) => {
+      server.log.warn({ code: 'SIDECAR_CAPABILITY_DISABLED' }, message);
+    });
+  const databaseStatus =
+    options.databaseStatus ??
+    (() => {
+      const deploymentStatus = ensureDeploymentDatabase();
+      const migrateApplicationDatabase =
+        options.migrateApplicationDatabase ?? applyApplicationMigrations;
+      migrateApplicationDatabase(deploymentStatus.sqlitePath);
+      return deploymentStatus;
+    })();
+
+  server.addHook('onRequest', async (request, reply) => {
+    const origin = request.headers.origin;
+
+    if (origin && !security.allowedOrigins.includes(origin)) {
+      return reply.code(403).send({
+        success: false,
+        error: {
+          code: 'UNEXPECTED_ORIGIN',
+          message: "L'origine de la requête locale est refusée.",
+        },
+      });
+    }
+
+    if (security.capabilityToken) {
+      const capability = request.headers[CAPABILITY_HEADER];
+
+      if (capability !== security.capabilityToken) {
+        return reply.code(403).send({
+          success: false,
+          error: {
+            code: 'INVALID_CAPABILITY',
+            message: "La capacité locale de l'application est invalide.",
+          },
+        });
+      }
+    }
   });
 
   server.get('/health', () => ({
@@ -32,6 +124,7 @@ export function buildServer(options: Pick<FastifyServerOptions, 'logger'> = {}) 
     data: {
       service: APP_NAME,
       status: 'ok',
+      database: databaseStatus,
     },
     message: 'OK',
   }));
@@ -52,6 +145,15 @@ export function getListenOptions() {
   };
 }
 
+export function createSidecarReadyPayload(host: string, port: number) {
+  return {
+    type: 'edutrack-sidecar-ready',
+    host,
+    port,
+    healthPath: '/health',
+  };
+}
+
 function parsePort(rawPort: string | undefined) {
   if (!rawPort) {
     return DEFAULT_API_PORT;
@@ -64,4 +166,15 @@ function parsePort(rawPort: string | undefined) {
   }
 
   return port;
+}
+
+function parseAllowedOrigins(rawOrigins: string | undefined) {
+  if (!rawOrigins) {
+    return [...DEFAULT_ALLOWED_ORIGINS];
+  }
+
+  return rawOrigins
+    .split(/[;,]/)
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
 }

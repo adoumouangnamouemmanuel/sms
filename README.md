@@ -67,6 +67,12 @@ Start only the API sidecar in watch mode:
 pnpm --filter @edutrack/api run dev
 ```
 
+Start the desktop shell in development mode:
+
+```bash
+pnpm --filter @edutrack/desktop run dev
+```
+
 ## Quality Commands
 
 ```bash
@@ -97,7 +103,7 @@ Runs TypeScript project-reference checks across all active packages and apps.
 pnpm run test
 ```
 
-Runs the unit test suites for the API and web app.
+Runs the unit test suites for the database package, API and web app.
 
 ```bash
 pnpm run test:e2e
@@ -113,7 +119,19 @@ pnpm exec playwright install chromium
 pnpm run build
 ```
 
-Builds all active packages and apps.
+Builds the shared packages, database package, API and web app. Desktop packaging is handled separately through `pnpm run build:desktop`.
+
+```bash
+pnpm run check:desktop
+```
+
+Builds the Windows sidecar executable and runs the Tauri/Rust compile check.
+
+```bash
+pnpm run verify:sidecar
+```
+
+Starts the packaged Windows sidecar, calls `/health` with the local capability header, and confirms the SQLite probe database is created.
 
 ## Database Commands
 
@@ -123,10 +141,18 @@ Generate SQLite migrations from the Drizzle schema:
 pnpm run db:generate
 ```
 
-Push the SQLite schema to the configured local database:
+Apply committed SQLite migrations to the configured local database:
 
 ```bash
 pnpm run db:migrate
+```
+
+For local schema prototyping only, `pnpm --filter @edutrack/db run db:push` can push the current Drizzle schema without using committed migrations.
+
+Seed deterministic Phase 1 foundation data:
+
+```bash
+pnpm run db:seed
 ```
 
 By default, local SQLite uses:
@@ -136,6 +162,34 @@ By default, local SQLite uses:
 ```
 
 Override it with `EDUTRACK_SQLITE_PATH` in `.env`.
+
+## Git Bash Convenience Scripts
+
+These scripts only group existing `pnpm` commands for local development convenience. The source of truth remains the `package.json` scripts above.
+
+```bash
+./scripts/db-setup.sh
+```
+
+Creates `.data`, runs migrations, seeds foundation data and prints the SQLite path for DBeaver.
+
+```bash
+./scripts/db-fresh.sh
+```
+
+Resets only the local development SQLite database after an explicit `RESET` confirmation, then migrates and seeds again.
+
+```bash
+./scripts/dev-verify.sh
+```
+
+Runs formatting check, lint, typecheck, unit tests and production build.
+
+```bash
+./scripts/phase-1-check.sh
+```
+
+Runs the current Phase 1 verification flow, including database setup, sidecar verification and desktop checks.
 
 ## Package-Specific Commands
 
@@ -151,11 +205,21 @@ Runs web-only development, build, tests, and preview.
 ```bash
 pnpm --filter @edutrack/api run dev
 pnpm --filter @edutrack/api run build
+pnpm --filter @edutrack/api run build:sidecar
+pnpm --filter @edutrack/api run verify:sidecar
 pnpm --filter @edutrack/api run start
 pnpm --filter @edutrack/api run test
 ```
 
-Runs API-only development, build, compiled start, and tests.
+Runs API-only development, build, packaged Windows sidecar build, packaged sidecar verification, compiled start, and tests.
+
+```bash
+pnpm --filter @edutrack/desktop run dev
+pnpm --filter @edutrack/desktop run check
+pnpm --filter @edutrack/desktop run build
+```
+
+Runs the Tauri desktop shell, sidecar-backed Rust/Tauri compile check, and Windows installer build.
 
 ```bash
 pnpm --filter @edutrack/domain run build
@@ -185,3 +249,5 @@ docs/
 ## Version 1 Scope Notes
 
 Version 1 is local and SQLite-only. Next.js, mobile apps, cloud sync, PostgreSQL runtime configuration, finance, attendance, parent/student portals, notifications, and remote web access are intentionally out of scope unless a later ADR approves them.
+
+The Phase 1 deployment spike is documented in `docs/deployment/phase-1-deployment-spike.md`.

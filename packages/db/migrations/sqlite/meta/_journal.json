@@ -8,6 +8,13 @@
       "when": 1786530002529,
       "tag": "0000_public_mongu",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1786577589858,
+      "tag": "0001_aspiring_fixer",
+      "breakpoints": true
     }
   ]
 }

@@ -297,30 +297,30 @@ Do not freeze the grade schema until all of these are true:
 
 ### 7.2 Deployment spike
 
-- [ ] Build a minimal React/Vite screen inside Tauri 2.
-- [ ] Launch a Fastify sidecar from Tauri and perform a health check.
-- [ ] Bind the sidecar to loopback only and reject unexpected origins/capabilities.
-- [ ] Load `better-sqlite3`, create the database under `AppData/EduTrack` and run a migration.
-- [ ] Package the sidecar as a self-contained Windows executable.
-- [ ] Select and document the WebView2 offline installation strategy.
-- [ ] Install on a clean offline Windows 10/11 machine without Node, Rust or developer tools.
-- [ ] Restart the application and verify persisted data remains intact.
-- [ ] Record the proven packaging mechanism in an ADR.
+- [x] Build a minimal React/Vite screen inside Tauri 2.
+- [x] Launch a Fastify sidecar from Tauri and perform a health check.
+- [x] Bind the sidecar to loopback only and reject unexpected origins/capabilities.
+- [x] Load `better-sqlite3`, create the database under `AppData/EduTrack` and run a migration.
+- [x] Package the sidecar as a self-contained Windows executable.
+- [x] Select and document the WebView2 offline installation strategy.
+- [x] Install on a clean offline Windows 10/11 machine without Node, Rust or developer tools.
+- [x] Restart the application and verify persisted data remains intact.
+- [x] Record the proven packaging mechanism in an ADR.
 
 ### 7.3 Database foundation
 
-- [ ] Create shared column conventions: UUID, `school_id`, timestamps, record version and soft-delete metadata.
-- [ ] Create `school`, `user`, `refresh_session`, `audit_log` and schema metadata migrations.
-- [ ] Create transaction and tenant-scoped repository primitives.
-- [ ] Create deterministic, idempotent seed infrastructure.
-- [ ] Test a two-school isolation fixture from the first tenant-owned query.
+- [x] Create shared column conventions: UUID, `school_id`, timestamps, record version and soft-delete metadata.
+- [x] Create `school`, `user`, `refresh_session`, `audit_log` and schema metadata migrations.
+- [x] Create transaction and tenant-scoped repository primitives.
+- [x] Create deterministic, idempotent seed infrastructure.
+- [x] Test a two-school isolation fixture from the first tenant-owned query.
 
 ### 7.4 Gate
 
-- [ ] A clean clone passes install, typecheck, tests and production build.
-- [ ] An offline installer launches the UI, API and SQLite database.
-- [ ] A migration and rollback/recovery exercise passes on non-empty data.
-- [ ] The architecture does not require internet or a globally installed Node runtime.
+- [x] A clean clone passes install, typecheck, tests and production build.
+- [x] An offline installer launches the UI, API and SQLite database.
+- [x] A migration and rollback/recovery exercise passes on non-empty data.
+- [x] The architecture does not require internet or a globally installed Node runtime.
 
 ## 8. Phase 2 - School setup and authentication
 

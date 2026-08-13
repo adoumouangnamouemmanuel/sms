@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
+    "build:sidecar": "pnpm --filter @edutrack/shared run build && pnpm --filter @edutrack/db run build && pnpm run build && node scripts/build-sidecar.mjs",
+    "verify:sidecar": "node scripts/verify-sidecar.mjs",
     "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --config vitest.config.ts"
@@ -14,10 +16,13 @@
   "dependencies": {
     "@edutrack/db": "workspace:*",
     "@edutrack/shared": "workspace:*",
+    "better-sqlite3": "13.0.2",
     "fastify": "^4.26.0"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
+    "@yao-pkg/pkg": "6.22.0",
+    "esbuild": "0.28.2",
     "tsx": "^4.23.12",
     "typescript": "^5.9.3"
   }

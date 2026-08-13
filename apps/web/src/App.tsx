@@ -1,9 +1,38 @@
 import { APP_NAME } from '@edutrack/shared';
 import { StatusBadge } from '@edutrack/ui';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { readDesktopDeploymentStatus, type DesktopDeploymentStatus } from './desktopStatus';
 
 export function App() {
   const { t } = useTranslation();
+  const [desktopStatus, setDesktopStatus] = useState<DesktopDeploymentStatus | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void readDesktopDeploymentStatus()
+      .then((status) => {
+        if (isMounted) {
+          setDesktopStatus(status);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setDesktopStatus({
+            runtime: 'tauri',
+            sidecarStatus: 'failed',
+            databaseReady: false,
+          });
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const isDesktopReady = desktopStatus?.sidecarStatus === 'ready' && desktopStatus.databaseReady;
 
   return (
     <main className="app-shell">
@@ -30,6 +59,14 @@ export function App() {
             <div className="status-row">
               <span>{t('shell.storageLabel')}</span>
               <StatusBadge>{t('shell.sqlite')}</StatusBadge>
+            </div>
+            <div className="status-row">
+              <span>{t('shell.desktopLabel')}</span>
+              <StatusBadge tone={isDesktopReady ? 'success' : 'warning'}>
+                {desktopStatus
+                  ? t(`shell.desktop.${desktopStatus.sidecarStatus}`)
+                  : t('shell.browser')}
+              </StatusBadge>
             </div>
             <div className="status-row">
               <span>{t('shell.networkLabel')}</span>
