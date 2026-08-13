@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildServer,
+  CAPABILITY_HEADER,
   createLoggerOptions,
   createSidecarReadyPayload,
   createSidecarSecurityOptions,
@@ -44,7 +45,7 @@ describe('api sidecar foundation', () => {
     });
     expect(loggerOptions.redact.paths).toContain('req.headers.authorization');
     expect(loggerOptions.redact.paths).toContain('req.headers.cookie');
-    expect(loggerOptions.redact.paths).toContain("req.headers['x-edutrack-capability']");
+    expect(loggerOptions.redact.paths).toContain(`req.headers['${CAPABILITY_HEADER}']`);
     expect(loggerOptions.redact.paths).toContain('body.password');
   });
 
@@ -84,7 +85,7 @@ describe('api sidecar foundation', () => {
       },
     });
 
-    const response = await server.inject({
+    const missingTokenResponse = await server.inject({
       method: 'GET',
       url: '/health',
       headers: {
@@ -92,8 +93,25 @@ describe('api sidecar foundation', () => {
       },
     });
 
-    expect(response.statusCode).toBe(403);
-    expect(response.json()).toMatchObject({
+    expect(missingTokenResponse.statusCode).toBe(403);
+    expect(missingTokenResponse.json()).toMatchObject({
+      success: false,
+      error: {
+        code: 'INVALID_CAPABILITY',
+      },
+    });
+
+    const invalidTokenResponse = await server.inject({
+      method: 'GET',
+      url: '/health',
+      headers: {
+        origin: 'tauri://localhost',
+        [CAPABILITY_HEADER]: 'wrong-token',
+      },
+    });
+
+    expect(invalidTokenResponse.statusCode).toBe(403);
+    expect(invalidTokenResponse.json()).toMatchObject({
       success: false,
       error: {
         code: 'INVALID_CAPABILITY',
@@ -116,7 +134,7 @@ describe('api sidecar foundation', () => {
       url: '/health',
       headers: {
         origin: 'tauri://localhost',
-        'x-edutrack-capability': 'expected-token',
+        [CAPABILITY_HEADER]: 'expected-token',
       },
     });
 
@@ -140,6 +158,25 @@ describe('api sidecar foundation', () => {
       allowedOrigins: ['tauri://localhost', 'http://127.0.0.1:5173'],
       capabilityToken: 'local-token',
     });
+  });
+
+  it('fails production startup when the sidecar capability token is missing', () => {
+    expect(() =>
+      createSidecarSecurityOptions({
+        NODE_ENV: 'production',
+      })
+    ).toThrow('EDUTRACK_SIDECAR_TOKEN is required in production.');
+  });
+
+  it('warns when sidecar capability checks are disabled outside production', () => {
+    const warnings: string[] = [];
+
+    expect(createSidecarSecurityOptions({}, (message) => warnings.push(message))).toEqual({
+      allowedOrigins: ['http://127.0.0.1:5173', 'http://tauri.localhost', 'tauri://localhost'],
+    });
+    expect(warnings).toEqual([
+      'EDUTRACK_SIDECAR_TOKEN is not set; local API capability checks are disabled outside production.',
+    ]);
   });
 
   it('creates a sidecar ready payload for Tauri supervision', () => {
