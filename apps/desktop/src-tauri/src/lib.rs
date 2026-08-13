@@ -8,7 +8,7 @@ use std::{
     process::{Child, Command, Stdio},
     sync::Mutex,
     thread,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::Duration,
 };
 use tauri::{Manager, RunEvent};
 
@@ -56,10 +56,25 @@ fn deployment_status(state: tauri::State<'_, DeploymentState>) -> DesktopDeploym
 
 pub fn run() {
     let context = tauri::generate_context!();
+    let deployment_state =
+        DeploymentState::new().expect("failed to initialize secure deployment state");
     let app = tauri::Builder::default()
-        .manage(DeploymentState::new())
+        .manage(deployment_state)
         .setup(|app| {
-            start_sidecar(app.handle())?;
+            if let Err(error) = start_sidecar(app.handle()) {
+                update_status(
+                    app.handle(),
+                    DesktopDeploymentStatus {
+                        runtime: "tauri",
+                        sidecar_status: "failed".to_string(),
+                        api_url: None,
+                        database_path: None,
+                        database_ready: false,
+                        error: Some(error.to_string()),
+                    },
+                );
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![deployment_status])
@@ -74,8 +89,8 @@ pub fn run() {
 }
 
 impl DeploymentState {
-    fn new() -> Self {
-        Self {
+    fn new() -> Result<Self, String> {
+        Ok(Self {
             child: Mutex::new(None),
             status: Mutex::new(DesktopDeploymentStatus {
                 runtime: "tauri",
@@ -85,8 +100,8 @@ impl DeploymentState {
                 database_ready: false,
                 error: None,
             }),
-            token: generate_capability_token(),
-        }
+            token: generate_capability_token()?,
+        })
     }
 }
 
@@ -346,17 +361,11 @@ fn update_status(app: &tauri::AppHandle, next_status: DesktopDeploymentStatus) {
         .expect("deployment status lock poisoned") = next_status;
 }
 
-fn generate_capability_token() -> String {
+fn generate_capability_token() -> Result<String, String> {
     let mut bytes = [0_u8; 32];
 
-    if getrandom::getrandom(&mut bytes).is_ok() {
-        return bytes.iter().map(|byte| format!("{byte:02x}")).collect();
-    }
+    getrandom::getrandom(&mut bytes)
+        .map_err(|error| format!("Failed to generate secure sidecar capability token: {error}"))?;
 
-    let fallback = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_nanos())
-        .unwrap_or_default();
-
-    format!("fallback-{fallback}-{}", std::process::id())
+    Ok(bytes.iter().map(|byte| format!("{byte:02x}")).collect())
 }
