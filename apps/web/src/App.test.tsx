@@ -9,7 +9,10 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByRole('heading', { level: 1, name: APP_NAME })).toBeInTheDocument();
-    expect(screen.getByText('Fondation locale')).toBeInTheDocument();
+    expect(screen.getByText('Connexion requise')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Connexion du personnel' })
+    ).toBeInTheDocument();
     expect(screen.getByText('SQLite local uniquement')).toBeInTheDocument();
   });
 });
