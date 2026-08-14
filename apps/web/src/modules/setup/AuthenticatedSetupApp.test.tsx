@@ -50,6 +50,86 @@ describe('AuthenticatedSetupApp', () => {
     expect(await screen.findByRole('heading', { name: 'Calendrier scolaire' })).toBeInTheDocument();
   });
 
+  it('shows French validation errors for empty required fields', async () => {
+    const userSession = userEvent.setup();
+    const pendingState = createSetupState({ setupStatus: 'PENDING', nextStep: 'profile' });
+    const setupClient = createSetupClient({
+      getState: vi.fn().mockResolvedValue(pendingState),
+      saveProfile: vi.fn(),
+    });
+
+    render(
+      <AuthenticatedSetupApp
+        apiBaseUrl="http://127.0.0.1:49152"
+        onLoggedOut={vi.fn()}
+        setupClient={setupClient}
+        user={user}
+      />
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Profil de l’école' })).toBeInTheDocument();
+    const nameInput = await screen.findByRole('textbox', { name: /Nom de l'école/i });
+    const cityInput = await screen.findByRole('textbox', { name: /Ville/i });
+
+    await userSession.clear(nameInput);
+    await userSession.clear(cityInput);
+
+    await userSession.click(screen.getByRole('button', { name: 'Continuer' }));
+
+    // Form shouldn't advance due to native HTML5 validation
+    expect(screen.getByRole('button', { name: 'Continuer' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Enregistrer et continuer' })
+    ).not.toBeInTheDocument();
+    expect(setupClient.saveProfile).not.toHaveBeenCalled();
+  });
+
+  it('shows a French error on service failure and recovers on retry', async () => {
+    const userSession = userEvent.setup();
+    const pendingState = createSetupState({ setupStatus: 'PENDING', nextStep: 'profile' });
+    const profileState = createSetupState({
+      setupStatus: 'PROFILE_COMPLETED',
+      nextStep: 'calendar',
+    });
+
+    let attempt = 0;
+    const saveProfileMock = vi.fn().mockImplementation(() => {
+      attempt++;
+      if (attempt === 1) {
+        return Promise.reject(new Error('Network error'));
+      }
+      return Promise.resolve(profileState);
+    });
+
+    const setupClient = createSetupClient({
+      getState: vi.fn().mockResolvedValue(pendingState),
+      saveProfile: saveProfileMock,
+    });
+
+    render(
+      <AuthenticatedSetupApp
+        apiBaseUrl="http://127.0.0.1:49152"
+        onLoggedOut={vi.fn()}
+        setupClient={setupClient}
+        user={user}
+      />
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Profil de l’école' })).toBeInTheDocument();
+    await userSession.click(await screen.findByRole('button', { name: 'Continuer' }));
+
+    await userSession.click(screen.getByRole('button', { name: 'Enregistrer et continuer' }));
+
+    expect(
+      await screen.findByText('La configuration locale a échoué. Réessayez.')
+    ).toBeInTheDocument();
+
+    await userSession.click(screen.getByRole('button', { name: 'Enregistrer et continuer' }));
+
+    expect(await screen.findByRole('heading', { name: 'Calendrier scolaire' })).toBeInTheDocument();
+    expect(saveProfileMock).toHaveBeenCalledTimes(2);
+  });
+
   it('shows completed setup navigation without future modules', async () => {
     const completedState = createSetupState({
       enabledModules: ['SCHOOL_SETUP', 'ACADEMIC_STRUCTURE'],
