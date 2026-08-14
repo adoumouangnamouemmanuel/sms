@@ -1,4 +1,3 @@
-import { SIDECAR_CAPABILITY_HEADER } from '@edutrack/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { login, logout } from './authApi';
 import type { AuthApiError } from './authErrors';
@@ -83,13 +82,13 @@ describe('authApi', () => {
       fetcher,
     });
 
-    expect(fetcher).toHaveBeenLastCalledWith(
-      'http://127.0.0.1:49152/auth/logout',
+    const request = readLastFetchCall(fetcher);
+
+    expect(request.url).toBe('http://127.0.0.1:49152/auth/logout');
+    expect(request.options.headers).toEqual(
       expect.objectContaining({
-        headers: expect.objectContaining({
-          Authorization: 'Bearer access-token-1',
-          [SIDECAR_CAPABILITY_HEADER]: 'local-capability-token',
-        }),
+        Authorization: 'Bearer access-token-1',
+        'x-edutrack-capability': 'local-capability-token',
       })
     );
   });
@@ -145,12 +144,12 @@ describe('authApi', () => {
       }
     );
 
-    expect(fetcher).toHaveBeenCalledWith(
-      'http://127.0.0.1:49152/auth/login',
+    const request = readLastFetchCall(fetcher);
+
+    expect(request.url).toBe('http://127.0.0.1:49152/auth/login');
+    expect(request.options.headers).toEqual(
       expect.objectContaining({
-        headers: expect.objectContaining({
-          [SIDECAR_CAPABILITY_HEADER]: 'local-capability-token',
-        }),
+        'x-edutrack-capability': 'local-capability-token',
       })
     );
   });
@@ -187,4 +186,13 @@ function createRejectedFetch(): typeof fetch {
         }
       )
     );
+}
+
+function readLastFetchCall(fetcher: ReturnType<typeof vi.fn<typeof fetch>>) {
+  const [url, options] = fetcher.mock.calls.at(-1) ?? [];
+
+  return {
+    options: options ?? {},
+    url,
+  };
 }
