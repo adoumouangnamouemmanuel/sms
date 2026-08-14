@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { mkdirSync } from 'node:fs';
+import { cpSync, mkdirSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,8 +10,10 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const packageRoot = resolve(scriptDir, '..');
 const workspaceRoot = resolve(packageRoot, '..', '..');
 const binariesDir = join(workspaceRoot, 'apps', 'desktop', 'src-tauri', 'binaries');
+const bcryptRuntimeDir = join(binariesDir, 'bcrypt');
 const sidecarName = 'edutrack-api-sidecar';
 const pkgCliPath = require.resolve('@yao-pkg/pkg/lib-es5/bin.js');
+const bcryptPackageDir = dirname(require.resolve('bcrypt/package.json'));
 const bundledEntryPath = join(packageRoot, 'dist', 'sidecar.cjs');
 const pkgConfigPath = join(packageRoot, 'pkg.sidecar.config.cjs');
 
@@ -25,6 +27,7 @@ if (!targetTriple.endsWith('windows-msvc')) {
 }
 
 mkdirSync(binariesDir, { recursive: true });
+copyBcryptRuntimePrebuilds();
 
 const outputPath = join(binariesDir, `${sidecarName}-${targetTriple}.exe`);
 
@@ -34,7 +37,7 @@ await build({
   platform: 'node',
   target: 'node24',
   format: 'cjs',
-  external: ['better-sqlite3'],
+  external: ['bcrypt', 'better-sqlite3'],
   outfile: bundledEntryPath,
   logLevel: 'info',
   logOverride: {
@@ -54,6 +57,15 @@ run(process.execPath, [
 ]);
 
 console.log(`Built ${outputPath}`);
+
+function copyBcryptRuntimePrebuilds() {
+  rmSync(bcryptRuntimeDir, { recursive: true, force: true });
+  mkdirSync(bcryptRuntimeDir, { recursive: true });
+  cpSync(join(bcryptPackageDir, 'package.json'), join(bcryptRuntimeDir, 'package.json'));
+  cpSync(join(bcryptPackageDir, 'prebuilds'), join(bcryptRuntimeDir, 'prebuilds'), {
+    recursive: true,
+  });
+}
 
 function commandOutput(command, args) {
   const result = spawnSync(command, args, {
