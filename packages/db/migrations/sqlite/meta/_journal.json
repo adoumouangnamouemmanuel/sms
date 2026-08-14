@@ -15,6 +15,13 @@
       "when": 1786577589858,
       "tag": "0001_aspiring_fixer",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1786668983420,
+      "tag": "0002_glorious_lizard",
+      "breakpoints": true
     }
   ]
 }
