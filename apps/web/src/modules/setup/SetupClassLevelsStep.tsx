@@ -80,7 +80,7 @@ export function SetupClassLevelsStep({
           {draft.map((level, index) => (
             <div
               className="grid grid-cols-[72px_1fr_1.5fr_120px_56px] items-center gap-3 px-4 py-1.5"
-              key={`${level.code}-${String(index)}`}
+              key={`class-level-${String(index)}`}
             >
               <input
                 className="h-10 w-full rounded-lg border border-transparent bg-transparent px-2 text-[13px] font-bold text-slate-900 outline-none transition-all hover:bg-slate-50 focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-600/10"
