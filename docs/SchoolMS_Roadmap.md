@@ -340,21 +340,21 @@ Do not freeze the grade schema until all of these are true:
 
 ### 8.2 Setup wizard slice
 
-- [ ] Configure school name, short name, logo, address, city, phone, email, motto and ministry code.
-- [ ] Default country to Chad, currency to XAF, locale to French and timezone to `Africa/Ndjamena`.
-- [ ] Create an academic year with valid start/end dates.
-- [ ] Choose trimester or semester structure and create non-overlapping terms.
-- [ ] Enforce one current academic year per school and one current term within it.
-- [ ] Create class levels with code, order and exam-year flag.
-- [ ] Save after every step and resume an incomplete setup.
-- [ ] Show only implemented modules in navigation.
+- [x] Configure school name, short name, logo, address, city, phone, email, motto and ministry code.
+- [x] Default country to Chad, currency to XAF, locale to French and timezone to `Africa/Ndjamena`.
+- [x] Create an academic year with valid start/end dates.
+- [x] Choose trimester or semester structure and create non-overlapping terms.
+- [x] Enforce one current academic year per school and one current term within it.
+- [x] Create class levels with code, order and exam-year flag.
+- [x] Save after every step and resume an incomplete setup.
+- [x] Show only implemented modules in navigation.
 
 ### 8.3 Gate
 
 - [ ] A new SchoolMaster completes setup offline in under 20 minutes using a usability script.
-- [ ] Same-school authorization and cross-school denial tests pass.
-- [ ] French validation, empty, error and recovery states are complete.
-- [ ] Restarting during setup loses no confirmed step.
+- [x] Same-school authorization and cross-school denial tests pass.
+- [x] French validation, empty, error and recovery states are complete.
+- [x] Restarting during setup loses no confirmed step.
 
 ## 9. Phase 3 - Students, guardians, teachers and import
 
