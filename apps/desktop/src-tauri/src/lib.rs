@@ -2,9 +2,10 @@ use serde::{Deserialize, Serialize};
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 use std::{
+    fs,
     io::{BufRead, BufReader, Read, Write},
     net::{TcpStream, ToSocketAddrs},
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::{Child, Command, Stdio},
     sync::Mutex,
     thread,
@@ -15,6 +16,8 @@ use tauri::{Manager, RunEvent};
 #[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 const SIDECAR_EXE: &str = "edutrack-api-sidecar.exe";
+#[cfg(all(windows, target_arch = "x86_64"))]
+const SIDECAR_TARGET_EXE: &str = "edutrack-api-sidecar-x86_64-pc-windows-msvc.exe";
 const SIDECAR_READY_TYPE: &str = "edutrack-sidecar-ready";
 const CAPABILITY_HEADER: &str = "x-edutrack-capability";
 
@@ -24,6 +27,7 @@ pub struct DesktopDeploymentStatus {
     runtime: &'static str,
     sidecar_status: String,
     api_url: Option<String>,
+    capability_token: Option<String>,
     database_path: Option<String>,
     database_ready: bool,
     error: Option<String>,
@@ -68,6 +72,7 @@ pub fn run() {
                         runtime: "tauri",
                         sidecar_status: "failed".to_string(),
                         api_url: None,
+                        capability_token: None,
                         database_path: None,
                         database_ready: false,
                         error: Some(error.to_string()),
@@ -90,17 +95,20 @@ pub fn run() {
 
 impl DeploymentState {
     fn new() -> Result<Self, String> {
+        let token = generate_capability_token()?;
+
         Ok(Self {
             child: Mutex::new(None),
             status: Mutex::new(DesktopDeploymentStatus {
                 runtime: "tauri",
                 sidecar_status: "starting".to_string(),
                 api_url: None,
+                capability_token: None,
                 database_path: None,
                 database_ready: false,
                 error: None,
             }),
-            token: generate_capability_token()?,
+            token,
         })
     }
 }
@@ -111,6 +119,7 @@ fn start_sidecar(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error
     let state = app.state::<DeploymentState>();
     let token = state.token.clone();
     let sidecar_path = resolve_sidecar_executable(app).map_err(std::io::Error::other)?;
+    let bcrypt_prebuild_path = resolve_bcrypt_prebuild_path(app, &sidecar_path);
 
     let mut command = Command::new(&sidecar_path);
     command
@@ -125,6 +134,11 @@ fn start_sidecar(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error
         .env("NODE_ENV", "production")
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
+
+    if let Some(path) = bcrypt_prebuild_path {
+        command.env("BCRYPT_PREBUILD", path);
+    }
+
     hide_sidecar_console(&mut command);
 
     let mut child = command.spawn().map_err(|error| {
@@ -183,33 +197,90 @@ fn hide_sidecar_console(command: &mut Command) {
 }
 
 fn resolve_sidecar_executable(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    let mut candidates = Vec::new();
+    let mut directories = Vec::new();
 
     if let Ok(current_exe) = std::env::current_exe() {
         if let Some(exe_dir) = current_exe.parent() {
-            candidates.push(exe_dir.join(SIDECAR_EXE));
-            candidates.push(exe_dir.join("binaries").join(SIDECAR_EXE));
+            directories.push(exe_dir.to_path_buf());
+            directories.push(exe_dir.join("binaries"));
         }
     }
 
     if let Ok(resource_dir) = app.path().resource_dir() {
-        candidates.push(resource_dir.join(SIDECAR_EXE));
-        candidates.push(resource_dir.join("binaries").join(SIDECAR_EXE));
+        directories.push(resource_dir.clone());
+        directories.push(resource_dir.join("binaries"));
     }
 
-    candidates
-        .iter()
-        .find(|candidate| candidate.is_file())
-        .cloned()
-        .ok_or_else(|| {
-            let searched = candidates
-                .iter()
-                .map(|candidate| candidate.display().to_string())
-                .collect::<Vec<_>>()
-                .join(", ");
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    directories.push(manifest_dir.join("binaries"));
 
+    let searched = directories
+        .iter()
+        .map(|directory| directory.display().to_string())
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    directories
+        .iter()
+        .find_map(|directory| find_sidecar_in_directory(directory))
+        .ok_or_else(|| {
             format!("Could not find the packaged sidecar executable. Searched: {searched}")
         })
+}
+
+fn find_sidecar_in_directory(directory: &Path) -> Option<PathBuf> {
+    for executable_name in sidecar_executable_names() {
+        let candidate = directory.join(executable_name);
+
+        if candidate.is_file() {
+            return Some(candidate);
+        }
+    }
+
+    fs::read_dir(directory)
+        .ok()?
+        .filter_map(Result::ok)
+        .map(|entry| entry.path())
+        .find(|path| {
+            path.file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| {
+                    name.starts_with("edutrack-api-sidecar-") && name.ends_with(".exe")
+                })
+        })
+}
+
+fn resolve_bcrypt_prebuild_path(app: &tauri::AppHandle, sidecar_path: &Path) -> Option<PathBuf> {
+    let mut candidates = Vec::new();
+
+    if let Some(sidecar_dir) = sidecar_path.parent() {
+        candidates.push(sidecar_dir.join("bcrypt"));
+        candidates.push(sidecar_dir.join("binaries").join("bcrypt"));
+    }
+
+    if let Ok(resource_dir) = app.path().resource_dir() {
+        candidates.push(resource_dir.join("bcrypt"));
+        candidates.push(resource_dir.join("binaries").join("bcrypt"));
+    }
+
+    candidates.push(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("binaries")
+            .join("bcrypt"),
+    );
+
+    candidates.into_iter().find(|path| {
+        path.join("package.json").is_file() && path.join("prebuilds").join("win32-x64").is_dir()
+    })
+}
+
+fn sidecar_executable_names() -> Vec<&'static str> {
+    let mut names = vec![SIDECAR_EXE];
+
+    #[cfg(all(windows, target_arch = "x86_64"))]
+    names.push(SIDECAR_TARGET_EXE);
+
+    names
 }
 
 fn handle_sidecar_ready(
@@ -227,6 +298,8 @@ fn handle_sidecar_ready(
                 runtime: "tauri",
                 sidecar_status: "ready".to_string(),
                 api_url: Some(api_url),
+                // The trusted WebView echoes this token on local sidecar API calls.
+                capability_token: Some(token.to_string()),
                 database_path: Some(database_path.to_string()),
                 database_ready: true,
                 error: None,
@@ -238,6 +311,7 @@ fn handle_sidecar_ready(
                 runtime: "tauri",
                 sidecar_status: "failed".to_string(),
                 api_url: Some(api_url),
+                capability_token: None,
                 database_path: Some(database_path.to_string()),
                 database_ready: false,
                 error: Some(error),
@@ -331,6 +405,7 @@ fn monitor_sidecar_exit(app: tauri::AppHandle, database_path: String) {
                     runtime: "tauri",
                     sidecar_status: "stopped".to_string(),
                     api_url: None,
+                    capability_token: None,
                     database_path: Some(database_path),
                     database_ready: false,
                     error: Some(format!("Sidecar exited with status {status}")),

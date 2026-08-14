@@ -2,6 +2,7 @@ export interface DesktopDeploymentStatus {
   runtime: 'tauri';
   sidecarStatus: 'starting' | 'ready' | 'failed' | 'stopped';
   apiUrl?: string;
+  capabilityToken?: string;
   databasePath?: string;
   databaseReady: boolean;
   error?: string;

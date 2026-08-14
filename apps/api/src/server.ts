@@ -1,10 +1,20 @@
 import {
   applyApplicationMigrations,
   ensureDeploymentDatabase,
+  openEduTrackDatabase,
   type DeploymentDatabaseStatus,
+  type EduTrackDatabase,
+  type EduTrackDatabaseConnection,
 } from '@edutrack/db';
-import { APP_NAME, REDACTED_LOG_VALUE, SENSITIVE_LOG_FIELDS } from '@edutrack/shared';
-import Fastify, { type FastifyServerOptions } from 'fastify';
+import {
+  APP_NAME,
+  REDACTED_LOG_VALUE,
+  SENSITIVE_LOG_FIELDS,
+  SIDECAR_CAPABILITY_HEADER,
+} from '@edutrack/shared';
+import Fastify, { type FastifyReply, type FastifyServerOptions } from 'fastify';
+import { AuthService, registerAuthRoutes, type AuthServiceOptions } from './modules/auth/index.js';
+import { registerSetupRoutes, SetupService } from './modules/setup/index.js';
 export { CAPABILITY_HEADER } from './sidecar-contract.js';
 import { CAPABILITY_HEADER } from './sidecar-contract.js';
 
@@ -15,6 +25,8 @@ const DEFAULT_ALLOWED_ORIGINS = [
   'http://tauri.localhost',
   'tauri://localhost',
 ];
+const CORS_ALLOWED_METHODS = 'GET,POST,PUT,OPTIONS';
+const CORS_ALLOWED_HEADERS = ['Authorization', 'Content-Type', SIDECAR_CAPABILITY_HEADER].join(',');
 
 export interface SafeLoggerOptions {
   level: string;
@@ -31,8 +43,12 @@ export interface SidecarSecurityOptions {
 
 export interface BuildServerOptions extends Pick<FastifyServerOptions, 'logger'> {
   databaseStatus?: DeploymentDatabaseStatus;
+  database?: EduTrackDatabase;
   migrateApplicationDatabase?: (sqlitePath: string) => void;
   security?: SidecarSecurityOptions;
+  auth?: AuthServiceOptions & {
+    enabled?: boolean;
+  };
 }
 
 type SecurityDowngradeWarning = (message: string) => void;
@@ -90,9 +106,13 @@ export function buildServer(options: BuildServerOptions = {}) {
       migrateApplicationDatabase(deploymentStatus.sqlitePath);
       return deploymentStatus;
     })();
+  const databaseConnection = createServerDatabaseConnection(options, databaseStatus);
+  const database = options.database ?? databaseConnection?.db;
+  const authEnabled =
+    options.auth?.enabled ?? (Boolean(options.database) || process.env.NODE_ENV !== 'test');
 
   server.addHook('onRequest', async (request, reply) => {
-    const origin = request.headers.origin;
+    const origin = readSingleHeader(request.headers.origin);
 
     if (origin && !security.allowedOrigins.includes(origin)) {
       return reply.code(403).send({
@@ -102,6 +122,15 @@ export function buildServer(options: BuildServerOptions = {}) {
           message: "L'origine de la requête locale est refusée.",
         },
       });
+    }
+
+    if (origin) {
+      applyCorsHeaders(reply, origin);
+    }
+
+    if (request.method === 'OPTIONS') {
+      // Browser preflight requests do not carry the sidecar capability token.
+      return reply.code(204).send();
     }
 
     if (security.capabilityToken) {
@@ -119,6 +148,26 @@ export function buildServer(options: BuildServerOptions = {}) {
     }
   });
 
+  if (authEnabled && database) {
+    const authService = new AuthService(database, options.auth);
+
+    registerAuthRoutes(server, {
+      authService,
+    });
+    registerSetupRoutes(server, {
+      authService,
+      setupService: new SetupService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+    });
+  }
+
+  if (databaseConnection) {
+    server.addHook('onClose', () => {
+      databaseConnection.close();
+    });
+  }
+
   server.get('/health', () => ({
     success: true,
     data: {
@@ -130,6 +179,37 @@ export function buildServer(options: BuildServerOptions = {}) {
   }));
 
   return server;
+}
+
+function applyCorsHeaders(reply: FastifyReply, origin: string) {
+  reply
+    .header('Access-Control-Allow-Origin', origin)
+    .header('Access-Control-Allow-Credentials', 'true')
+    .header('Access-Control-Allow-Methods', CORS_ALLOWED_METHODS)
+    .header('Access-Control-Allow-Headers', CORS_ALLOWED_HEADERS)
+    .header('Vary', 'Origin');
+}
+
+function readSingleHeader(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function createServerDatabaseConnection(
+  options: BuildServerOptions,
+  databaseStatus: DeploymentDatabaseStatus
+): EduTrackDatabaseConnection | undefined {
+  const authEnabled =
+    options.auth?.enabled ?? (Boolean(options.database) || process.env.NODE_ENV !== 'test');
+
+  if (options.database || !authEnabled) {
+    return undefined;
+  }
+
+  if (options.databaseStatus && options.auth?.enabled !== true) {
+    return undefined;
+  }
+
+  return openEduTrackDatabase(databaseStatus.sqlitePath);
 }
 
 export function getListenOptions() {
