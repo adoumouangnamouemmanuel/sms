@@ -9,6 +9,7 @@ import {
 import { sql } from 'drizzle-orm';
 import {
   check,
+  foreignKey,
   index,
   integer,
   sqliteTable,
@@ -69,10 +70,10 @@ export const academicYear = sqliteTable(
     schoolCurrentUnique: uniqueIndex('academic_year_school_current_unique')
       .on(table.schoolId)
       .where(sql`${table.isCurrent} = true`),
-    schoolLabelUnique: uniqueIndex('academic_year_school_label_unique').on(
-      table.schoolId,
-      table.label
-    ),
+    schoolLabelUnique: uniqueIndex('academic_year_school_label_unique')
+      .on(table.schoolId, table.label)
+      .where(sql`${table.deletedAt} is null`),
+    schoolIdIdUnique: uniqueIndex('academic_year_school_id_id_unique').on(table.schoolId, table.id),
   })
 );
 
@@ -81,12 +82,7 @@ export const term = sqliteTable(
   {
     id: uuidPrimaryKey(),
     ...tenantColumns(),
-    academicYearId: text('academic_year_id')
-      .notNull()
-      .references(() => academicYear.id, {
-        onDelete: 'restrict',
-        onUpdate: 'cascade',
-      }),
+    academicYearId: text('academic_year_id').notNull(),
     label: text('label').notNull(),
     termNumber: integer('term_number').notNull(),
     startDate: text('start_date').notNull(),
@@ -100,16 +96,23 @@ export const term = sqliteTable(
     academicYearCurrentUnique: uniqueIndex('term_academic_year_current_unique')
       .on(table.academicYearId)
       .where(sql`${table.isCurrent} = true`),
-    academicYearLabelUnique: uniqueIndex('term_academic_year_label_unique').on(
-      table.academicYearId,
-      table.label
-    ),
-    academicYearNumberUnique: uniqueIndex('term_academic_year_number_unique').on(
-      table.academicYearId,
-      table.termNumber
-    ),
+    schoolCurrentUnique: uniqueIndex('term_school_current_unique')
+      .on(table.schoolId)
+      .where(sql`${table.isCurrent} = true`),
+    academicYearLabelUnique: uniqueIndex('term_academic_year_label_unique')
+      .on(table.academicYearId, table.label)
+      .where(sql`${table.deletedAt} is null`),
+    academicYearNumberUnique: uniqueIndex('term_academic_year_number_unique')
+      .on(table.academicYearId, table.termNumber)
+      .where(sql`${table.deletedAt} is null`),
     numberCheck: check('term_number_check', sql`${table.termNumber} >= 1`),
     dateRangeCheck: check('term_date_range_check', sql`${table.startDate} <= ${table.endDate}`),
+    academicYearFk: foreignKey({
+      columns: [table.schoolId, table.academicYearId],
+      foreignColumns: [academicYear.schoolId, academicYear.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
   })
 );
 
@@ -127,12 +130,15 @@ export const classLevel = sqliteTable(
   },
   (table) => ({
     schoolIdIdx: index('class_level_school_id_idx').on(table.schoolId),
-    schoolCodeUnique: uniqueIndex('class_level_school_code_unique').on(table.schoolId, table.code),
-    schoolNameUnique: uniqueIndex('class_level_school_name_unique').on(table.schoolId, table.name),
-    schoolOrderUnique: uniqueIndex('class_level_school_order_unique').on(
-      table.schoolId,
-      table.displayOrder
-    ),
+    schoolCodeUnique: uniqueIndex('class_level_school_code_unique')
+      .on(table.schoolId, table.code)
+      .where(sql`${table.deletedAt} is null`),
+    schoolNameUnique: uniqueIndex('class_level_school_name_unique')
+      .on(table.schoolId, table.name)
+      .where(sql`${table.deletedAt} is null`),
+    schoolOrderUnique: uniqueIndex('class_level_school_order_unique')
+      .on(table.schoolId, table.displayOrder)
+      .where(sql`${table.deletedAt} is null`),
     displayOrderCheck: check('class_level_display_order_check', sql`${table.displayOrder} >= 1`),
   })
 );
