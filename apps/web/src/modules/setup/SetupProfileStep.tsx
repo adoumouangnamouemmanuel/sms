@@ -17,9 +17,8 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
   const handleFieldChange = (field: keyof SetupSchoolProfileRequest, value: string) => {
     if (errors[field]) {
       setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
+        const { [field]: _, ...rest } = prev;
+        return rest;
       });
     }
     onChange(field, value);
