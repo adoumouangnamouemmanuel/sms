@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "sqlite",
-  "id": "9fa03a0d-773f-4558-8bb0-a8b0c45beae3",
+  "id": "6b362fdb-052e-4a15-bae5-6403c56f482b",
   "prevId": "41853e09-5108-4f55-8db4-2d82cd6e7f08",
   "tables": {
     "academic_year": {
@@ -103,6 +103,15 @@
           "columns": [
             "school_id",
             "label"
+          ],
+          "isUnique": true,
+          "where": "\"academic_year\".\"deleted_at\" is null"
+        },
+        "academic_year_school_id_id_unique": {
+          "name": "academic_year_school_id_id_unique",
+          "columns": [
+            "school_id",
+            "id"
           ],
           "isUnique": true
         }
@@ -357,7 +366,8 @@
             "school_id",
             "code"
           ],
-          "isUnique": true
+          "isUnique": true,
+          "where": "\"class_level\".\"deleted_at\" is null"
         },
         "class_level_school_name_unique": {
           "name": "class_level_school_name_unique",
@@ -365,7 +375,8 @@
             "school_id",
             "name"
           ],
-          "isUnique": true
+          "isUnique": true,
+          "where": "\"class_level\".\"deleted_at\" is null"
         },
         "class_level_school_order_unique": {
           "name": "class_level_school_order_unique",
@@ -373,7 +384,8 @@
             "school_id",
             "display_order"
           ],
-          "isUnique": true
+          "isUnique": true,
+          "where": "\"class_level\".\"deleted_at\" is null"
         }
       },
       "foreignKeys": {
@@ -1021,13 +1033,22 @@
           "isUnique": true,
           "where": "\"term\".\"is_current\" = true"
         },
+        "term_school_current_unique": {
+          "name": "term_school_current_unique",
+          "columns": [
+            "school_id"
+          ],
+          "isUnique": true,
+          "where": "\"term\".\"is_current\" = true"
+        },
         "term_academic_year_label_unique": {
           "name": "term_academic_year_label_unique",
           "columns": [
             "academic_year_id",
             "label"
           ],
-          "isUnique": true
+          "isUnique": true,
+          "where": "\"term\".\"deleted_at\" is null"
         },
         "term_academic_year_number_unique": {
           "name": "term_academic_year_number_unique",
@@ -1035,7 +1056,8 @@
             "academic_year_id",
             "term_number"
           ],
-          "isUnique": true
+          "isUnique": true,
+          "where": "\"term\".\"deleted_at\" is null"
         }
       },
       "foreignKeys": {
@@ -1052,14 +1074,16 @@
           "onDelete": "restrict",
           "onUpdate": "cascade"
         },
-        "term_academic_year_id_academic_year_id_fk": {
-          "name": "term_academic_year_id_academic_year_id_fk",
+        "term_school_id_academic_year_id_academic_year_school_id_id_fk": {
+          "name": "term_school_id_academic_year_id_academic_year_school_id_id_fk",
           "tableFrom": "term",
           "tableTo": "academic_year",
           "columnsFrom": [
+            "school_id",
             "academic_year_id"
           ],
           "columnsTo": [
+            "school_id",
             "id"
           ],
           "onDelete": "restrict",
