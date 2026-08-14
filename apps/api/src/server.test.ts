@@ -197,6 +197,55 @@ describe('api sidecar foundation', () => {
     expect(response.statusCode).toBe(200);
   });
 
+  it('answers allowed browser preflight requests before capability enforcement', async () => {
+    const server = buildServer({
+      databaseStatus,
+      logger: false,
+      security: {
+        allowedOrigins: ['http://127.0.0.1:5173'],
+        capabilityToken: 'expected-token',
+      },
+    });
+
+    const response = await server.inject({
+      method: 'OPTIONS',
+      url: '/auth/login',
+      headers: {
+        origin: 'http://127.0.0.1:5173',
+        'access-control-request-method': 'POST',
+        'access-control-request-headers': `content-type,${CAPABILITY_HEADER}`,
+      },
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(response.headers['access-control-allow-origin']).toBe('http://127.0.0.1:5173');
+    expect(response.headers['access-control-allow-credentials']).toBe('true');
+    expect(response.headers['access-control-allow-methods']).toContain('POST');
+    expect(response.headers['access-control-allow-headers']).toContain(CAPABILITY_HEADER);
+  });
+
+  it('adds CORS headers to allowed browser requests', async () => {
+    const server = buildServer({
+      databaseStatus,
+      logger: false,
+      security: {
+        allowedOrigins: ['http://127.0.0.1:5173'],
+      },
+    });
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/health',
+      headers: {
+        origin: 'http://127.0.0.1:5173',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['access-control-allow-origin']).toBe('http://127.0.0.1:5173');
+    expect(response.headers['access-control-allow-credentials']).toBe('true');
+  });
+
   it('binds to loopback by default', () => {
     expect(getListenOptions()).toEqual({
       host: '127.0.0.1',
