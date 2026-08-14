@@ -21,13 +21,14 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self' asset:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: data:; font-src 'self' asset: data:; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'self'; form-action 'none'"
+      "csp": "default-src 'self' asset:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: data:; font-src 'self' asset: data:; connect-src ipc: http://ipc.localhost http://127.0.0.1:*; object-src 'none'; base-uri 'self'; form-action 'none'"
     }
   },
   "bundle": {
     "active": true,
     "targets": ["nsis"],
     "externalBin": ["binaries/edutrack-api-sidecar"],
+    "resources": ["binaries/bcrypt/**/*"],
     "windows": {
       "webviewInstallMode": {
         "type": "offlineInstaller"
