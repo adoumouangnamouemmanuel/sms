@@ -172,7 +172,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
 interface SetupFieldProps {
   autoFocus?: boolean;
   className?: string;
-  error?: string;
+  error?: string | undefined;
   label: string;
   name: keyof SetupSchoolProfileRequest;
   onChange: (field: keyof SetupSchoolProfileRequest, value: string) => void;
