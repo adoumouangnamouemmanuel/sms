@@ -273,7 +273,7 @@ describe('school setup routes', () => {
     accessToken: string,
     method: 'POST' | 'PUT',
     url: string,
-    payload: unknown
+    payload: Record<string, unknown>
   ) {
     const response = await server.inject({
       method,
