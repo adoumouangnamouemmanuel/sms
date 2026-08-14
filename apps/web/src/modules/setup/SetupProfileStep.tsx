@@ -14,6 +14,17 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
   const [page, setPage] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const handleFieldChange = (field: keyof SetupSchoolProfileRequest, value: string) => {
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+    onChange(field, value);
+  };
+
   return (
     <form
       className="space-y-5"
@@ -68,7 +79,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
               error={errors.name}
               label={t('setup.profile.name')}
               name="name"
-              onChange={onChange}
+              onChange={handleFieldChange}
               placeholder={t('setup.profile.placeholders.name')}
               required
               value={draft.name}
@@ -77,7 +88,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
               error={errors.shortName}
               label={t('setup.profile.shortName')}
               name="shortName"
-              onChange={onChange}
+              onChange={handleFieldChange}
               placeholder={t('setup.profile.placeholders.shortName')}
               value={draft.shortName ?? ''}
             />
@@ -85,7 +96,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
               error={errors.city}
               label={t('setup.profile.city')}
               name="city"
-              onChange={onChange}
+              onChange={handleFieldChange}
               placeholder={t('setup.profile.placeholders.city')}
               required
               value={draft.city}
@@ -94,7 +105,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
               error={errors.ministryCode}
               label={t('setup.profile.ministryCode')}
               name="ministryCode"
-              onChange={onChange}
+              onChange={handleFieldChange}
               placeholder={t('setup.profile.placeholders.ministryCode')}
               value={draft.ministryCode ?? ''}
             />
@@ -103,7 +114,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
               error={errors.address}
               label={t('setup.profile.address')}
               name="address"
-              onChange={onChange}
+              onChange={handleFieldChange}
               placeholder={t('setup.profile.placeholders.address')}
               value={draft.address ?? ''}
             />
@@ -115,7 +126,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
               error={errors.phone}
               label={t('setup.profile.phone')}
               name="phone"
-              onChange={onChange}
+              onChange={handleFieldChange}
               placeholder={t('setup.profile.placeholders.phone')}
               type="tel"
               value={draft.phone ?? ''}
@@ -124,7 +135,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
               error={errors.email}
               label={t('setup.profile.email')}
               name="email"
-              onChange={onChange}
+              onChange={handleFieldChange}
               placeholder={t('setup.profile.placeholders.email')}
               type="email"
               value={draft.email ?? ''}
@@ -133,7 +144,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
               error={errors.logoUrl}
               label={t('setup.profile.logoUrl')}
               name="logoUrl"
-              onChange={onChange}
+              onChange={handleFieldChange}
               placeholder="https://"
               type="url"
               value={draft.logoUrl ?? ''}
@@ -143,7 +154,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
               error={errors.motto}
               label={t('setup.profile.motto')}
               name="motto"
-              onChange={onChange}
+              onChange={handleFieldChange}
               placeholder={t('setup.profile.placeholders.motto')}
               value={draft.motto ?? ''}
             />
