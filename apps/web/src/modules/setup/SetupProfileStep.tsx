@@ -96,11 +96,12 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
               type="email"
               value={draft.email ?? ''}
             />
-            <SetupDropzone
+            <SetupField
               label={t('setup.profile.logoUrl')}
-              onChange={(value) => {
-                onChange('logoUrl', value);
-              }}
+              name="logoUrl"
+              onChange={onChange}
+              placeholder="https://"
+              type="url"
               value={draft.logoUrl ?? ''}
             />
             <SetupField
@@ -174,66 +175,6 @@ function SetupField({
         value={value}
       />
     </label>
-  );
-}
-
-function SetupDropzone({
-  label,
-  onChange,
-  value,
-}: {
-  label: string;
-  onChange: (val: string) => void;
-  value: string;
-}) {
-  return (
-    <div className="flex flex-col gap-2 md:col-span-2">
-      <span className="flex items-center gap-1.5 text-[13px] font-bold text-slate-800">
-        {label}
-      </span>
-      <label className="relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 py-8 transition-colors hover:border-teal-400 hover:bg-teal-50/30">
-        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200/50">
-          <svg
-            className="h-5 w-5 text-teal-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-            />
-          </svg>
-        </div>
-        <p className="text-sm font-bold text-slate-700">Cliquez pour importer ou glissez-déposez</p>
-        <p className="mt-1 text-xs font-medium text-slate-400">PNG, JPG jusqu'à 2MB</p>
-        <input
-          accept=".png,.jpg,.jpeg"
-          className="sr-only"
-          onChange={(e) => {
-            if (e.target.files?.[0]) {
-              onChange(e.target.files[0].name);
-            }
-          }}
-          type="file"
-        />
-        {value ? (
-          <div className="mt-4 flex items-center gap-2 rounded-lg bg-teal-50 px-3 py-1.5 text-xs font-bold text-teal-700">
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                d="M5 13l4 4L19 7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={3}
-              />
-            </svg>
-            Sélectionné : {value}
-          </div>
-        ) : null}
-      </label>
-    </div>
   );
 }
 
