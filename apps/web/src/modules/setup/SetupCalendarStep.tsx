@@ -24,6 +24,11 @@ export function SetupCalendarStep({
   function updateYear(field: keyof SetupCalendarRequest['academicYear'], value: string) {
     const academicYear = { ...draft.academicYear, [field]: value };
 
+    if (field === 'label') {
+      onChange({ ...draft, academicYear });
+      return;
+    }
+
     onChange({
       ...draft,
       academicYear,
