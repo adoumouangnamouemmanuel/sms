@@ -415,6 +415,7 @@ export class AuthService {
           currentTime.toISOString()
         );
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!replaced) {
           throw invalidRefreshSession();
         }
