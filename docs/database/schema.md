@@ -11,7 +11,7 @@ SQLite is the Version 1 system of record. PostgreSQL, cloud sync and remote web 
 - Audit records are append-only and expose insert-only repository primitives.
 - Tenant-local uniqueness includes `school_id`.
 
-## Phase 1.3 Tables
+## Phase 1.3 and Phase 2.2 Tables
 
 ### `school`
 
@@ -25,14 +25,57 @@ Indexes:
 
 ### `academic_year`
 
-Tracks academic years for one school. This is still foundation-level; term validation is Phase 2.
+Tracks academic years for one school.
 
 Key columns: `id`, `school_id`, `label`, `start_date`, `end_date`, `is_current`, lifecycle metadata.
 
 Indexes:
 
 - `academic_year_school_id_idx`
+- `academic_year_school_current_unique`
 - `academic_year_school_label_unique`
+
+### `term`
+
+Tracks the trimester or semester periods inside the current academic year.
+
+Key columns: `id`, `school_id`, `academic_year_id`, `label`, `term_number`, `start_date`, `end_date`, `is_current`, lifecycle metadata.
+
+Indexes and constraints:
+
+- `term_school_id_idx`
+- `term_academic_year_id_idx`
+- `term_academic_year_current_unique`
+- `term_academic_year_label_unique`
+- `term_academic_year_number_unique`
+- `term_number_check`
+- `term_date_range_check`
+
+### `class_level`
+
+Stores tenant-local curriculum levels such as `6E`, `3E` or `TLE`.
+
+Key columns: `id`, `school_id`, `code`, `name`, `display_order`, `is_exam_year`, `is_active`, lifecycle metadata.
+
+Indexes and constraints:
+
+- `class_level_school_id_idx`
+- `class_level_school_code_unique`
+- `class_level_school_name_unique`
+- `class_level_school_order_unique`
+- `class_level_display_order_check`
+
+### `school_module_config`
+
+Controls which implemented modules appear for a school. Phase 2.2 enables only setup and academic-structure navigation; future modules stay absent until implemented.
+
+Key columns: `id`, `school_id`, `module_name`, `is_enabled`, `config_json`, lifecycle metadata.
+
+Indexes and constraints:
+
+- `school_module_config_school_id_idx`
+- `school_module_config_school_module_unique`
+- `school_module_config_module_name_check`
 
 ### `user`
 
@@ -84,6 +127,8 @@ Key columns: `key`, `value`, `description`, `created_at`, `updated_at`, `record_
 SQLite migration files live in `packages/db/migrations/sqlite`.
 
 `0001_aspiring_fixer.sql` is intentionally a table-rebuild migration for existing scaffold tables because SQLite cannot safely add several non-null timestamp columns or foreign-key changes with plain `ALTER TABLE`.
+
+`0002_glorious_lizard.sql` adds the Phase 2.2 setup tables for terms, class levels and module visibility. It is additive and safe for non-empty databases that do not already violate the single-current-year invariant.
 
 ## Seed Policy
 
