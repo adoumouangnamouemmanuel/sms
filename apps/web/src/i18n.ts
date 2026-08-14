@@ -16,14 +16,33 @@ const resources = {
       },
       auth: {
         apiUnavailable: "Le service local n'est pas prêt. Réessayez dans un instant.",
+        serviceStatus: {
+          connecting: 'Connexion au service local...',
+          ready: 'Service local prêt',
+          unavailable: 'Service local indisponible - Réessayer',
+        },
         errors: {
           accountLocked: 'Le compte est temporairement verrouillé. Réessayez dans 15 minutes.',
           forbidden: "Vous n'êtes pas autorisé à effectuer cette opération.",
           generic: 'La connexion locale a échoué. Réessayez.',
           invalidCredentials: "L'identifiant ou le mot de passe est incorrect.",
           invalidCurrentPassword: 'Le mot de passe actuel est incorrect.',
+          logoutFailed: 'La déconnexion locale a échoué. Réessayez.',
           sessionExpired: 'La session locale est expirée. Reconnectez-vous.',
           userNotFound: 'Utilisateur introuvable.',
+        },
+        logout: {
+          submit: 'Se déconnecter',
+          submitting: 'Déconnexion...',
+        },
+        forgotPassword: {
+          action:
+            'Demandez à un compte Direction déjà connecté de réinitialiser votre mot de passe depuis la gestion des utilisateurs.',
+          body:
+            'Pour protéger les dossiers scolaires, EduTrack ne réinitialise pas un mot de passe sans validation locale.',
+          close: 'Compris',
+          link: 'Mot de passe oublié ?',
+          title: 'Mot de passe oublié',
         },
         loginPanelLabel: 'Connexion locale',
         password: 'Mot de passe',
@@ -65,14 +84,33 @@ const resources = {
       },
       auth: {
         apiUnavailable: 'الخدمة المحلية غير جاهزة. حاول مرة أخرى بعد قليل.',
+        serviceStatus: {
+          connecting: 'جار الاتصال بالخدمة المحلية...',
+          ready: 'الخدمة المحلية جاهزة',
+          unavailable: 'الخدمة المحلية غير متاحة - أعد المحاولة',
+        },
         errors: {
           accountLocked: 'الحساب مقفل مؤقتاً. حاول مرة أخرى بعد 15 دقيقة.',
           forbidden: 'غير مسموح لك بتنفيذ هذه العملية.',
           generic: 'فشل تسجيل الدخول المحلي. حاول مرة أخرى.',
           invalidCredentials: 'اسم المستخدم أو كلمة المرور غير صحيحة.',
           invalidCurrentPassword: 'كلمة المرور الحالية غير صحيحة.',
+          logoutFailed: 'فشل تسجيل الخروج المحلي. حاول مرة أخرى.',
           sessionExpired: 'انتهت الجلسة المحلية. سجل الدخول مرة أخرى.',
           userNotFound: 'المستخدم غير موجود.',
+        },
+        logout: {
+          submit: 'تسجيل الخروج',
+          submitting: 'جار تسجيل الخروج...',
+        },
+        forgotPassword: {
+          action:
+            'اطلب من حساب الإدارة المتصل بالفعل إعادة تعيين كلمة المرور من إدارة المستخدمين.',
+          body:
+            'لحماية سجلات المدرسة، لا يعيد EduTrack تعيين كلمة المرور دون تحقق محلي.',
+          close: 'فهمت',
+          link: 'هل نسيت كلمة المرور؟',
+          title: 'هل نسيت كلمة المرور؟',
         },
         loginPanelLabel: 'تسجيل الدخول المحلي',
         password: 'كلمة المرور',
@@ -114,14 +152,33 @@ const resources = {
       },
       auth: {
         apiUnavailable: 'The local service is not ready. Try again in a moment.',
+        serviceStatus: {
+          connecting: 'Connecting to the local service...',
+          ready: 'Local service ready',
+          unavailable: 'Local service unavailable - Retry',
+        },
         errors: {
           accountLocked: 'The account is temporarily locked. Try again in 15 minutes.',
           forbidden: 'You are not allowed to perform this action.',
           generic: 'Local login failed. Try again.',
           invalidCredentials: 'The username or password is incorrect.',
           invalidCurrentPassword: 'The current password is incorrect.',
+          logoutFailed: 'Local logout failed. Try again.',
           sessionExpired: 'The local session has expired. Sign in again.',
           userNotFound: 'User not found.',
+        },
+        logout: {
+          submit: 'Sign out',
+          submitting: 'Signing out...',
+        },
+        forgotPassword: {
+          action:
+            'Ask an already signed-in school management account to reset your password from user management.',
+          body:
+            'To protect school records, EduTrack does not reset a password without local validation.',
+          close: 'Got it',
+          link: 'Forgot password?',
+          title: 'Forgot password',
         },
         loginPanelLabel: 'Local login',
         password: 'Password',
