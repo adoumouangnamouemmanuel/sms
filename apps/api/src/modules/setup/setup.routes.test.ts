@@ -1,5 +1,7 @@
 import type Database from 'better-sqlite3';
-import { readFileSync, readdirSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
+import { readFileSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -69,83 +71,164 @@ describe('school setup routes', () => {
     passwordHash = '';
   });
 
-  it('saves each setup step and enables only implemented modules on completion', async () => {
-    const accessToken = await loginAndReadAccessToken('directeur');
+  it('saves each setup step and enables only implemented modules on completion, surviving application restarts', async () => {
+    // Override the in-memory server and connection with a file-backed one for this test
+    // to prove that setup steps survive an application restart.
+    await server.close();
+    connection.close();
 
-    const initialState = await injectSetupState(accessToken);
-    expect(initialState.data.school.setupStatus).toBe('PENDING');
-    expect(initialState.data.nextStep).toBe('profile');
-
-    const profileState = await injectSetupRequest(accessToken, 'PUT', '/setup/profile', {
-      name: 'Lycee Demo N Djamena',
-      shortName: 'LDN',
-      logoUrl: 'logo.png',
-      address: 'Avenue Charles de Gaulle',
-      city: 'N Djamena',
-      phone: '+23500000001',
-      email: '',
-      motto: 'Travail et excellence',
-      ministryCode: 'MEN-001',
-    });
-    expect(profileState.data.school.setupStatus).toBe('PROFILE_COMPLETED');
-    expect(profileState.data.school.currency).toBe('XAF');
-    expect(profileState.data.school.email).toBeNull();
-    expect(profileState.data.nextStep).toBe('calendar');
-
-    const calendarState = await injectSetupRequest(accessToken, 'PUT', '/setup/calendar', {
-      academicYear: {
-        label: '2026-2027',
-        startDate: '2026-09-01',
-        endDate: '2027-06-30',
+    const dbPath = join(tmpdir(), `edutrack-setup-test-${randomUUID()}.sqlite`);
+    connection = openEduTrackDatabase(dbPath);
+    sqlite = connection.sqlite;
+    sqlite.pragma('foreign_keys = ON');
+    applyAllMigrations(sqlite);
+    db = connection.db;
+    seedFoundation(db);
+    seedSetupFixture(sqlite);
+    server = buildServer({
+      databaseStatus: {
+        sqlitePath: dbPath,
+        migrated: true,
+        migrationId: 'deployment-probe-0001',
       },
-      termSystem: 'TRIMESTER',
-      terms: [
-        {
-          label: 'Trimestre 1',
-          termNumber: 1,
+      database: db,
+      logger: false,
+      auth: {
+        accessTokenSecret,
+      },
+      security: {
+        allowedOrigins: ['tauri://localhost'],
+      },
+    });
+
+    try {
+      const accessToken = await loginAndReadAccessToken('directeur');
+
+      const initialState = await injectSetupState(accessToken);
+      expect(initialState.data.school.setupStatus).toBe('PENDING');
+      expect(initialState.data.nextStep).toBe('profile');
+
+      const profileState = await injectSetupRequest(accessToken, 'PUT', '/setup/profile', {
+        name: 'Lycee Demo N Djamena',
+        shortName: 'LDN',
+        logoUrl: 'https://example.com/logo.png',
+        address: 'Avenue Charles de Gaulle',
+        city: 'N Djamena',
+        phone: '+23500000001',
+        email: '',
+        motto: 'Travail et excellence',
+        ministryCode: 'MEN-001',
+      });
+      expect(profileState.data.school.setupStatus).toBe('PROFILE_COMPLETED');
+      expect(profileState.data.school.currency).toBe('XAF');
+      expect(profileState.data.school.email).toBeNull();
+      expect(profileState.data.nextStep).toBe('calendar');
+
+      const calendarState = await injectSetupRequest(accessToken, 'PUT', '/setup/calendar', {
+        academicYear: {
+          label: '2026-2027',
           startDate: '2026-09-01',
-          endDate: '2026-12-20',
-          isCurrent: true,
-        },
-        {
-          label: 'Trimestre 2',
-          termNumber: 2,
-          startDate: '2027-01-05',
-          endDate: '2027-03-31',
-          isCurrent: false,
-        },
-        {
-          label: 'Trimestre 3',
-          termNumber: 3,
-          startDate: '2027-04-01',
           endDate: '2027-06-30',
-          isCurrent: false,
         },
-      ],
-    });
-    expect(calendarState.data.school.setupStatus).toBe('CALENDAR_COMPLETED');
-    expect(calendarState.data.terms).toHaveLength(3);
-    expect(calendarState.data.terms.filter((term) => term.isCurrent)).toHaveLength(1);
+        termSystem: 'TRIMESTER',
+        terms: [
+          {
+            label: 'Trimestre 1',
+            termNumber: 1,
+            startDate: '2026-09-01',
+            endDate: '2026-12-20',
+            isCurrent: true,
+          },
+          {
+            label: 'Trimestre 2',
+            termNumber: 2,
+            startDate: '2027-01-05',
+            endDate: '2027-03-31',
+            isCurrent: false,
+          },
+          {
+            label: 'Trimestre 3',
+            termNumber: 3,
+            startDate: '2027-04-01',
+            endDate: '2027-06-30',
+            isCurrent: false,
+          },
+        ],
+      });
+      expect(calendarState.data.school.setupStatus).toBe('CALENDAR_COMPLETED');
+      expect(calendarState.data.terms).toHaveLength(3);
+      expect(calendarState.data.terms.filter((term) => term.isCurrent)).toHaveLength(1);
 
-    const classLevelsState = await injectSetupRequest(accessToken, 'PUT', '/setup/class-levels', {
-      classLevels: [
-        { code: '6e', name: 'Sixieme', displayOrder: 1, isExamYear: false },
-        { code: '3e', name: 'Troisieme', displayOrder: 2, isExamYear: true },
-      ],
-    });
-    expect(classLevelsState.data.school.setupStatus).toBe('CLASS_LEVELS_COMPLETED');
-    expect(classLevelsState.data.classLevels.map((level) => level.code)).toEqual(['6E', '3E']);
+      const classLevelsState = await injectSetupRequest(accessToken, 'PUT', '/setup/class-levels', {
+        classLevels: [
+          { code: '6e', name: 'Sixieme', displayOrder: 1, isExamYear: false },
+          { code: '3e', name: 'Troisieme', displayOrder: 2, isExamYear: true },
+        ],
+      });
+      expect(classLevelsState.data.school.setupStatus).toBe('CLASS_LEVELS_COMPLETED');
+      expect(classLevelsState.data.classLevels.map((level) => level.code)).toEqual(['6E', '3E']);
 
-    const completedState = await injectSetupRequest(accessToken, 'POST', '/setup/complete', {});
-    expect(completedState.data.school.setupStatus).toBe('COMPLETED');
-    expect(
-      completedState.data.enabledModules.map((moduleConfig) => moduleConfig.moduleName)
-    ).toEqual(['ACADEMIC_STRUCTURE', 'SCHOOL_SETUP']);
+      const completedState = await injectSetupRequest(accessToken, 'POST', '/setup/complete', {});
+      expect(completedState.data.school.setupStatus).toBe('COMPLETED');
+      expect(
+        completedState.data.enabledModules.map((moduleConfig) => moduleConfig.moduleName)
+      ).toEqual(['ACADEMIC_STRUCTURE', 'SCHOOL_SETUP']);
 
-    expect(readCount('academic_year', 'is_current = 1')).toBe(1);
-    expect(readCount('term', 'is_current = 1')).toBe(1);
-    expect(readCount('school_module_config', 'is_enabled = 1')).toBe(2);
-    expect(readLatestAuditAction()).toBe('SETUP_COMPLETE');
+      expect(readCount('academic_year', 'is_current = 1')).toBe(1);
+      expect(readCount('term', 'is_current = 1')).toBe(1);
+      expect(readCount('school_module_config', 'is_enabled = 1')).toBe(2);
+      expect(readLatestAuditAction()).toBe('SETUP_COMPLETE');
+
+      // Simulate application restart
+      await server.close();
+      connection.close();
+
+      connection = openEduTrackDatabase(dbPath);
+      sqlite = connection.sqlite;
+      db = connection.db;
+
+      server = buildServer({
+        databaseStatus: {
+          sqlitePath: dbPath,
+          migrated: true,
+          migrationId: 'deployment-probe-0001',
+        },
+        database: db,
+        logger: false,
+        auth: {
+          accessTokenSecret,
+        },
+        security: {
+          allowedOrigins: ['tauri://localhost'],
+        },
+      });
+
+      const newAccessToken = await loginAndReadAccessToken('directeur');
+      const restartedState = await injectSetupState(newAccessToken);
+
+      expect(restartedState.data.school.setupStatus).toBe('COMPLETED');
+      expect(restartedState.data.school.name).toBe('Lycee Demo N Djamena');
+      expect(restartedState.data.terms).toHaveLength(3);
+      expect(restartedState.data.classLevels).toHaveLength(2);
+    } finally {
+      try {
+        await server.close();
+        connection.close();
+        rmSync(dbPath, { force: true });
+      } catch {
+        // ignore cleanup errors
+      }
+
+      // Restore dummy in-memory connection so afterEach doesn't fail
+      connection = openEduTrackDatabase(':memory:');
+      server = buildServer({
+        databaseStatus: { sqlitePath: ':memory:', migrated: true, migrationId: 'x' },
+        database: connection.db,
+        logger: false,
+        auth: { accessTokenSecret },
+        security: { allowedOrigins: [] },
+      });
+    }
   });
 
   it('denies setup access to teachers', async () => {
