@@ -2,10 +2,13 @@ export const AUTH_API_ERROR_MESSAGE_KEYS = {
   ACCOUNT_LOCKED: 'auth.errors.accountLocked',
   FORBIDDEN: 'auth.errors.forbidden',
   INVALID_ACCESS_TOKEN: 'auth.errors.sessionExpired',
+  INVALID_CAPABILITY: 'auth.errors.apiUnavailable',
   INVALID_CREDENTIALS: 'auth.errors.invalidCredentials',
   INVALID_CURRENT_PASSWORD: 'auth.errors.invalidCurrentPassword',
+  LOCAL_SERVICE_UNAVAILABLE: 'auth.errors.apiUnavailable',
   INVALID_REFRESH_SESSION: 'auth.errors.sessionExpired',
   MISSING_REFRESH_SESSION: 'auth.errors.sessionExpired',
+  UNEXPECTED_ORIGIN: 'auth.errors.apiUnavailable',
   USER_NOT_FOUND: 'auth.errors.userNotFound',
 } as const;
 
@@ -23,12 +26,12 @@ export class AuthApiError extends Error {
   }
 }
 
-export function resolveAuthErrorMessageKey(error: unknown) {
+export function resolveAuthErrorMessageKey(error: unknown, fallbackKey = 'auth.errors.generic') {
   if (error instanceof AuthApiError && isKnownAuthApiErrorCode(error.code)) {
     return AUTH_API_ERROR_MESSAGE_KEYS[error.code];
   }
 
-  return 'auth.errors.generic';
+  return fallbackKey;
 }
 
 function isKnownAuthApiErrorCode(code: string): code is AuthApiErrorCode {
