@@ -17,7 +17,9 @@ const migrationsDir = fileURLToPath(
   new URL('../../../../../packages/db/migrations/sqlite/', import.meta.url)
 );
 const firstSchoolId = '00000000-0000-4000-8000-000000000101';
+const secondSchoolId = '00000000-0000-4000-8000-000000000102';
 const schoolMasterId = '00000000-0000-4000-8000-000000000201';
+const secondSchoolMasterId = '00000000-0000-4000-8000-000000000202';
 const teacherId = '00000000-0000-4000-8000-000000000301';
 const correctPassword = 'correct-password';
 const accessTokenSecret = 'phase-2-setup-test-secret-with-local-only-scope';
@@ -166,6 +168,28 @@ describe('school setup routes', () => {
     });
   });
 
+  it('isolates setup state between different schools', async () => {
+    const school1Token = await loginAndReadAccessToken('directeur', 'NDS-DEMO');
+    const school2Token = await loginAndReadAccessToken('directeur', 'MND-DEMO');
+
+    // School 1 sets up profile
+    await injectSetupRequest(school1Token, 'PUT', '/setup/profile', {
+      name: 'School One',
+      shortName: 'S1',
+      city: 'City One',
+    });
+
+    // School 2 fetches state, should still be PENDING
+    const school2State = await injectSetupState(school2Token);
+    expect(school2State.data.school.setupStatus).toBe('PENDING');
+    expect(school2State.data.school.name).not.toBe('School One');
+
+    // School 1 fetches state, should be PROFILE_COMPLETED
+    const school1State = await injectSetupState(school1Token);
+    expect(school1State.data.school.setupStatus).toBe('PROFILE_COMPLETED');
+    expect(school1State.data.school.name).toBe('School One');
+  });
+
   it('rejects overlapping setup terms before persistence', async () => {
     const accessToken = await loginAndReadAccessToken('directeur');
 
@@ -216,12 +240,12 @@ describe('school setup routes', () => {
     expect(readCount('term')).toBe(0);
   });
 
-  async function loginAndReadAccessToken(username: string) {
+  async function loginAndReadAccessToken(username: string, schoolCode: string = 'NDS-DEMO') {
     const response = await server.inject({
       method: 'POST',
       url: '/auth/login',
       payload: {
-        schoolCode: 'NDS-DEMO',
+        schoolCode,
         username,
         password: correctPassword,
         deviceName: 'Vitest',
@@ -300,10 +324,11 @@ function seedSetupFixture(sqlite: Database.Database) {
       `
         UPDATE user
         SET password_hash = ?, failed_login_attempts = 0, locked_until = NULL
-        WHERE id = ?
+        WHERE id = ? OR id = ?
       `
     )
-    .run(passwordHash, schoolMasterId);
+    .run(passwordHash, schoolMasterId, secondSchoolMasterId);
+
   sqlite
     .prepare(
       `
