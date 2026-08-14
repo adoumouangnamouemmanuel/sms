@@ -42,6 +42,11 @@ const setupNullableLongTextSchema = z.preprocess(
   emptyStringToNull,
   z.string().trim().max(500).nullable().optional()
 );
+const setupOptionalUrlSchema = z.preprocess(
+  emptyStringToNull,
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  z.string().trim().url().max(500).nullable().optional()
+);
 const setupOptionalEmailSchema = z.preprocess(
   emptyStringToNull,
   z.email().max(190).nullable().optional()
@@ -54,7 +59,7 @@ const setupNullableMottoSchema = z.preprocess(
 export const setupSchoolProfileRequestSchema = z.object({
   name: z.string().trim().min(2).max(160),
   shortName: setupNullableTextSchema,
-  logoUrl: setupNullableLongTextSchema,
+  logoUrl: setupOptionalUrlSchema,
   address: setupNullableLongTextSchema,
   city: z.string().trim().min(1).max(120),
   phone: setupNullableTextSchema,
