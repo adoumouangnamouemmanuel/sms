@@ -6,6 +6,7 @@ import { LoginScreen, resolveAuthRuntime } from './modules/auth';
 import { AuthenticatedSetupApp } from './modules/setup';
 
 const DEPLOYMENT_STATUS_POLL_MS = 500;
+const DEPLOYMENT_STATUS_MAX_ATTEMPTS = 60;
 
 export function App() {
   const { t } = useTranslation();
@@ -15,6 +16,7 @@ export function App() {
   useEffect(() => {
     let isMounted = true;
     let retryHandle: number | undefined;
+    let attempts = 0;
 
     async function readStatus() {
       try {
@@ -24,9 +26,15 @@ export function App() {
           return;
         }
 
+        if (status?.sidecarStatus === 'starting' && attempts >= DEPLOYMENT_STATUS_MAX_ATTEMPTS) {
+          setDesktopStatus({ ...status, sidecarStatus: 'failed' });
+          return;
+        }
+
         setDesktopStatus(status);
 
         if (status?.sidecarStatus === 'starting') {
+          attempts += 1;
           // Tauri may render before the sidecar has emitted its ready payload.
           retryHandle = window.setTimeout(() => {
             void readStatus();
