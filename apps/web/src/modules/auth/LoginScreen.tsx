@@ -1,14 +1,19 @@
 import type { PublicAuthUser } from '@edutrack/shared';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
+import { ForgotPasswordNotice } from './ForgotPasswordNotice';
 import { useLoginForm, type LoginClient, type LoginFormField } from './useLoginForm';
+import { useLogoutAction, type LogoutClient } from './useLogoutAction';
 import type { DesktopDeploymentStatus } from '../../desktopStatus';
 
 export interface LoginScreenProps {
   apiBaseUrl: string | null;
+  capabilityToken?: string;
   desktopStatus?: DesktopDeploymentStatus | null;
   loginClient?: LoginClient;
   onAuthenticated: (user: PublicAuthUser) => void;
+  onLoggedOut: () => void;
+  logoutClient?: LogoutClient;
   user: PublicAuthUser | null;
 }
 
@@ -20,18 +25,29 @@ const fieldIds: Record<LoginFormField, string> = {
 
 export function LoginScreen({
   apiBaseUrl,
+  capabilityToken,
   desktopStatus,
   loginClient,
+  logoutClient,
   onAuthenticated,
+  onLoggedOut,
   user,
 }: LoginScreenProps) {
   const { t } = useTranslation();
+  const [isForgotPasswordNoticeOpen, setIsForgotPasswordNoticeOpen] = useState(false);
   const form = useLoginForm({
     apiBaseUrl,
+    ...(capabilityToken ? { capabilityToken } : {}),
     ...(loginClient ? { loginClient } : {}),
     onAuthenticated: (session) => {
       onAuthenticated(session.user);
     },
+  });
+  const logoutAction = useLogoutAction({
+    apiBaseUrl,
+    ...(capabilityToken ? { capabilityToken } : {}),
+    ...(logoutClient ? { logoutClient } : {}),
+    onLoggedOut,
   });
 
   if (user) {
@@ -73,6 +89,39 @@ export function LoginScreen({
             </div>
           </dl>
         </div>
+
+        {logoutAction.errorKey ? (
+          <div className="mt-4 flex items-center gap-2 p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl shadow-sm">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-4 h-4 flex-shrink-0 text-red-500"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <p className="text-xs font-bold" role="alert">
+              {t(logoutAction.errorKey)}
+            </p>
+          </div>
+        ) : null}
+
+        <button
+          className="mt-5 w-full flex items-center justify-center h-[48px] border border-slate-200 bg-white text-slate-700 font-bold rounded-2xl transition-all shadow-sm hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.98]"
+          disabled={!apiBaseUrl || logoutAction.isSubmitting}
+          onClick={() => {
+            void logoutAction.submit();
+          }}
+          type="button"
+        >
+          {logoutAction.isSubmitting ? t('auth.logout.submitting') : t('auth.logout.submit')}
+        </button>
       </div>
     );
   }
@@ -80,31 +129,33 @@ export function LoginScreen({
   const renderServiceStatus = () => {
     if (desktopStatus === undefined) return null;
 
-    if (!desktopStatus) {
+    if (apiBaseUrl) {
+      return (
+        <div className="flex justify-center mt-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-50/50 border border-teal-100 shadow-sm text-[12px] font-medium text-teal-700">
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-500 shadow-[0_0_6px_rgba(20,184,166,0.5)]"></span>
+            {t('auth.serviceStatus.ready')}
+          </div>
+        </div>
+      );
+    }
+
+    if (!desktopStatus || desktopStatus.sidecarStatus === 'starting') {
       return (
         <div className="flex justify-center mt-4">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200/60 shadow-sm text-[12px] font-medium text-slate-600">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse shadow-[0_0_6px_rgba(59,130,246,0.5)]"></span>
-            Connexion au service local...
+            {t('auth.serviceStatus.connecting')}
           </div>
         </div>
       );
     }
-    if (!apiBaseUrl) {
-      return (
-        <div className="flex justify-center mt-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-50/50 border border-red-100 shadow-sm text-[12px] font-medium text-red-600">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]"></span>
-            Service local indisponible — Réessayer
-          </div>
-        </div>
-      );
-    }
+
     return (
       <div className="flex justify-center mt-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-50/50 border border-teal-100 shadow-sm text-[12px] font-medium text-teal-700">
-          <span className="w-1.5 h-1.5 rounded-full bg-teal-500 shadow-[0_0_6px_rgba(20,184,166,0.5)]"></span>
-          Service local prêt
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-50/50 border border-red-100 shadow-sm text-[12px] font-medium text-red-600">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]"></span>
+          {t('auth.serviceStatus.unavailable')}
         </div>
       </div>
     );
@@ -112,6 +163,14 @@ export function LoginScreen({
 
   return (
     <div className="w-full" aria-label={t('auth.loginPanelLabel')}>
+      {isForgotPasswordNoticeOpen ? (
+        <ForgotPasswordNotice
+          onClose={() => {
+            setIsForgotPasswordNoticeOpen(false);
+          }}
+        />
+      ) : null}
+
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-slate-900 tracking-tight mb-1.5">
           {t('auth.title')}
@@ -163,6 +222,10 @@ export function LoginScreen({
           placeholder={t('auth.passwordPlaceholder')}
           type="password"
           value={form.values.password}
+          forgotPasswordLabel={t('auth.forgotPassword.link')}
+          onForgotPassword={() => {
+            setIsForgotPasswordNoticeOpen(true);
+          }}
           showForgotPassword={true}
         />
 
@@ -234,6 +297,8 @@ interface LoginFieldProps {
   type: 'password' | 'text';
   value: string;
   showForgotPassword?: boolean;
+  forgotPasswordLabel?: string;
+  onForgotPassword?: () => void;
   tooltip?: string;
 }
 
@@ -246,6 +311,8 @@ function LoginField({
   placeholder,
   type,
   value,
+  forgotPasswordLabel,
+  onForgotPassword,
   showForgotPassword,
   tooltip,
 }: LoginFieldProps) {
@@ -286,14 +353,15 @@ function LoginField({
             </span>
           )}
         </label>
-        {showForgotPassword && (
-          <a
-            href="#"
+        {showForgotPassword && onForgotPassword && forgotPasswordLabel ? (
+          <button
+            type="button"
+            onClick={onForgotPassword}
             className="text-[12px] font-bold text-teal-600 hover:text-teal-700 transition-colors"
           >
-            Mot de passe oublié ?
-          </a>
-        )}
+            {forgotPasswordLabel}
+          </button>
+        ) : null}
       </div>
       <div className="relative group">
         <input
