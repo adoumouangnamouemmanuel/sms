@@ -41,15 +41,37 @@ export class TermRepository extends TenantScopedRepository {
       .where(and(eq(term.schoolId, this.schoolId), eq(term.academicYearId, academicYearId)))
       .all();
 
+    // Natural keys (label, termNumber) are unique per academic year, so existing rows move temporarily first.
     this.db
       .update(term)
       .set({
-        isCurrent: false,
+        termNumber: sql`${term.termNumber} + 1000`,
+        label: sql`${term.label} || '-tmp-' || ${term.id}`,
         updatedAt,
       })
       .where(and(eq(term.schoolId, this.schoolId), eq(term.academicYearId, academicYearId)))
       .run();
 
+    const hasNewCurrentTerm = terms.some((item) => item.isCurrent);
+    if (hasNewCurrentTerm) {
+      this.db
+        .update(term)
+        .set({
+          isCurrent: false,
+          updatedAt,
+        })
+        .where(and(eq(term.schoolId, this.schoolId), eq(term.isCurrent, true)))
+        .run();
+    } else {
+      this.db
+        .update(term)
+        .set({
+          isCurrent: false,
+          updatedAt,
+        })
+        .where(and(eq(term.schoolId, this.schoolId), eq(term.academicYearId, academicYearId)))
+        .run();
+    }
     for (const existingTerm of existingTerms) {
       if (!activeNumbers.has(existingTerm.termNumber)) {
         this.db
