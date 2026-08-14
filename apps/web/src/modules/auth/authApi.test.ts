@@ -1,3 +1,4 @@
+import { SIDECAR_CAPABILITY_HEADER } from '@edutrack/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { login, logout } from './authApi';
 import type { AuthApiError } from './authErrors';
@@ -65,6 +66,34 @@ describe('authApi', () => {
     expect(createAuthHeaders()).toEqual({});
   });
 
+  it('sends the sidecar capability header when logging out', async () => {
+    const fetcher = vi.fn(createSuccessfulFetch());
+
+    await login(
+      'http://127.0.0.1:49152',
+      {
+        schoolCode: 'NDS-DEMO',
+        username: 'directeur',
+        password: 'correct-password',
+      },
+      fetcher
+    );
+    await logout('http://127.0.0.1:49152', {
+      capabilityToken: 'local-capability-token',
+      fetcher,
+    });
+
+    expect(fetcher).toHaveBeenLastCalledWith(
+      'http://127.0.0.1:49152/auth/logout',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer access-token-1',
+          [SIDECAR_CAPABILITY_HEADER]: 'local-capability-token',
+        }),
+      })
+    );
+  });
+
   it('throws a typed API error when login is rejected', async () => {
     await expect(
       login(
@@ -81,6 +110,49 @@ describe('authApi', () => {
       message: "L'identifiant ou le mot de passe est incorrect.",
       status: 401,
     } satisfies Partial<AuthApiError>);
+  });
+
+  it('throws a local service error when the browser cannot reach the API', async () => {
+    await expect(
+      login(
+        'http://127.0.0.1:49152',
+        {
+          schoolCode: 'NDS-DEMO',
+          username: 'directeur',
+          password: 'correct-password',
+        },
+        vi.fn<typeof fetch>().mockRejectedValue(new TypeError('Failed to fetch'))
+      )
+    ).rejects.toMatchObject({
+      code: 'LOCAL_SERVICE_UNAVAILABLE',
+      status: 0,
+    } satisfies Partial<AuthApiError>);
+  });
+
+  it('sends the sidecar capability header when Tauri provides one', async () => {
+    const fetcher = vi.fn(createSuccessfulFetch());
+
+    await login(
+      'http://127.0.0.1:49152',
+      {
+        schoolCode: 'NDS-DEMO',
+        username: 'directeur',
+        password: 'correct-password',
+      },
+      {
+        capabilityToken: 'local-capability-token',
+        fetcher,
+      }
+    );
+
+    expect(fetcher).toHaveBeenCalledWith(
+      'http://127.0.0.1:49152/auth/login',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          [SIDECAR_CAPABILITY_HEADER]: 'local-capability-token',
+        }),
+      })
+    );
   });
 });
 
