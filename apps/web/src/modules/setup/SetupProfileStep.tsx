@@ -17,6 +17,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
   const handleFieldChange = (field: keyof SetupSchoolProfileRequest, value: string) => {
     if (errors[field]) {
       setErrors((prev) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { [field]: _, ...rest } = prev;
         return rest;
       });
