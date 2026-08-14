@@ -1,4 +1,6 @@
 reviews:
   auto_review:
+    enabled: false
     base_branches:
       - develop
+  # To trigger a review manually when you are ready, comment on the PR: @coderabbitai review
