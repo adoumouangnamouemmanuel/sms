@@ -52,6 +52,14 @@ export function resolveAccessTokenSecret(secret: string | Uint8Array | undefined
     return new TextEncoder().encode(secret.trim());
   }
 
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('AUTH_ACCESS_TOKEN_SECRET is required; refusing to sign tokens with an ephemeral key.');
+  }
+
+  console.warn(
+    'No access token secret configured. Using an ephemeral key; all sessions end on restart.'
+  );
+
   return randomBytes(32);
 }
 
