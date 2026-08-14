@@ -43,6 +43,7 @@ import {
   invalidRefreshSession,
   missingRefreshSession,
   userNotFound,
+  AuthServiceError,
 } from './auth.errors.js';
 import { createAccessToken, verifyAccessToken } from './auth.tokens.js';
 import type { AuthenticatedUser, AuthServiceOptions, RequestAuditContext } from './auth.types.js';
@@ -397,29 +398,54 @@ export class AuthService {
     const accessTokenResult = await createAccessToken(user, currentTime, this.accessTokenSecret);
     const tenant = createTenantContext(user.schoolId);
 
-    withTransaction(this.db, (transaction) => {
-      createRefreshSessionRepository(transaction, tenant).createSession({
-        id: refreshToken.sessionId,
-        userId: user.id,
-        tokenHash: refreshToken.tokenHash,
-        familyId,
-        expiresAt: refreshTokenExpiresAt,
-        userAgentHash: hashOptional(requestContext.userAgent),
+    try {
+      withTransaction(this.db, (transaction) => {
+        createRefreshSessionRepository(transaction, tenant).createSession({
+          id: refreshToken.sessionId,
+          userId: user.id,
+          tokenHash: refreshToken.tokenHash,
+          familyId,
+          expiresAt: refreshTokenExpiresAt,
+          userAgentHash: hashOptional(requestContext.userAgent),
+        });
+
+        const replaced = createRefreshSessionRepository(transaction, tenant).replaceSession(
+          oldSessionId,
+          refreshToken.sessionId,
+          currentTime.toISOString()
+        );
+
+        if (!replaced) {
+          throw invalidRefreshSession();
+        }
+
+        createAuditLogRepository(transaction, tenant).createEvent({
+          actorUserId: user.id,
+          action: 'AUTH_REFRESH',
+          targetType: 'refresh_session',
+          targetId: oldSessionId,
+          correlationId: requestContext.correlationId ?? null,
+          metadata: successMetadata(requestContext),
+        });
       });
-      createRefreshSessionRepository(transaction, tenant).replaceSession(
-        oldSessionId,
-        refreshToken.sessionId,
-        currentTime.toISOString()
-      );
-      createAuditLogRepository(transaction, tenant).createEvent({
-        actorUserId: user.id,
-        action: 'AUTH_REFRESH',
-        targetType: 'refresh_session',
-        targetId: oldSessionId,
-        correlationId: requestContext.correlationId ?? null,
-        metadata: successMetadata(requestContext),
-      });
-    });
+    } catch (error) {
+      if (error instanceof AuthServiceError && error.code === 'INVALID_REFRESH_SESSION') {
+        createRefreshSessionRepository(this.db, tenant).revokeFamily(
+          familyId,
+          currentTime.toISOString()
+        );
+        createAuditLogRepository(this.db, tenant).createEvent({
+          actorUserId: user.id,
+          action: 'AUTH_REFRESH',
+          targetType: 'refresh_session',
+          targetId: oldSessionId,
+          correlationId: requestContext.correlationId ?? null,
+          metadata: failureMetadata('invalid_refresh_session', requestContext),
+          outcome: 'FAILURE',
+        });
+      }
+      throw error;
+    }
 
     return {
       ...accessTokenResult,

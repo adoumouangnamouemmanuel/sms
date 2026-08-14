@@ -53,7 +53,9 @@ export function resolveAccessTokenSecret(secret: string | Uint8Array | undefined
   }
 
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('AUTH_ACCESS_TOKEN_SECRET is required; refusing to sign tokens with an ephemeral key.');
+    throw new Error(
+      'AUTH_ACCESS_TOKEN_SECRET is required; refusing to sign tokens with an ephemeral key.'
+    );
   }
 
   console.warn(

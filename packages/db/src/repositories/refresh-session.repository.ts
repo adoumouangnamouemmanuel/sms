@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { RepositoryExecutor, TenantContext } from './base';
 import { TenantScopedRepository } from './base';
@@ -73,7 +73,14 @@ export class RefreshSessionRepository extends TenantScopedRepository {
         updatedAt: replacedAt,
         recordVersion: sql`${refreshSession.recordVersion} + 1`,
       })
-      .where(and(eq(refreshSession.schoolId, this.schoolId), eq(refreshSession.id, sessionId)))
+      .where(
+        and(
+          eq(refreshSession.schoolId, this.schoolId),
+          eq(refreshSession.id, sessionId),
+          isNull(refreshSession.replacedBySessionId),
+          isNull(refreshSession.revokedAt)
+        )
+      )
       .returning(refreshSessionColumns)
       .get();
   }
