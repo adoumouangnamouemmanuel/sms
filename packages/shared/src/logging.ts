@@ -1,7 +1,9 @@
+import { SIDECAR_CAPABILITY_HEADER } from './sidecar';
+
 export const SENSITIVE_LOG_FIELDS = [
   'req.headers.authorization',
   'req.headers.cookie',
-  "req.headers['x-edutrack-capability']",
+  `req.headers['${SIDECAR_CAPABILITY_HEADER}']`,
   "res.headers['set-cookie']",
   'body.password',
   'body.currentPassword',
