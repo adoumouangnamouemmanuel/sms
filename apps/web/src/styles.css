@@ -11,3 +11,13 @@ html,
 body {
   @apply antialiased text-slate-900 bg-slate-50;
 }
+
+@layer base {
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
