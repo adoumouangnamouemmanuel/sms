@@ -35,9 +35,7 @@ describe('AuthenticatedSetupApp', () => {
       />
     );
 
-    expect(
-      await screen.findByRole('heading', { name: 'Profil de l’école' }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Profil de l’école' })).toBeInTheDocument();
 
     await userSession.click(screen.getByRole('button', { name: 'Continuer' }));
     await userSession.click(screen.getByRole('button', { name: 'Enregistrer et continuer' }));

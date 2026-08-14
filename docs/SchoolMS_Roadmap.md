@@ -9,7 +9,7 @@
 | Date                 | 12 August 2026                                    |
 | Owner                | Emmanuel Ouang-namou Adoum                        |
 | Delivery model       | Solo founder/developer working with coding agents |
-| Initial market       | Private collèges and lycées in N'Djamena        |
+| Initial market       | Private collèges and lycées in N'Djamena          |
 | Version 1 target     | Pilot launch after approximately 26 focused weeks |
 | Version 1 validation | One complete school term after pilot launch       |
 | Status               | Final implementation baseline                     |
@@ -91,23 +91,23 @@ Coding agents may scaffold, implement, test, document and review. The developer 
 
 | Layer                 | Decision                                                                      |
 | --------------------- | ----------------------------------------------------------------------------- |
-| Workspace             | `pnpm` monorepo                                                             |
+| Workspace             | `pnpm` monorepo                                                               |
 | Runtime               | Node.js 24 LTS, pinned in local development and CI                            |
 | Product frontend      | React + TypeScript + Vite                                                     |
 | Routing               | React Router                                                                  |
 | API/server state      | TanStack Query                                                                |
 | Forms                 | React Hook Form + Zod                                                         |
 | Styling               | Tailwind CSS and shared accessible components                                 |
-| Localization          | `i18next` + `react-i18next`; French default                               |
+| Localization          | `i18next` + `react-i18next`; French default                                   |
 | Desktop shell         | Tauri 2                                                                       |
 | Local API             | Fastify TypeScript application packaged as a Tauri sidecar                    |
 | Validation            | Zod at all external boundaries                                                |
 | ORM                   | Drizzle ORM                                                                   |
-| Version 1 database    | SQLite through`better-sqlite3`                                              |
+| Version 1 database    | SQLite through`better-sqlite3`                                                |
 | Future cloud database | PostgreSQL behind the same repository contracts; not implemented in Version 1 |
-| Authentication        | Self-hosted accounts,`jose`, rotating refresh sessions, bcrypt cost >= 12   |
-| PDFs                  | `@react-pdf/renderer`                                                       |
-| Excel                 | SheetJS (`xlsx`)                                                            |
+| Authentication        | Self-hosted accounts,`jose`, rotating refresh sessions, bcrypt cost >= 12     |
+| PDFs                  | `@react-pdf/renderer`                                                         |
+| Excel                 | SheetJS (`xlsx`)                                                              |
 | Unit/component tests  | Vitest + Testing Library                                                      |
 | End-to-end tests      | Playwright                                                                    |
 | CI                    | GitHub Actions                                                                |
@@ -232,20 +232,20 @@ AI materially reduces implementation time but does not eliminate discovery, arch
 
 ### 5.1 Timeline summary
 
-| Phase      | Focus                                          |     Focused duration | Cumulative target |
-| ---------- | ---------------------------------------------- | -------------------: | ----------------: |
-| 0          | School discovery and pilot commitment          |              2 weeks |            Week 2 |
-| 1          | Foundation and deployment proof                |              2 weeks |            Week 4 |
-| 2          | School setup and authentication                |              2 weeks |            Week 6 |
-| 3          | Students, guardians, teachers and import       |              3 weeks |            Week 9 |
-| 4          | Classes, curriculum and enrolment              |              3 weeks |           Week 12 |
-| 5          | Grade entry and validation                     |              3 weeks |           Week 15 |
-| 6          | Calculation, ranking and bulletins             |              3 weeks |           Week 18 |
-| 7          | Export, backup, restore and hardening          |              2 weeks |           Week 20 |
-| 8          | Windows release candidate                      |              2 weeks |           Week 22 |
-| 9          | Pilot onboarding and launch                    |               1 week |           Week 23 |
-| Buffer     | Integration, illness, school delays and rework |              3 weeks |           Week 26 |
-| Pilot term | Live validation and measured support           | 10–14 elapsed weeks |      Weeks 27–40 |
+| Phase      | Focus                                          |    Focused duration | Cumulative target |
+| ---------- | ---------------------------------------------- | ------------------: | ----------------: |
+| 0          | School discovery and pilot commitment          |             2 weeks |            Week 2 |
+| 1          | Foundation and deployment proof                |             2 weeks |            Week 4 |
+| 2          | School setup and authentication                |             2 weeks |            Week 6 |
+| 3          | Students, guardians, teachers and import       |             3 weeks |            Week 9 |
+| 4          | Classes, curriculum and enrolment              |             3 weeks |           Week 12 |
+| 5          | Grade entry and validation                     |             3 weeks |           Week 15 |
+| 6          | Calculation, ranking and bulletins             |             3 weeks |           Week 18 |
+| 7          | Export, backup, restore and hardening          |             2 weeks |           Week 20 |
+| 8          | Windows release candidate                      |             2 weeks |           Week 22 |
+| 9          | Pilot onboarding and launch                    |              1 week |           Week 23 |
+| Buffer     | Integration, illness, school delays and rework |             3 weeks |           Week 26 |
+| Pilot term | Live validation and measured support           | 10–14 elapsed weeks |       Weeks 27–40 |
 
 Target: pilot launch in approximately six months of focused work and a validated Version 1 after approximately nine months elapsed. At 15–20 focused hours per week, expect pilot launch in nine to twelve months.
 
@@ -287,40 +287,40 @@ Do not freeze the grade schema until all of these are true:
 
 ### 7.1 Repository and quality foundation
 
-- [X] Initialize the `pnpm` monorepo and intended directories.
-- [X] Pin Node.js 24 LTS through `.nvmrc`, `package.json#engines` and CI.
-- [X] Configure strict TypeScript, ESLint, Prettier and import boundaries.
-- [X] Configure Vitest, Testing Library and Playwright smoke tests.
-- [X] Add `.env.example`, secret scanning and safe logging defaults.
-- [X] Add GitHub Actions for format, lint, typecheck, unit tests and builds.
-- [X] Create ADRs for Vite, Tauri, the Fastify sidecar and SQLite-only Version 1.
+- [x] Initialize the `pnpm` monorepo and intended directories.
+- [x] Pin Node.js 24 LTS through `.nvmrc`, `package.json#engines` and CI.
+- [x] Configure strict TypeScript, ESLint, Prettier and import boundaries.
+- [x] Configure Vitest, Testing Library and Playwright smoke tests.
+- [x] Add `.env.example`, secret scanning and safe logging defaults.
+- [x] Add GitHub Actions for format, lint, typecheck, unit tests and builds.
+- [x] Create ADRs for Vite, Tauri, the Fastify sidecar and SQLite-only Version 1.
 
 ### 7.2 Deployment spike
 
-- [X] Build a minimal React/Vite screen inside Tauri 2.
-- [X] Launch a Fastify sidecar from Tauri and perform a health check.
-- [X] Bind the sidecar to loopback only and reject unexpected origins/capabilities.
-- [X] Load `better-sqlite3`, create the database under `AppData/EduTrack` and run a migration.
-- [X] Package the sidecar as a self-contained Windows executable.
-- [X] Select and document the WebView2 offline installation strategy.
-- [X] Install on a clean offline Windows 10/11 machine without Node, Rust or developer tools.
-- [X] Restart the application and verify persisted data remains intact.
-- [X] Record the proven packaging mechanism in an ADR.
+- [x] Build a minimal React/Vite screen inside Tauri 2.
+- [x] Launch a Fastify sidecar from Tauri and perform a health check.
+- [x] Bind the sidecar to loopback only and reject unexpected origins/capabilities.
+- [x] Load `better-sqlite3`, create the database under `AppData/EduTrack` and run a migration.
+- [x] Package the sidecar as a self-contained Windows executable.
+- [x] Select and document the WebView2 offline installation strategy.
+- [x] Install on a clean offline Windows 10/11 machine without Node, Rust or developer tools.
+- [x] Restart the application and verify persisted data remains intact.
+- [x] Record the proven packaging mechanism in an ADR.
 
 ### 7.3 Database foundation
 
-- [X] Create shared column conventions: UUID, `school_id`, timestamps, record version and soft-delete metadata.
-- [X] Create `school`, `user`, `refresh_session`, `audit_log` and schema metadata migrations.
-- [X] Create transaction and tenant-scoped repository primitives.
-- [X] Create deterministic, idempotent seed infrastructure.
-- [X] Test a two-school isolation fixture from the first tenant-owned query.
+- [x] Create shared column conventions: UUID, `school_id`, timestamps, record version and soft-delete metadata.
+- [x] Create `school`, `user`, `refresh_session`, `audit_log` and schema metadata migrations.
+- [x] Create transaction and tenant-scoped repository primitives.
+- [x] Create deterministic, idempotent seed infrastructure.
+- [x] Test a two-school isolation fixture from the first tenant-owned query.
 
 ### 7.4 Gate
 
-- [X] A clean clone passes install, typecheck, tests and production build.
-- [X] An offline installer launches the UI, API and SQLite database.
-- [X] A migration and rollback/recovery exercise passes on non-empty data.
-- [X] The architecture does not require internet or a globally installed Node runtime.
+- [x] A clean clone passes install, typecheck, tests and production build.
+- [x] An offline installer launches the UI, API and SQLite database.
+- [x] A migration and rollback/recovery exercise passes on non-empty data.
+- [x] The architecture does not require internet or a globally installed Node runtime.
 
 ## 8. Phase 2 - School setup and authentication
 
@@ -329,14 +329,14 @@ Do not freeze the grade schema until all of these are true:
 
 ### 8.1 Authentication slice
 
-- [X] Implement SchoolMaster and Teacher roles; deny every other role in Version 1.
-- [X] Hash passwords with bcrypt cost >= 12.
-- [X] Implement login, refresh-session rotation, logout and password change.
-- [X] Lock an account for 15 minutes after five failed attempts.
-- [X] Keep access tokens in memory; never use `localStorage` for credentials.
-- [X] Add SchoolMaster-driven local password reset for offline operation.
-- [X] Enforce tenant and role authorization in application services.
-- [X] Audit authentication-sensitive and role-management operations.
+- [x] Implement SchoolMaster and Teacher roles; deny every other role in Version 1.
+- [x] Hash passwords with bcrypt cost >= 12.
+- [x] Implement login, refresh-session rotation, logout and password change.
+- [x] Lock an account for 15 minutes after five failed attempts.
+- [x] Keep access tokens in memory; never use `localStorage` for credentials.
+- [x] Add SchoolMaster-driven local password reset for offline operation.
+- [x] Enforce tenant and role authorization in application services.
+- [x] Audit authentication-sensitive and role-management operations.
 
 ### 8.2 Setup wizard slice
 
@@ -700,21 +700,21 @@ These are release budgets to measure on representative hardware, not assumptions
 
 ## 18. Risk register
 
-| Risk                                  | Likelihood   | Impact   | Mitigation                                                                      |
-| ------------------------------------- | ------------ | -------- | ------------------------------------------------------------------------------- |
-| Wrong grading or bulletin policy      | Medium       | Critical | Phase 0 fixtures, approved ADR, independent calculation samples                 |
-| Incorrect official computation        | Medium       | Critical | Fixed-point pure functions, boundary fixtures, dual verification                |
-| Data loss or corrupt restore          | Medium       | Critical | Atomic writes, verified rotating backups, clean-machine restore drills          |
+| Risk                                  | Likelihood  | Impact   | Mitigation                                                                      |
+| ------------------------------------- | ----------- | -------- | ------------------------------------------------------------------------------- |
+| Wrong grading or bulletin policy      | Medium      | Critical | Phase 0 fixtures, approved ADR, independent calculation samples                 |
+| Incorrect official computation        | Medium      | Critical | Fixed-point pure functions, boundary fixtures, dual verification                |
+| Data loss or corrupt restore          | Medium      | Critical | Atomic writes, verified rotating backups, clean-machine restore drills          |
 | Tenant or role data leak              | Low–Medium  | Critical | Tenant-scoped repositories, deny-by-default services, isolation tests           |
 | Pilot will not pay                    | Medium–High | High     | Price discussion before build, paid continuation gate, track support cost       |
-| Teacher adoption failure              | Medium       | High     | Observed workflow, keyboard-first entry, early usability tests, narrow training |
-| Windows sidecar/native-module failure | Medium       | High     | Phase 1 clean-machine deployment spike before feature investment                |
-| Scope creep                           | Very high    | High     | Explicit Version 1 exclusions and evidence-gated Version 2                      |
-| Messy Excel data                      | High         | High     | Preview, row errors, idempotency, reconciliation and rollback                   |
-| Power loss during entry               | High         | High     | Near-immediate local persistence, transactional saves and restart tests         |
-| Solo developer interruption/burnout   | Medium       | High     | Small vertical phases, three-week buffer, one pilot first, strict WIP limit     |
-| AI-generated regression               | Medium       | High     | Required diff review, tests, no unverifiable completion claims                  |
-| School response delays                | Medium       | Medium   | Primary and backup pilot, named coordinators, agreed review windows             |
+| Teacher adoption failure              | Medium      | High     | Observed workflow, keyboard-first entry, early usability tests, narrow training |
+| Windows sidecar/native-module failure | Medium      | High     | Phase 1 clean-machine deployment spike before feature investment                |
+| Scope creep                           | Very high   | High     | Explicit Version 1 exclusions and evidence-gated Version 2                      |
+| Messy Excel data                      | High        | High     | Preview, row errors, idempotency, reconciliation and rollback                   |
+| Power loss during entry               | High        | High     | Near-immediate local persistence, transactional saves and restart tests         |
+| Solo developer interruption/burnout   | Medium      | High     | Small vertical phases, three-week buffer, one pilot first, strict WIP limit     |
+| AI-generated regression               | Medium      | High     | Required diff review, tests, no unverifiable completion claims                  |
+| School response delays                | Medium      | Medium   | Primary and backup pilot, named coordinators, agreed review windows             |
 
 ## 19. Definition of done
 

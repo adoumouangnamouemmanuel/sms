@@ -136,7 +136,11 @@ export function SetupCalendarStep({
                 {term.isCurrent ? (
                   <>
                     <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fillRule="evenodd" />
+                      <path
+                        clipRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        fillRule="evenodd"
+                      />
                     </svg>
                     {t('setup.calendar.current')}
                   </>
@@ -211,8 +215,18 @@ function CalendarField({ label, onChange, type = 'text', value }: CalendarFieldP
 }
 
 const MONTHS = [
-  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+  'Janvier',
+  'Février',
+  'Mars',
+  'Avril',
+  'Mai',
+  'Juin',
+  'Juillet',
+  'Août',
+  'Septembre',
+  'Octobre',
+  'Novembre',
+  'Décembre',
 ];
 const DAYS = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'];
 
@@ -295,7 +309,12 @@ function SetupDatePicker({ onChange, value }: { onChange: (v: string) => void; v
         <span>
           {displayValue || <span className="font-medium text-slate-400">JJ/MM/AAAA</span>}
         </span>
-        <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="h-5 w-5 text-slate-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
             strokeLinecap="round"
@@ -318,7 +337,12 @@ function SetupDatePicker({ onChange, value }: { onChange: (v: string) => void; v
               type="button"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
+                <path
+                  d="M15 19l-7-7 7-7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                />
               </svg>
             </button>
             <span className="text-sm font-bold text-slate-900">
@@ -330,7 +354,12 @@ function SetupDatePicker({ onChange, value }: { onChange: (v: string) => void; v
               type="button"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
+                <path
+                  d="M9 5l7 7-7 7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                />
               </svg>
             </button>
           </div>

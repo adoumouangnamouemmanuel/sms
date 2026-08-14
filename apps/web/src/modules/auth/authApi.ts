@@ -35,10 +35,7 @@ export async function login(
   return session;
 }
 
-export async function refreshSession(
-  apiBaseUrl: string,
-  options: AuthRequestOptionsInput = {}
-) {
+export async function refreshSession(apiBaseUrl: string, options: AuthRequestOptionsInput = {}) {
   const requestOptions = resolveRequestOptions(options);
   const session = await postJson<AuthTokenResponse>(
     apiBaseUrl,

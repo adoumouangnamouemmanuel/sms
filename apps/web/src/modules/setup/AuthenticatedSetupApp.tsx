@@ -39,7 +39,6 @@ export function AuthenticatedSetupApp({
     ...(setupClient ? { client: setupClient } : {}),
   });
 
-
   const [activeStep, setActiveStep] = useState<SetupStepId | null>(null);
   const [isInMainApp, setIsInMainApp] = useState(false);
   const currentStep = activeStep ?? setup.state?.nextStep ?? null;
@@ -209,10 +208,7 @@ function SetupCompleteDashboard({
           label={t('setup.review.academicYear')}
           value={state.academicYear?.label ?? '-'}
         />
-        <DashboardMetric
-          label={t('setup.review.currentTerm')}
-          value={currentTerm?.label ?? '-'}
-        />
+        <DashboardMetric label={t('setup.review.currentTerm')} value={currentTerm?.label ?? '-'} />
         <DashboardMetric
           label={t('setup.review.classLevels')}
           value={String(state.classLevels.length)}
@@ -271,5 +267,3 @@ function SetupSkeleton() {
     </div>
   );
 }
-
-

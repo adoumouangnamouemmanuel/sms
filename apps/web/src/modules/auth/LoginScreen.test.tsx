@@ -161,7 +161,9 @@ describe('LoginScreen', () => {
 
     await user.click(screen.getByRole('button', { name: 'Se déconnecter' }));
 
-    expect(await screen.findByText('La déconnexion locale a échoué. Réessayez.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('La déconnexion locale a échoué. Réessayez.')
+    ).toBeInTheDocument();
   });
 });
 

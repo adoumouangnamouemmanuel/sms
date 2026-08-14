@@ -216,12 +216,7 @@ function SetupDropzone({
         />
         {value ? (
           <div className="mt-4 flex items-center gap-2 rounded-lg bg-teal-50 px-3 py-1.5 text-xs font-bold text-teal-700">
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 d="M5 13l4 4L19 7"
                 strokeLinecap="round"

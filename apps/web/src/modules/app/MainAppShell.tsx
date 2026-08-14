@@ -394,9 +394,7 @@ export function MainAppShell({
           <div className="flex items-center gap-3 shrink-0">
             {/* ── System status ── */}
             <AppStatusPill
-              label={
-                serviceOnline ? t('app.shell.header.online') : t('app.shell.header.offline')
-              }
+              label={serviceOnline ? t('app.shell.header.online') : t('app.shell.header.offline')}
               tone={serviceOnline ? 'green' : 'red'}
             />
 
@@ -467,8 +465,8 @@ function NavButton({ icon, isActive, isExpanded, label, onClick }: NavButtonProp
         isActive && isExpanded
           ? 'bg-teal-500/15 text-white before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-r-full before:bg-teal-400'
           : isActive && !isExpanded
-          ? 'bg-teal-500/20 text-white'
-          : 'text-slate-400 hover:bg-white/10 hover:text-slate-100'
+            ? 'bg-teal-500/20 text-white'
+            : 'text-slate-400 hover:bg-white/10 hover:text-slate-100'
       }`}
       onClick={onClick}
       title={isExpanded ? undefined : label}
@@ -795,9 +793,7 @@ function ComingSoonNavButton({
       title={isExpanded ? undefined : label}
     >
       <span className="shrink-0 opacity-40">{icon}</span>
-      {isExpanded && (
-        <span className="truncate flex-1">{label}</span>
-      )}
+      {isExpanded && <span className="truncate flex-1">{label}</span>}
       {isExpanded && (
         <span className="text-[9px] font-bold uppercase tracking-wider text-slate-600/40 shrink-0">
           bientôt
@@ -817,7 +813,16 @@ const COMING_SOON_NAV_ITEMS: { label: string; icon: React.ReactNode }[] = [
   {
     label: 'Élèves',
     icon: (
-      <svg aria-hidden="true" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+      <svg
+        aria-hidden="true"
+        className="h-5 w-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        viewBox="0 0 24 24"
+      >
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
         <circle cx="9" cy="7" r="4" />
         <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -828,7 +833,16 @@ const COMING_SOON_NAV_ITEMS: { label: string; icon: React.ReactNode }[] = [
   {
     label: 'Enseignants',
     icon: (
-      <svg aria-hidden="true" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+      <svg
+        aria-hidden="true"
+        className="h-5 w-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        viewBox="0 0 24 24"
+      >
         <rect height="16" rx="2" width="20" x="2" y="4" />
         <path d="M10 4v4" />
         <path d="M2 8h20" />
@@ -839,7 +853,16 @@ const COMING_SOON_NAV_ITEMS: { label: string; icon: React.ReactNode }[] = [
   {
     label: 'Notes & bulletins',
     icon: (
-      <svg aria-hidden="true" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+      <svg
+        aria-hidden="true"
+        className="h-5 w-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        viewBox="0 0 24 24"
+      >
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
         <polyline points="14 2 14 8 20 8" />
         <line x1="16" x2="8" y1="13" y2="13" />
@@ -851,7 +874,16 @@ const COMING_SOON_NAV_ITEMS: { label: string; icon: React.ReactNode }[] = [
   {
     label: 'Finances',
     icon: (
-      <svg aria-hidden="true" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+      <svg
+        aria-hidden="true"
+        className="h-5 w-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        viewBox="0 0 24 24"
+      >
         <line x1="12" x2="12" y1="1" y2="23" />
         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
       </svg>
@@ -860,7 +892,16 @@ const COMING_SOON_NAV_ITEMS: { label: string; icon: React.ReactNode }[] = [
   {
     label: 'Rapports',
     icon: (
-      <svg aria-hidden="true" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+      <svg
+        aria-hidden="true"
+        className="h-5 w-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        viewBox="0 0 24 24"
+      >
         <line x1="18" x2="18" y1="20" y2="10" />
         <line x1="12" x2="12" y1="20" y2="4" />
         <line x1="6" x2="6" y1="20" y2="14" />

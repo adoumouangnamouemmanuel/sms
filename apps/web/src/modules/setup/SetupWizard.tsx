@@ -11,11 +11,7 @@ import { SetupCalendarStep } from './SetupCalendarStep';
 import { SetupClassLevelsStep } from './SetupClassLevelsStep';
 import { SetupProfileStep } from './SetupProfileStep';
 import { SetupReviewStep } from './SetupReviewStep';
-import {
-  createCalendarDraft,
-  createClassLevelsDraft,
-  createProfileDraft,
-} from './setupSteps';
+import { createCalendarDraft, createClassLevelsDraft, createProfileDraft } from './setupSteps';
 
 export interface SetupWizardProps {
   errorKey: string | null;
@@ -46,8 +42,6 @@ export function SetupWizard({
   const [profileDraft, setProfileDraft] = useState(() => createProfileDraft(state));
   const [calendarDraft, setCalendarDraft] = useState(() => createCalendarDraft(state));
   const [classLevelDraft, setClassLevelDraft] = useState(() => createClassLevelsDraft(state));
-
-
 
   async function saveProfile() {
     const nextState = await onSaveProfile(profileDraft);

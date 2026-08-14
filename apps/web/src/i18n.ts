@@ -207,7 +207,7 @@ const resources = {
           navigation: 'Navigation principale',
           session: 'Session',
           welcome: {
-            body: "La navigation par module sera disponible au fur et à mesure du déploiement des fonctionnalités.",
+            body: 'La navigation par module sera disponible au fur et à mesure du déploiement des fonctionnalités.',
             eyebrow: 'Application prête',
             title: "L'école est configurée",
           },
