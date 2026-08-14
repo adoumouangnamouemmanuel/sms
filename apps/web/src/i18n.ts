@@ -71,16 +71,19 @@ const resources = {
       },
       setup: {
         actions: {
+          back: 'Retour',
           complete: 'Terminer la configuration',
+          continue: 'Continuer',
           retry: 'Réessayer',
           saveAndContinue: 'Enregistrer et continuer',
         },
         calendar: {
-          current: 'Courante',
+          current: 'Période actuelle',
           endDate: 'Date de fin',
           label: 'Année scolaire',
           period: 'Période',
           periodLabel: 'Libellé',
+          setCurrent: 'Définir comme actuelle',
           startDate: 'Date de début',
           systems: {
             SEMESTER: 'Semestres',
@@ -91,7 +94,7 @@ const resources = {
         classLevels: {
           add: 'Ajouter un niveau',
           code: 'Code',
-          examYear: 'Examen',
+          examYear: 'Examen national',
           name: 'Nom du niveau',
           order: 'Ordre',
           remove: 'Retirer ce niveau',
@@ -100,6 +103,7 @@ const resources = {
         complete: {
           body: 'La configuration de base est enregistrée dans la base locale. Les prochains modules apparaîtront uniquement lorsqu’ils seront réellement disponibles.',
           enabledModules: 'Modules actifs',
+          enterApp: "Accéder à l'application",
           eyebrow: 'Configuration terminée',
           title: 'Le socle de l’école est prêt',
         },
@@ -186,6 +190,29 @@ const resources = {
         subtitle: 'Chaque étape est enregistrée dans SQLite avant de passer à la suivante.',
         title: 'Configuration de l’école',
       },
+      app: {
+        shell: {
+          collapse: 'Réduire le menu',
+          comingSoon: 'À venir',
+          dashboard: 'Tableau de bord',
+          expand: 'Développer le menu',
+          header: {
+            offline: 'Hors ligne',
+            online: 'Service local prêt',
+            syncLabel: 'État de synchronisation',
+            termLabel: 'Période courante',
+            yearLabel: 'Année scolaire',
+          },
+          modulesLabel: 'Navigation',
+          navigation: 'Navigation principale',
+          session: 'Session',
+          welcome: {
+            body: "La navigation par module sera disponible au fur et à mesure du déploiement des fonctionnalités.",
+            eyebrow: 'Application prête',
+            title: "L'école est configurée",
+          },
+        },
+      },
     },
   },
   ar: {
@@ -254,16 +281,19 @@ const resources = {
       },
       setup: {
         actions: {
+          back: 'رجوع',
           complete: 'إنهاء الإعداد',
+          continue: 'متابعة',
           retry: 'إعادة المحاولة',
           saveAndContinue: 'حفظ ومتابعة',
         },
         calendar: {
-          current: 'الحالية',
+          current: 'الفترة الحالية',
           endDate: 'تاريخ النهاية',
           label: 'السنة الدراسية',
           period: 'الفترة',
           periodLabel: 'التسمية',
+          setCurrent: 'تعيين كحالية',
           startDate: 'تاريخ البداية',
           systems: {
             SEMESTER: 'فصول نصف سنوية',
@@ -274,7 +304,7 @@ const resources = {
         classLevels: {
           add: 'إضافة مستوى',
           code: 'الرمز',
-          examYear: 'سنة امتحان',
+          examYear: 'امتحان وطني',
           name: 'اسم المستوى',
           order: 'الترتيب',
           remove: 'حذف هذا المستوى',
@@ -283,6 +313,7 @@ const resources = {
         complete: {
           body: 'تم حفظ الإعداد الأساسي في قاعدة البيانات المحلية. لن تظهر الوحدات الأخرى إلا عندما تصبح متاحة فعلاً.',
           enabledModules: 'الوحدات النشطة',
+          enterApp: 'الدخول إلى التطبيق',
           eyebrow: 'اكتمل الإعداد',
           title: 'أصبح أساس المدرسة جاهزاً',
         },
@@ -369,6 +400,29 @@ const resources = {
         subtitle: 'يتم حفظ كل خطوة في SQLite قبل الانتقال إلى الخطوة التالية.',
         title: 'إعداد المدرسة',
       },
+      app: {
+        shell: {
+          collapse: 'طي القائمة',
+          comingSoon: 'قريباً',
+          dashboard: 'لوحة التحكم',
+          expand: 'توسيع القائمة',
+          header: {
+            offline: 'غير متصل',
+            online: 'الخدمة المحلية جاهزة',
+            syncLabel: 'حالة المزامنة',
+            termLabel: 'الفترة الحالية',
+            yearLabel: 'السنة الدراسية',
+          },
+          modulesLabel: 'التنقل',
+          navigation: 'التنقل الرئيسي',
+          session: 'الجلسة',
+          welcome: {
+            body: 'سيكون التنقل بين الوحدات متاحاً تدريجياً مع نشر الميزات.',
+            eyebrow: 'التطبيق جاهز',
+            title: 'المدرسة مهيأة',
+          },
+        },
+      },
     },
   },
   en: {
@@ -438,16 +492,19 @@ const resources = {
       },
       setup: {
         actions: {
+          back: 'Back',
           complete: 'Finish setup',
+          continue: 'Continue',
           retry: 'Retry',
           saveAndContinue: 'Save and continue',
         },
         calendar: {
-          current: 'Current',
+          current: 'Current period',
           endDate: 'End date',
           label: 'Academic year',
           period: 'Period',
           periodLabel: 'Label',
+          setCurrent: 'Set as current',
           startDate: 'Start date',
           systems: {
             SEMESTER: 'Semesters',
@@ -458,7 +515,7 @@ const resources = {
         classLevels: {
           add: 'Add level',
           code: 'Code',
-          examYear: 'Exam year',
+          examYear: 'National exam',
           name: 'Level name',
           order: 'Order',
           remove: 'Remove this level',
@@ -467,6 +524,7 @@ const resources = {
         complete: {
           body: 'The base setup is saved in the local database. Other modules will appear only when they are actually available.',
           enabledModules: 'Active modules',
+          enterApp: 'Go to the application',
           eyebrow: 'Setup complete',
           title: 'The school foundation is ready',
         },
@@ -552,6 +610,29 @@ const resources = {
         },
         subtitle: 'Each step is saved to SQLite before moving to the next one.',
         title: 'School setup',
+      },
+      app: {
+        shell: {
+          collapse: 'Collapse menu',
+          comingSoon: 'Coming soon',
+          dashboard: 'Dashboard',
+          expand: 'Expand menu',
+          header: {
+            offline: 'Offline',
+            online: 'Local service ready',
+            syncLabel: 'Sync status',
+            termLabel: 'Current period',
+            yearLabel: 'Academic year',
+          },
+          modulesLabel: 'Navigation',
+          navigation: 'Main navigation',
+          session: 'Session',
+          welcome: {
+            body: 'Module navigation will be available as features are progressively deployed.',
+            eyebrow: 'Application ready',
+            title: 'School is configured',
+          },
+        },
       },
     },
   },
