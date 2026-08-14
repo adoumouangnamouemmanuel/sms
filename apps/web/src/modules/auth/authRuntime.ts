@@ -41,7 +41,11 @@ export function normalizeApiBaseUrl(value: string | null | undefined) {
 function normalizeCapabilityToken(value: string | null | undefined) {
   const trimmed = value?.trim();
 
-  return trimmed || undefined;
+  if (!trimmed) {
+    return undefined;
+  }
+
+  return trimmed;
 }
 
 function readViteAuthApiBaseUrl() {
