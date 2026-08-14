@@ -36,9 +36,10 @@ describe('AuthenticatedSetupApp', () => {
     );
 
     expect(
-      await screen.findByRole('heading', { name: 'Configuration de l’école' })
+      await screen.findByRole('heading', { name: 'Profil de l’école' }),
     ).toBeInTheDocument();
 
+    await userSession.click(screen.getByRole('button', { name: 'Continuer' }));
     await userSession.click(screen.getByRole('button', { name: 'Enregistrer et continuer' }));
 
     expect(setupClient.saveProfile).toHaveBeenCalledWith(
@@ -71,9 +72,8 @@ describe('AuthenticatedSetupApp', () => {
     );
 
     expect(await screen.findByText('Le socle de l’école est prêt')).toBeInTheDocument();
-    expect(screen.getAllByText('Configuration').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Structure académique').length).toBeGreaterThan(0);
-    expect(screen.queryByText('Élèves')).not.toBeInTheDocument();
+    expect(screen.getByText(/Configuration et Structure académique/)).toBeInTheDocument();
+    expect(screen.queryByText(/Élèves/)).not.toBeInTheDocument();
   });
 });
 
