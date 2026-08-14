@@ -1,4 +1,4 @@
-import type { SetupSchoolProfileRequest } from '@edutrack/shared';
+import { setupSchoolProfileRequestSchema, type SetupSchoolProfileRequest } from '@edutrack/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -12,15 +12,41 @@ export interface SetupProfileStepProps {
 export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupProfileStepProps) {
   const { t } = useTranslation();
   const [page, setPage] = useState(0);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   return (
     <form
       className="space-y-5"
+      noValidate
       onSubmit={(event) => {
         event.preventDefault();
+
+        const result = setupSchoolProfileRequestSchema.safeParse(draft);
+        const fieldErrors: Record<string, string> = {};
+        if (!result.success) {
+          for (const issue of result.error.issues) {
+            if (issue.path[0]) {
+              fieldErrors[issue.path[0].toString()] = t('setup.errors.validation');
+            }
+          }
+        }
+
+        const page0Fields = ['name', 'shortName', 'city', 'ministryCode', 'address'];
+
         if (page === 0) {
+          const hasPage0Error = page0Fields.some((f) => fieldErrors[f]);
+          if (hasPage0Error) {
+            setErrors(fieldErrors);
+            return;
+          }
+          setErrors({});
           setPage(1);
         } else {
+          if (Object.keys(fieldErrors).length > 0) {
+            setErrors(fieldErrors);
+            return;
+          }
+          setErrors({});
           onSubmit();
         }
       }}
@@ -39,6 +65,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
           <>
             <SetupField
               autoFocus
+              error={errors.name}
               label={t('setup.profile.name')}
               name="name"
               onChange={onChange}
@@ -47,6 +74,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
               value={draft.name}
             />
             <SetupField
+              error={errors.shortName}
               label={t('setup.profile.shortName')}
               name="shortName"
               onChange={onChange}
@@ -54,6 +82,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
               value={draft.shortName ?? ''}
             />
             <SetupField
+              error={errors.city}
               label={t('setup.profile.city')}
               name="city"
               onChange={onChange}
@@ -62,6 +91,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
               value={draft.city}
             />
             <SetupField
+              error={errors.ministryCode}
               label={t('setup.profile.ministryCode')}
               name="ministryCode"
               onChange={onChange}
@@ -70,6 +100,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
             />
             <SetupField
               className="md:col-span-2"
+              error={errors.address}
               label={t('setup.profile.address')}
               name="address"
               onChange={onChange}
@@ -81,6 +112,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
           <>
             <SetupField
               autoFocus
+              error={errors.phone}
               label={t('setup.profile.phone')}
               name="phone"
               onChange={onChange}
@@ -89,6 +121,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
               value={draft.phone ?? ''}
             />
             <SetupField
+              error={errors.email}
               label={t('setup.profile.email')}
               name="email"
               onChange={onChange}
@@ -97,6 +130,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
               value={draft.email ?? ''}
             />
             <SetupField
+              error={errors.logoUrl}
               label={t('setup.profile.logoUrl')}
               name="logoUrl"
               onChange={onChange}
@@ -106,6 +140,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
             />
             <SetupField
               className="md:col-span-2"
+              error={errors.motto}
               label={t('setup.profile.motto')}
               name="motto"
               onChange={onChange}
@@ -137,6 +172,7 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
 interface SetupFieldProps {
   autoFocus?: boolean;
   className?: string;
+  error?: string;
   label: string;
   name: keyof SetupSchoolProfileRequest;
   onChange: (field: keyof SetupSchoolProfileRequest, value: string) => void;
@@ -149,6 +185,7 @@ interface SetupFieldProps {
 function SetupField({
   autoFocus,
   className,
+  error,
   label,
   name,
   onChange,
@@ -164,7 +201,11 @@ function SetupField({
       </span>
       <input
         autoFocus={autoFocus}
-        className="h-[50px] w-full cursor-text rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[14px] font-medium text-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] outline-none transition-all placeholder:font-medium placeholder:text-slate-400 hover:border-slate-300 focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-600/10"
+        className={`h-[50px] w-full cursor-text rounded-2xl border ${
+          error
+            ? 'border-red-300 bg-red-50/30 focus:border-red-500 focus:ring-red-500/10'
+            : 'border-slate-200 bg-slate-50 hover:border-slate-300 focus:border-teal-500 focus:ring-teal-600/10'
+        } px-4 text-[14px] font-medium text-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] outline-none transition-all placeholder:font-medium placeholder:text-slate-400 focus:bg-white focus:ring-4`}
         name={name}
         onChange={(event) => {
           onChange(name, event.target.value);
@@ -174,6 +215,7 @@ function SetupField({
         type={type}
         value={value}
       />
+      {error ? <span className="text-[13px] font-medium text-red-600">{error}</span> : null}
     </label>
   );
 }
