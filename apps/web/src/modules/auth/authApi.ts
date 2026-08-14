@@ -53,11 +53,14 @@ export async function refreshSession(apiBaseUrl: string, options: AuthRequestOpt
 export async function logout(apiBaseUrl: string, options: AuthRequestOptionsInput = {}) {
   const requestOptions = resolveRequestOptions(options);
 
-  await postJson(apiBaseUrl, '/auth/logout', {}, requestOptions.fetcher, {
-    ...createSidecarHeaders(requestOptions.capabilityToken),
-    ...createAuthHeaders(),
-  });
-  clearAccessToken();
+  try {
+    await postJson(apiBaseUrl, '/auth/logout', {}, requestOptions.fetcher, {
+      ...createSidecarHeaders(requestOptions.capabilityToken),
+      ...createAuthHeaders(),
+    });
+  } finally {
+    clearAccessToken();
+  }
 }
 
 export async function changePassword(
