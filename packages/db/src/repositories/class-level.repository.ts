@@ -40,11 +40,13 @@ export class ClassLevelRepository extends TenantScopedRepository {
       .where(eq(classLevel.schoolId, this.schoolId))
       .all();
 
-    // Display order is unique per school, so existing rows move temporarily first.
+    // Natural keys (code, name) and display order are unique per school, so existing rows move temporarily first.
     this.db
       .update(classLevel)
       .set({
         displayOrder: sql`${classLevel.displayOrder} + 1000`,
+        code: sql`${classLevel.code} || '-tmp-' || ${classLevel.id}`,
+        name: sql`${classLevel.name} || '-tmp-' || ${classLevel.id}`,
         updatedAt,
       })
       .where(eq(classLevel.schoolId, this.schoolId))
