@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { readDesktopDeploymentStatus, type DesktopDeploymentStatus } from './desktopStatus';
 import { LoginScreen, resolveAuthRuntime } from './modules/auth';
+import { AuthenticatedSetupApp } from './modules/setup';
 
 const DEPLOYMENT_STATUS_POLL_MS = 500;
 
@@ -27,7 +28,9 @@ export function App() {
 
         if (status?.sidecarStatus === 'starting') {
           // Tauri may render before the sidecar has emitted its ready payload.
-          retryHandle = window.setTimeout(readStatus, DEPLOYMENT_STATUS_POLL_MS);
+          retryHandle = window.setTimeout(() => {
+            void readStatus();
+          }, DEPLOYMENT_STATUS_POLL_MS);
         }
       } catch {
         if (!isMounted) {
@@ -54,6 +57,20 @@ export function App() {
   }, []);
 
   const authRuntime = resolveAuthRuntime(desktopStatus);
+
+  if (authenticatedUser) {
+    return (
+      <AuthenticatedSetupApp
+        apiBaseUrl={authRuntime.apiBaseUrl}
+        {...(authRuntime.capabilityToken ? { capabilityToken: authRuntime.capabilityToken } : {})}
+        desktopStatus={desktopStatus}
+        onLoggedOut={() => {
+          setAuthenticatedUser(null);
+        }}
+        user={authenticatedUser}
+      />
+    );
+  }
 
   return (
     <main className="fixed inset-0 w-full h-full bg-slate-50 lg:bg-slate-900 font-sans selection:bg-teal-200 selection:text-teal-900 overflow-hidden">
