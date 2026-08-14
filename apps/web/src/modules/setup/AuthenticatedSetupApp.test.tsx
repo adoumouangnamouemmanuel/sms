@@ -76,7 +76,8 @@ describe('AuthenticatedSetupApp', () => {
 
     await userSession.click(screen.getByRole('button', { name: 'Continuer' }));
 
-    // Form shouldn't advance due to native HTML5 validation
+    // Form shouldn't advance and should show French validation messages
+    expect(await screen.findAllByText(/Vérifiez les champs du formulaire/i)).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'Continuer' })).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: 'Enregistrer et continuer' })
