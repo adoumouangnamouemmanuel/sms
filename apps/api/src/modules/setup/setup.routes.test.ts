@@ -17,7 +17,6 @@ const migrationsDir = fileURLToPath(
   new URL('../../../../../packages/db/migrations/sqlite/', import.meta.url)
 );
 const firstSchoolId = '00000000-0000-4000-8000-000000000101';
-const secondSchoolId = '00000000-0000-4000-8000-000000000102';
 const schoolMasterId = '00000000-0000-4000-8000-000000000201';
 const secondSchoolMasterId = '00000000-0000-4000-8000-000000000202';
 const teacherId = '00000000-0000-4000-8000-000000000301';
@@ -240,7 +239,7 @@ describe('school setup routes', () => {
     expect(readCount('term')).toBe(0);
   });
 
-  async function loginAndReadAccessToken(username: string, schoolCode: string = 'NDS-DEMO') {
+  async function loginAndReadAccessToken(username: string, schoolCode = 'NDS-DEMO') {
     const response = await server.inject({
       method: 'POST',
       url: '/auth/login',

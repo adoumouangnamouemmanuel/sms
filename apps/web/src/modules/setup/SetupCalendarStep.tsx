@@ -275,7 +275,7 @@ function SetupDatePicker({ onChange, value }: { onChange: (v: string) => void; v
   const handleDateClick = (day: number) => {
     const d = String(day).padStart(2, '0');
     const m = String(currentMonth + 1).padStart(2, '0');
-    onChange(`${currentYear}-${m}-${d}`);
+    onChange(`${String(currentYear)}-${m}-${d}`);
     setIsOpen(false);
   };
 

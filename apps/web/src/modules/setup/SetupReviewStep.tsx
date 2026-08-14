@@ -48,7 +48,7 @@ export function SetupReviewStep({ isSaving, onBack, onSubmit, state }: SetupRevi
                   className="flex items-center gap-1.5 rounded-full border border-teal-100 bg-teal-50 px-3 py-1 text-xs font-bold text-teal-800"
                   key={moduleConfig.id}
                 >
-                  {MODULE_ICONS[moduleConfig.moduleName] || null}
+                  {MODULE_ICONS[moduleConfig.moduleName] ?? null}
                   {t(`setup.modules.${moduleConfig.moduleName}`)}
                 </span>
               ))
@@ -57,7 +57,7 @@ export function SetupReviewStep({ isSaving, onBack, onSubmit, state }: SetupRevi
                   className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-600"
                   key={moduleName}
                 >
-                  {MODULE_ICONS[moduleName] || null}
+                  {MODULE_ICONS[moduleName] ?? null}
                   {t(`setup.modules.${moduleName}`)}
                 </span>
               ))}
