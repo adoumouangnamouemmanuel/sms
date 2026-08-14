@@ -117,7 +117,12 @@ export function SetupProfileStep({ draft, isSaving, onChange, onSubmit }: SetupP
 
       <div className="flex gap-4 pt-1">
         {page === 1 ? (
-          <WizardSecondaryButton label={t('setup.actions.back')} onClick={() => { setPage(0); }} />
+          <WizardSecondaryButton
+            label={t('setup.actions.back')}
+            onClick={() => {
+              setPage(0);
+            }}
+          />
         ) : null}
         <WizardPrimaryButton
           isSaving={isSaving}
