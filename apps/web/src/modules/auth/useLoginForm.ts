@@ -1,15 +1,20 @@
 import type { AuthTokenResponse, LoginRequest } from '@edutrack/shared';
 import { useMemo, useState, type SyntheticEvent } from 'react';
-import { login as loginWithApi } from './authApi';
+import { login as loginWithApi, type AuthRequestOptions } from './authApi';
 import { resolveAuthErrorMessageKey } from './authErrors';
 
 export type LoginFormField = 'schoolCode' | 'username' | 'password';
 export type LoginFormErrors = Partial<Record<LoginFormField, string>>;
 export type LoginFormStatus = 'idle' | 'submitting' | 'success';
-export type LoginClient = (apiBaseUrl: string, input: LoginRequest) => Promise<AuthTokenResponse>;
+export type LoginClient = (
+  apiBaseUrl: string,
+  input: LoginRequest,
+  options?: AuthRequestOptions
+) => Promise<AuthTokenResponse>;
 
 export interface UseLoginFormOptions {
   apiBaseUrl: string | null;
+  capabilityToken?: string;
   loginClient?: LoginClient;
   onAuthenticated: (session: AuthTokenResponse) => void;
 }
@@ -23,6 +28,7 @@ const initialValues: LoginRequest = {
 /** Owns login form state while keeping token storage inside the auth API module. */
 export function useLoginForm({
   apiBaseUrl,
+  capabilityToken,
   loginClient = loginWithApi,
   onAuthenticated,
 }: UseLoginFormOptions) {
@@ -59,7 +65,9 @@ export function useLoginForm({
     setSubmitErrorKey(null);
 
     try {
-      const session = await loginClient(apiBaseUrl, normalizedValues);
+      const session = capabilityToken
+        ? await loginClient(apiBaseUrl, normalizedValues, { capabilityToken })
+        : await loginClient(apiBaseUrl, normalizedValues);
       setStatus('success');
       onAuthenticated(session);
     } catch (error) {
