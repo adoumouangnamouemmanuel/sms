@@ -30,6 +30,7 @@ try {
       EDUTRACK_API_PORT: '0',
       EDUTRACK_ALLOWED_ORIGIN: 'tauri://localhost;http://127.0.0.1:5173',
       EDUTRACK_SIDECAR_TOKEN: verificationToken,
+      AUTH_ACCESS_TOKEN_SECRET: verificationToken,
       EDUTRACK_SQLITE_PATH: sqlitePath,
       LOG_LEVEL: 'error',
       NODE_ENV: 'production',
