@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Teacher password reset (Phase 3.3)**: Added a Réinitialiser le mot de passe action on active teacher login accounts backed by the existing reset endpoint (sessions revoked).
 - **Import UX (Phase 3.4)**: Added a drag-and-drop file zone (French, replacing the native browser button), a resizable preview dialog, an import identifier prefilled from the file name + date, and advisory "Possible doublon" warnings that never block.
 - **Guardian import (Phase 3.4)**: Added the `GUARDIANS` import kind (own template, no code column), guardian preview/confirm, and sample files in `docs/import-templates/`.
+- **Guardian import linking (Phase 3.4)**: Added an optional `Code élève` column to the guardian template — when filled, the imported guardian is automatically linked to the matching student at confirm (relationship `AUTRE`); an unknown student code rejects the row at preview with a clear French message.
 - **Phase 3.9.5 gate**: Added `apps/api/src/test/imports.gate.test.ts` — a 1,000-row import load test covering duplicate-free integrity, reimport idempotency, and duplicate names distinguishable by code (ADR-011).
 
 ### Changed
