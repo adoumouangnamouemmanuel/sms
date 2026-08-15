@@ -12,7 +12,7 @@ The Phase 3 §9.2 people module introduced form labels in uppercase small-caps w
 
 Two label styles exist and are both intentional. The deciding factor is whether the label is attached to an editable form control:
 
-1. **Editable form field labels** (inputs, selects, textareas inside forms and modals): bold, normal-case, dark slate — `text-[13px] font-bold text-slate-800`, with a ` *` suffix for required fields. This matches the setup wizard's `SetupField` and `CalendarField`. Required markers use ` *`; optional fields carry no marker (the wizard sets this precedent).
+1. **Editable form field labels** (inputs, selects, textareas inside forms and modals): bold, normal-case, dark slate — `text-[13px] font-bold text-slate-800`, with a suffix of a space plus an asterisk (`*`) for required fields. This matches the setup wizard's `SetupField` and `CalendarField`. Required markers are a space followed by an asterisk; optional fields carry no marker (the wizard sets this precedent).
 
 2. **Display/data labels and section headers** (read-only info grids such as SEXE / DATE DE NAISSANCE, table column headers, and section headers such as RESPONSABLES LIÉS): uppercase small-caps micro labels — `text-[10px]/[11px]/[13px] font-black uppercase tracking-wide text-slate-400/500`. These are never attached to editable controls.
 
