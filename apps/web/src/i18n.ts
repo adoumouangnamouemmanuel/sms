@@ -701,6 +701,8 @@ const resources = {
           invalidRows: 'Vérifiez les lignes avant de continuer.',
           localService: 'La session locale est indisponible. Réessayez.',
           sessionExpired: 'La session locale est expirée. Reconnectez-vous.',
+          serviceUpdate:
+            'Le service local est en cours de mise à jour. Fermez puis relancez l’application.',
           studentAlreadyEnrolled:
             'Cet élève est déjà inscrit dans une classe pour cette année scolaire.',
           studentNotFound: 'Élève introuvable.',
@@ -1589,6 +1591,7 @@ const resources = {
           invalidRows: 'تحقق من الصفوف قبل المتابعة.',
           localService: 'الجلسة المحلية غير متاحة. حاول مرة أخرى.',
           sessionExpired: 'انتهت الجلسة المحلية. سجل الدخول مرة أخرى.',
+          serviceUpdate: 'الخدمة المحلية قيد التحديث. أغلق التطبيق ثم أعد تشغيله.',
           studentAlreadyEnrolled: 'هذا الطالب مسجل بالفعل في قسم لهذه السنة الدراسية.',
           studentNotFound: 'الطالب غير موجود.',
           subjectCodeExists: 'يوجد مادة بهذا الرمز بالفعل. لا تُعاد الرموز أبداً.',
@@ -2448,6 +2451,7 @@ const resources = {
           invalidRows: 'Check the rows before continuing.',
           localService: 'The local session is unavailable. Try again.',
           sessionExpired: 'The local session has expired. Sign in again.',
+          serviceUpdate: 'The local service is being updated. Close and restart the application.',
           studentAlreadyEnrolled:
             'This student is already enrolled in a class for this academic year.',
           studentNotFound: 'Student not found.',
