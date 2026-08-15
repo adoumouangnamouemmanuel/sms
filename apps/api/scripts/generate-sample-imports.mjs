@@ -59,6 +59,8 @@ const TEACHER_DESCRIPTIONS = [
   'Optionnel.',
   'Optionnel.',
 ];
+const GUARDIAN_COLUMNS = ['Prénom', 'Nom', 'Téléphone', 'Email', 'Adresse'];
+const GUARDIAN_DESCRIPTIONS = ['Requis.', 'Requis.', 'Optionnel.', 'Optionnel.', 'Optionnel.'];
 
 mkdirSync(outputDir, { recursive: true });
 
@@ -128,6 +130,18 @@ function writeModeles() {
     [],
     teacherExampleRows,
     TEACHER_DESCRIPTIONS
+  );
+
+  const guardianExampleRows = [
+    ['Fatime', 'Abakar', '+23566000020', 'fatime.abakar@exemple.td', 'N Djamena'],
+    ['Mahamat', 'Ousmane', '+23566000021', null, null],
+  ];
+  writeWorkbook(
+    'responsables_modele.xlsx',
+    GUARDIAN_COLUMNS,
+    [],
+    guardianExampleRows,
+    GUARDIAN_DESCRIPTIONS
   );
 }
 
@@ -215,6 +229,18 @@ function writeExemples() {
     ],
     [],
     TEACHER_DESCRIPTIONS
+  );
+
+  writeWorkbook(
+    'responsables_exemple.xlsx',
+    GUARDIAN_COLUMNS,
+    [
+      ['Aminata', 'Mahamat', '+23566000030', 'aminata.mahamat@exemple.td', 'N Djamena'],
+      ['Ibrahim', 'Ousmane', '+23566000031', null, null],
+      ['Fatime', 'Abakar', '+23566000032', null, null],
+    ],
+    [],
+    GUARDIAN_DESCRIPTIONS
   );
 }
 
