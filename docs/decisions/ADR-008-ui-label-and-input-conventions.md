@@ -20,6 +20,10 @@ Input fields follow the wizard recipe: `h-[50px]` (48px in modal grids), `rounde
 
 Date inputs in editable forms use the native `<input type="date">` so the browser renders the field in the user's locale format. The shared calendar picker (`apps/web/src/components/DatePicker.tsx`) remains available for the setup-wizard calendar step where a month-grid picker is part of the established flow. Read-only date displays format ISO values as DD/MM/YYYY via `formatISODate` from `apps/web/src/components/dateFormat.ts`.
 
+List search inputs stay bound to the active query: the input value reflects the query state and is cleared only by an explicit clear control (an ✕ inside the field) or manual deletion — never as a side effect of submitting a search. This keeps the user oriented (filtered vs. full list) and supports refining an existing query.
+
+Nationality is a curated dropdown of African countries (French names, Tchad as default), defined once in `apps/web/src/modules/students/countries.ts`. Country names are treated as data proper nouns kept in the product's primary locale rather than translated per i18n locale.
+
 ## Consequences
 
 New forms and modules apply the label distinction: bold normal-case for editable field labels, uppercase small-caps only for display/descriptive labels. New forms use the native date input unless a calendar-grid picker is explicitly required. All visible strings stay behind i18n keys with French complete first (ADR-003).
