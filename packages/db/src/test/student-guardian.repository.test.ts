@@ -117,6 +117,46 @@ describe('student-guardian repository', () => {
     expect(relinked.relationshipType).toBe('PERE');
   });
 
+  it('allows assigning a new primary after unlinking the previous primary', () => {
+    const [school] = foundationSeed.schools;
+    const tenant = createTenantContext(school.id);
+    const student = createStudentRepository(db, tenant).create({
+      code: 'NDS-DEMO-2026-000000104',
+      firstName: 'Aminata',
+      lastName: 'Mahamat',
+    });
+    const firstGuardian = createGuardianRepository(db, tenant).create({
+      firstName: 'Fatime',
+      lastName: 'Abakar',
+    });
+    const secondGuardian = createGuardianRepository(db, tenant).create({
+      firstName: 'Mahamat',
+      lastName: 'Ousmane',
+    });
+    const repository = createStudentGuardianRepository(db, tenant);
+
+    const primaryLink = repository.link({
+      studentId: student.id,
+      guardianId: firstGuardian.id,
+      relationshipType: 'PERE',
+      isPrimary: true,
+    });
+
+    // Soft-delete the primary link (is_primary stays true on the deleted row).
+    repository.unlink(primaryLink.id, '2026-09-01T00:00:00.000Z');
+
+    // The deleted primary link must not block a new primary (deleted_at IS NULL
+    // predicate on student_guardian_student_primary_unique).
+    const reassigned = repository.link({
+      studentId: student.id,
+      guardianId: secondGuardian.id,
+      relationshipType: 'MERE',
+      isPrimary: true,
+    });
+    expect(reassigned.isPrimary).toBe(true);
+    expect(repository.listForStudent(student.id)).toHaveLength(1);
+  });
+
   it('allows at most one primary contact per student', () => {
     const [school] = foundationSeed.schools;
     const tenant = createTenantContext(school.id);
