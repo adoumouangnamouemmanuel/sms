@@ -201,7 +201,7 @@ SQLite migration files live in `packages/db/migrations/sqlite`.
 
 Foundation seed data is deterministic and idempotent. It uses synthetic demo schools only; real school or student data is forbidden in seeds and tests.
 
-Demo credentials for the seeded schools (`NDS-DEMO`, `MND-DEMO`): school code `NDS-DEMO`, username `directeur`. The password must be provided via the `EDUTRACK_SEED_PASSWORD_HASH` environment variable during seeding, or the account remains locked and requires administrator configuration before first login.
+Demo credentials for the seeded schools (`NDS-DEMO`, `MND-DEMO`): school code `NDS-DEMO`, username `directeur`. The password must be provided via the `EDUTRACK_SEED_PASSWORD_HASH` environment variable during seeding as a **valid bcrypt hash with a cost factor of 12 or higher** (the app's `BCRYPT_COST`); a malformed hash or one below cost 12 fails seeding loudly rather than persisting a broken login. When the variable is unset or empty, the accounts remain locked and require administrator configuration before first login.
 
 Run after applying the schema:
 
