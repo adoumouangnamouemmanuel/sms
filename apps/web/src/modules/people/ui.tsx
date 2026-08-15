@@ -1,5 +1,5 @@
 import type { RecordStatus } from '@edutrack/shared';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 export const formInputClassName =
   'h-[50px] w-full cursor-text rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[14px] font-medium text-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] outline-none transition-all placeholder:font-medium placeholder:text-slate-400 hover:border-slate-300 focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-600/10';
@@ -22,6 +22,7 @@ function clampResize(value: number, min: number, max: number) {
 export function ModalShell({
   title,
   closeLabel,
+  resizeLabel,
   onClose,
   resizable = false,
   size = 'md',
@@ -29,6 +30,7 @@ export function ModalShell({
 }: {
   title: string;
   closeLabel: string;
+  resizeLabel?: string;
   onClose: () => void;
   /**
    * When true, a bottom-right drag handle lets the user resize the dialog
@@ -42,6 +44,41 @@ export function ModalShell({
   const panelRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
   const [dims, setDims] = useState<{ width: number; height: number } | null>(null);
+  const titleId = useId();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+
+      if (e.key === 'Tab' && panelRef.current) {
+        const focusableElements = panelRef.current.querySelectorAll(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input[type="text"]:not([disabled]), input[type="radio"]:not([disabled]), input[type="checkbox"]:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements[0] as HTMLElement;
+        const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            lastElement.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            firstElement.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     const panel = panelRef.current;
@@ -75,6 +112,7 @@ export function ModalShell({
 
   return (
     <div
+      aria-labelledby={titleId}
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
       role="dialog"
@@ -94,7 +132,9 @@ export function ModalShell({
           }`}
         >
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-black tracking-tight text-slate-950">{title}</h2>
+            <h2 className="text-lg font-black tracking-tight text-slate-950" id={titleId}>
+              {title}
+            </h2>
             <button
               aria-label={closeLabel}
               className="cursor-pointer rounded-lg px-2 py-1 text-[13px] font-bold text-slate-400 hover:bg-slate-50 hover:text-slate-600"
@@ -109,7 +149,7 @@ export function ModalShell({
 
         {resizable && (
           <div
-            aria-label="Redimensionner"
+            aria-label={resizeLabel ?? closeLabel}
             className="absolute -bottom-2 -right-2 flex h-7 w-7 cursor-nwse-resize touch-none items-end justify-end rounded-bl-xl rounded-tr-xl bg-teal-500/90 p-1 shadow-lg ring-1 ring-teal-600/30 hover:bg-teal-500"
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
