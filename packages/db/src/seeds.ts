@@ -7,14 +7,11 @@ import { schemaMetadata, school, user, type UserRole } from './schema.sqlite.js'
  *
  * - School code: `NDS-DEMO` (or `MND-DEMO`)
  * - Username: `directeur`
- * - Password: `Directeur2026!`
+ * - Password: (set via EDUTRACK_SEED_PASSWORD_HASH)
  *
- * Synthetic demo data only — never use in a real school. Change the password
- * from the app after first login.
+ * Synthetic demo data only — never use in a real school.
  */
-export const foundationSeedDemoPassword = 'Directeur2026!';
-
-const seedPasswordHash = '$2b$12$qz2biC3Eg5TZABmiLpeyfOWBgqx.AB3wu6EL0Rb7JCY2M5XBcSdwy';
+const seedPasswordHash = process.env.EDUTRACK_SEED_PASSWORD_HASH ?? '!UNUSABLE_PASSWORD_HASH!';
 
 export const foundationSeedVersion = 'phase-1.4-foundation-2026-08-15';
 
