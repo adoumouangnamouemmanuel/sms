@@ -8,17 +8,25 @@ import type {
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatISODate } from '../../components/dateFormat';
+import {
+  ArchiveDialog,
+  DetailField,
+  EmptyRow,
+  FormField,
+  ListToolbar,
+  ModalCancelButton,
+  ModalShell,
+  Pagination,
+  SelectField,
+  StatusBadge,
+  formSelectClassName,
+} from '../people/ui';
 import { AFRICAN_COUNTRIES, DEFAULT_NATIONALITY } from './countries';
 import {
   useStudentsModule,
   type PaginatedListState,
   type StudentsClient,
 } from './useStudentsState';
-
-const formInputClassName =
-  'h-[50px] w-full cursor-text rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[14px] font-medium text-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] outline-none transition-all placeholder:font-medium placeholder:text-slate-400 hover:border-slate-300 focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-600/10';
-const formSelectClassName =
-  'h-[50px] w-full cursor-pointer rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[14px] font-medium text-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] outline-none transition-all hover:border-slate-300 focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-600/10';
 
 export interface StudentsModuleProps {
   apiBaseUrl: string | null;
@@ -181,8 +189,24 @@ export function StudentsModule({ apiBaseUrl, capabilityToken, client }: Students
 
       {archiveTarget ? (
         <ArchiveDialog
-          reactivate={archiveTarget.reactivate}
-          targetName={archiveTarget.name}
+          labels={{
+            body: t(
+              archiveTarget.reactivate
+                ? 'students.archive.reactivateBody'
+                : 'students.archive.body',
+              { name: archiveTarget.name }
+            ),
+            cancelLabel: t('students.form.cancel'),
+            confirmLabel: t('students.archive.confirm'),
+            reasonLabel: t('students.archive.reason'),
+            reasonPlaceholder: t('students.archive.reasonPlaceholder'),
+            reasonRequiredMessage: t('students.archive.reasonRequired'),
+            title: t(
+              archiveTarget.reactivate
+                ? 'students.archive.reactivateTitle'
+                : 'students.archive.title'
+            ),
+          }}
           onClose={() => {
             setArchiveTarget(null);
           }}
@@ -270,9 +294,17 @@ function StudentsTab({
       style={{ animation: 'sms-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both' }}
     >
       <ListToolbar
-        count={module.students.total}
-        newLabel={t('students.list.new')}
-        searchPlaceholder={t('students.list.searchPlaceholder')}
+        labels={{
+          clearSearch: t('students.list.clearSearch'),
+          count: t('students.list.total', { count: module.students.total }),
+          filter: t('students.list.filter'),
+          new: t('students.list.new'),
+          search: t('students.list.search'),
+          searchPlaceholder: t('students.list.searchPlaceholder'),
+          status: t('students.list.status'),
+          statusActive: t('students.list.statusActive'),
+          statusArchived: t('students.list.statusArchived'),
+        }}
         onNew={onOpenForm}
         onSearch={(search) => {
           module.searchStudents(search);
@@ -280,7 +312,11 @@ function StudentsTab({
         onSearchValueChange={(value) => {
           module.searchStudents(value);
         }}
+        onStatusChange={(status) => {
+          module.setStudentsStatus(status);
+        }}
         searchValue={module.students.search}
+        status={module.students.status}
       />
 
       <StudentTable
@@ -302,6 +338,7 @@ function StudentsTab({
         list={module.students}
         onNext={module.nextStudentsPage}
         onPrevious={module.prevStudentsPage}
+        pageLabel={(current, total) => t('students.list.page', { current, total })}
       />
     </div>
   );
@@ -339,9 +376,17 @@ function GuardiansTab({
       style={{ animation: 'sms-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both' }}
     >
       <ListToolbar
-        count={module.guardians.total}
-        newLabel={t('students.list.newGuardian')}
-        searchPlaceholder={t('students.list.searchGuardiansPlaceholder')}
+        labels={{
+          clearSearch: t('students.list.clearSearch'),
+          count: t('students.list.total', { count: module.guardians.total }),
+          filter: t('students.list.filter'),
+          new: t('students.list.newGuardian'),
+          search: t('students.list.search'),
+          searchPlaceholder: t('students.list.searchGuardiansPlaceholder'),
+          status: t('students.list.status'),
+          statusActive: t('students.list.statusActive'),
+          statusArchived: t('students.list.statusArchived'),
+        }}
         onNew={onOpenForm}
         onSearch={(search) => {
           module.searchGuardians(search);
@@ -349,7 +394,11 @@ function GuardiansTab({
         onSearchValueChange={(value) => {
           module.searchGuardians(value);
         }}
+        onStatusChange={(status) => {
+          module.setGuardiansStatus(status);
+        }}
         searchValue={module.guardians.search}
+        status={module.guardians.status}
       />
 
       <GuardianTable
@@ -371,6 +420,7 @@ function GuardiansTab({
         list={module.guardians}
         onNext={module.nextGuardiansPage}
         onPrevious={module.prevGuardiansPage}
+        pageLabel={(current, total) => t('students.list.page', { current, total })}
       />
     </div>
   );
@@ -386,151 +436,6 @@ interface ArchiveTarget {
   name: string;
   reactivate: boolean;
 }
-function ListToolbar({
-  count,
-  newLabel,
-  onNew,
-  onSearch,
-  searchPlaceholder,
-  searchValue,
-  onSearchValueChange,
-}: {
-  count: number;
-  newLabel: string;
-  onNew: () => void;
-  onSearch: (search: string) => void;
-  searchPlaceholder: string;
-  searchValue: string;
-  onSearchValueChange: (value: string) => void;
-}) {
-  const { t } = useTranslation();
-
-  return (
-    <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <p className="text-[13px] font-bold text-slate-500">
-          {t('students.list.total', { count })}
-        </p>
-
-        <form
-          className="flex items-center gap-2"
-          onSubmit={(event) => {
-            event.preventDefault();
-            onSearch(searchValue);
-          }}
-        >
-          <div className="relative">
-            <input
-              aria-label={t('students.list.search')}
-              className="h-9 w-44 min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-3 pr-8 text-[13px] text-slate-700 focus:border-teal-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-400/40 sm:w-56"
-              onChange={(event) => {
-                onSearchValueChange(event.target.value);
-              }}
-              placeholder={searchPlaceholder}
-              type="text"
-              value={searchValue}
-            />
-            {searchValue ? (
-              <button
-                aria-label={t('students.list.clearSearch')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-full p-0.5 text-[13px] font-bold leading-none text-slate-400 hover:bg-slate-200 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-                onClick={() => {
-                  onSearchValueChange('');
-                }}
-                type="button"
-              >
-                ✕
-              </button>
-            ) : null}
-          </div>
-          <button
-            className="h-9 cursor-pointer whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-            type="submit"
-          >
-            {t('students.list.search')}
-          </button>
-        </form>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <span aria-hidden="true" className="hidden h-6 w-px bg-slate-200 sm:block" />
-        <button
-          className="h-9 cursor-pointer whitespace-nowrap rounded-xl bg-teal-500 px-4 text-[13px] font-bold text-white shadow-sm hover:bg-teal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-          onClick={onNew}
-          type="button"
-        >
-          {newLabel}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function Pagination({
-  list,
-  onNext,
-  onPrevious,
-}: {
-  list: PaginatedListState<unknown>;
-  onNext: () => void;
-  onPrevious: () => void;
-}) {
-  const { t } = useTranslation();
-  const currentPage = Math.floor(list.offset / list.limit) + 1;
-
-  return (
-    <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
-      <p className="text-[12px] font-bold text-slate-400">
-        {t('students.list.page', { current: currentPage, total: list.pageCount })}
-      </p>
-      <div className="flex items-center gap-2">
-        <button
-          className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-50 disabled:text-slate-300"
-          disabled={list.offset === 0}
-          onClick={onPrevious}
-          type="button"
-        >
-          {t('students.list.previous')}
-        </button>
-        <button
-          className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-50 disabled:text-slate-300"
-          disabled={list.offset + list.limit >= list.total}
-          onClick={onNext}
-          type="button"
-        >
-          {t('students.list.next')}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function EmptyRow({ message }: { message: string }) {
-  return (
-    <tr>
-      <td className="px-4 py-8 text-center text-sm font-bold text-slate-400" colSpan={5}>
-        {message}
-      </td>
-    </tr>
-  );
-}
-
-function StatusBadge({ active }: { active: boolean }) {
-  const { t } = useTranslation();
-
-  return active ? (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-200/60 bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-700">
-      <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
-      {t('students.status.active')}
-    </span>
-  ) : (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500">
-      <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
-      {t('students.status.archived')}
-    </span>
-  );
-}
-
 function PrimaryBadge() {
   const { t } = useTranslation();
 
@@ -616,7 +521,11 @@ function StudentTable({
               {student.sex ? t(`students.sex.${student.sex}`) : '—'}
             </td>
             <td className="px-3 py-3">
-              <StatusBadge active={student.isActive} />
+              <StatusBadge
+                active={student.isActive}
+                activeLabel={t('students.status.active')}
+                archivedLabel={t('students.status.archived')}
+              />
             </td>
             <td className="px-3 py-3 text-right">
               <button
@@ -693,7 +602,11 @@ function GuardianTable({
               {guardian.phone ?? '—'}
             </td>
             <td className="px-3 py-3">
-              <StatusBadge active={guardian.isActive} />
+              <StatusBadge
+                active={guardian.isActive}
+                activeLabel={t('students.status.active')}
+                archivedLabel={t('students.status.archived')}
+              />
             </td>
             <td className="px-3 py-3 text-right">
               <button
@@ -761,7 +674,11 @@ function StudentDetail({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <StatusBadge active={profile.student.isActive} />
+          <StatusBadge
+            active={profile.student.isActive}
+            activeLabel={t('students.status.active')}
+            archivedLabel={t('students.status.archived')}
+          />
           <button
             className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700"
             onClick={() => {
@@ -922,7 +839,11 @@ function GuardianDetail({
           </h2>
         </div>
         <div className="flex items-center gap-2">
-          <StatusBadge active={profile.guardian.isActive} />
+          <StatusBadge
+            active={profile.guardian.isActive}
+            activeLabel={t('students.status.active')}
+            archivedLabel={t('students.status.archived')}
+          />
           <button
             className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700"
             onClick={() => {
@@ -992,53 +913,9 @@ function GuardianDetail({
   );
 }
 
-function DetailField({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="text-[10px] font-black uppercase tracking-wide text-slate-400">{label}</dt>
-      <dd className="mt-0.5 text-[13px] font-bold text-slate-700">{value}</dd>
-    </div>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Modals
 // ---------------------------------------------------------------------------
-
-function ModalShell({
-  title,
-  onClose,
-  children,
-}: {
-  title: string;
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  const { t } = useTranslation();
-
-  return (
-    <div
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
-      role="dialog"
-    >
-      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-white bg-white p-6 shadow-2xl">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-black tracking-tight text-slate-950">{title}</h2>
-          <button
-            aria-label={t('students.form.close')}
-            className="cursor-pointer rounded-lg px-2 py-1 text-[13px] font-bold text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-            onClick={onClose}
-            type="button"
-          >
-            ✕
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
 
 function StudentFormModal({
   student,
@@ -1054,6 +931,7 @@ function StudentFormModal({
 
   return (
     <ModalShell
+      closeLabel={t('students.form.close')}
       onClose={onClose}
       title={t(student ? 'students.form.editStudentTitle' : 'students.form.studentTitle')}
     >
@@ -1116,6 +994,7 @@ function StudentFormModal({
             { label: t('students.sex.F'), value: 'F' },
             { label: t('students.sex.AUTRE'), value: 'AUTRE' },
           ]}
+          placeholderOption={t('students.form.selectPlaceholder')}
         />
         <FormField
           defaultValue={student?.dateOfBirth ?? ''}
@@ -1132,6 +1011,7 @@ function StudentFormModal({
           label={t('students.form.nationality')}
           name="nationality"
           options={AFRICAN_COUNTRIES.map((country) => ({ label: country, value: country }))}
+          placeholderOption={t('students.form.selectPlaceholder')}
         />
         <FormField
           defaultValue={student?.phone ?? ''}
@@ -1186,6 +1066,7 @@ function GuardianFormModal({
 
   return (
     <ModalShell
+      closeLabel={t('students.form.close')}
       onClose={onClose}
       title={t(guardian ? 'students.form.editGuardianTitle' : 'students.form.guardianTitle')}
     >
@@ -1282,7 +1163,11 @@ function LinkGuardianModal({
   const [errorKey, setErrorKey] = useState<string | null>(null);
 
   return (
-    <ModalShell onClose={onClose} title={t('students.link.title')}>
+    <ModalShell
+      closeLabel={t('students.form.close')}
+      onClose={onClose}
+      title={t('students.link.title')}
+    >
       <form
         className="space-y-3"
         onSubmit={(event) => {
@@ -1326,6 +1211,7 @@ function LinkGuardianModal({
             { label: t('students.relationship.TUTEUR'), value: 'TUTEUR' },
             { label: t('students.relationship.AUTRE'), value: 'AUTRE' },
           ]}
+          placeholderOption={t('students.form.selectPlaceholder')}
         />
 
         <div className="flex gap-4">
@@ -1356,149 +1242,6 @@ function LinkGuardianModal({
         </div>
       </form>
     </ModalShell>
-  );
-}
-
-function ArchiveDialog({
-  reactivate,
-  targetName,
-  onClose,
-  onConfirm,
-}: {
-  reactivate: boolean;
-  targetName: string;
-  onClose: () => void;
-  onConfirm: (reason: string) => Promise<void>;
-}) {
-  const { t } = useTranslation();
-  const [errorKey, setErrorKey] = useState<string | null>(null);
-  const [reason, setReason] = useState('');
-
-  return (
-    <ModalShell
-      onClose={onClose}
-      title={t(reactivate ? 'students.archive.reactivateTitle' : 'students.archive.title')}
-    >
-      <form
-        className="space-y-3"
-        onSubmit={(event) => {
-          event.preventDefault();
-
-          if (reason.trim().length < 3) {
-            setErrorKey('students.archive.reasonRequired');
-            return;
-          }
-
-          setErrorKey(null);
-          void onConfirm(reason.trim()).catch(() => undefined);
-        }}
-      >
-        <p className="text-[13px] font-semibold leading-6 text-slate-500">
-          {reactivate
-            ? t('students.archive.reactivateBody', { name: targetName })
-            : t('students.archive.body', { name: targetName })}
-        </p>
-        <label className="flex flex-col gap-2">
-          <span className="text-[13px] font-bold text-slate-800">
-            {t('students.archive.reason')}
-          </span>
-          <textarea
-            className="min-h-[80px] w-full cursor-text rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] font-medium text-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] outline-none transition-all placeholder:font-medium placeholder:text-slate-400 hover:border-slate-300 focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-600/10"
-            onChange={(event) => {
-              setReason(event.target.value);
-            }}
-            placeholder={t('students.archive.reasonPlaceholder')}
-            value={reason}
-          />
-        </label>
-
-        {errorKey ? (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] font-bold text-red-700">
-            {t(errorKey)}
-          </p>
-        ) : null}
-
-        <div className="flex justify-end gap-2">
-          <ModalCancelButton label={t('students.form.cancel')} onClose={onClose} />
-          <button
-            className="cursor-pointer rounded-xl bg-red-500 px-4 py-2 text-[13px] font-bold text-white hover:bg-red-400"
-            type="submit"
-          >
-            {t('students.archive.confirm')}
-          </button>
-        </div>
-      </form>
-    </ModalShell>
-  );
-}
-
-function ModalCancelButton({ label, onClose }: { label: string; onClose: () => void }) {
-  return (
-    <button
-      className="cursor-pointer rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-bold text-slate-500 hover:bg-slate-50"
-      onClick={onClose}
-      type="button"
-    >
-      {label}
-    </button>
-  );
-}
-
-function FormField({
-  defaultValue,
-  label,
-  name,
-  type = 'text',
-  required = false,
-}: {
-  defaultValue?: string;
-  label: string;
-  name: string;
-  type?: string;
-  required?: boolean;
-}) {
-  return (
-    <label className="flex flex-col gap-2">
-      <span className="text-[13px] font-bold text-slate-800">
-        {label}
-        {required ? ' *' : ''}
-      </span>
-      <input
-        className={formInputClassName}
-        defaultValue={defaultValue}
-        name={name}
-        required={required}
-        type={type}
-      />
-    </label>
-  );
-}
-
-function SelectField({
-  defaultValue,
-  label,
-  name,
-  options,
-}: {
-  defaultValue?: string;
-  label: string;
-  name: string;
-  options: { label: string; value: string }[];
-}) {
-  const { t } = useTranslation();
-
-  return (
-    <label className="flex flex-col gap-2">
-      <span className="text-[13px] font-bold text-slate-800">{label}</span>
-      <select className={formSelectClassName} defaultValue={defaultValue} name={name}>
-        <option value="">{t('students.form.selectPlaceholder')}</option>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
   );
 }
 
