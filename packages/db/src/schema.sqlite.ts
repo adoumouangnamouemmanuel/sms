@@ -306,7 +306,7 @@ export const studentGuardian = sqliteTable(
       .where(sql`${table.deletedAt} is null`),
     studentPrimaryUnique: uniqueIndex('student_guardian_student_primary_unique')
       .on(table.schoolId, table.studentId)
-      .where(sql`${table.isPrimary} = true`),
+      .where(sql`${table.isPrimary} = true AND ${table.deletedAt} is null`),
     studentFk: foreignKey({
       columns: [table.schoolId, table.studentId],
       foreignColumns: [student.schoolId, student.id],
