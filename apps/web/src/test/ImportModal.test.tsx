@@ -4,6 +4,7 @@ import type { ConfirmImportResponse, ImportPreviewResponse } from '@edutrack/sha
 import { describe, expect, it, vi } from 'vitest';
 import '../i18n';
 import { ImportModal } from '../modules/imports/ImportModal';
+import { ImportsApiError } from '../modules/imports/importsErrors';
 import type { ImportsClient } from '../modules/imports/useImportState';
 
 const preview: ImportPreviewResponse = {
@@ -200,6 +201,49 @@ describe('ImportModal', () => {
         'Cet identifiant d’import a déjà été confirmé. Rien de nouveau n’a été importé.'
       )
     ).toBeInTheDocument();
+  });
+
+  it('blocks the confirm action and offers reconnection when the session expired', async () => {
+    const userSession = userEvent.setup();
+    const onClose = vi.fn();
+    const onSessionExpired = vi.fn();
+    const confirmImport = vi
+      .fn()
+      .mockRejectedValue(new ImportsApiError('INVALID_ACCESS_TOKEN', 'Session expiree.', 401));
+    const client = createImportsClient({
+      confirmImport,
+      previewImport: vi.fn().mockResolvedValue(preview),
+    });
+
+    render(
+      <ImportModal
+        apiBaseUrl="http://127.0.0.1:49152"
+        client={client}
+        kind="STUDENTS"
+        onClose={onClose}
+        onSessionExpired={onSessionExpired}
+      />
+    );
+
+    const file = new File(['fake'], 'eleves.xlsx', {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    await userSession.upload(screen.getByLabelText('Fichier à importer'), file);
+    await userSession.click(screen.getByRole('button', { name: 'Analyser le fichier' }));
+    await screen.findByText('2 valides');
+
+    await userSession.type(screen.getByPlaceholderText('Ex. rentree-2026-09-01'), 'rentree-2026');
+    await userSession.click(screen.getByRole('button', { name: 'Confirmer l’import' }));
+
+    expect(
+      await screen.findByText('La session locale est expirée. Reconnectez-vous.')
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirmer l’import' })).toBeDisabled();
+
+    await userSession.click(screen.getByRole('button', { name: 'Se reconnecter' }));
+
+    expect(onSessionExpired).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('downloads the rejected-rows CSV from the preview', async () => {
