@@ -1,5 +1,6 @@
 import {
   createAuditLogRepository,
+  createGuardianRepository,
   createImportBatchRepository,
   createStudentRepository,
   createTeacherRepository,
@@ -83,10 +84,6 @@ export class ImportsService {
     // are deliberately NOT treated as identity: two real people can share an
     // exact name, so this only flags the row for the admin to double-check.
     const tenant = createTenantContext(actor.schoolId);
-    const repository =
-      kind === 'STUDENTS'
-        ? createStudentRepository(this.db, tenant)
-        : createTeacherRepository(this.db, tenant);
 
     for (const row of parsed.rows) {
       if (row.errors.length > 0) {
@@ -94,6 +91,20 @@ export class ImportsService {
       }
 
       const explicitCode = row.values.code?.trim();
+
+      if (kind === 'GUARDIANS') {
+        // Guardians carry no code, so only the advisory name check applies.
+        const repository = createGuardianRepository(this.db, tenant);
+        row.possibleDuplicate = Boolean(
+          repository.findByName(row.values.firstName ?? '', row.values.lastName ?? '')
+        );
+        continue;
+      }
+
+      const repository =
+        kind === 'STUDENTS'
+          ? createStudentRepository(this.db, tenant)
+          : createTeacherRepository(this.db, tenant);
       row.possibleDuplicate = explicitCode
         ? Boolean(repository.findByCode(normalizePeopleCode(explicitCode)))
         : Boolean(repository.findByName(row.values.firstName ?? '', row.values.lastName ?? ''));
@@ -148,48 +159,68 @@ export class ImportsService {
 
     try {
       const report = withTransaction(this.db, (transaction) => {
-        const repository =
-          preview.kind === 'STUDENTS'
-            ? createStudentRepository(transaction, tenant)
-            : createTeacherRepository(transaction, tenant);
         const validRows = preview.rows.filter((row) => row.errors.length === 0);
         let imported = 0;
         let skippedExisting = 0;
         let errored = 0;
 
-        for (const row of validRows) {
-          const explicitCode = row.values.code?.trim();
+        if (preview.kind === 'GUARDIANS') {
+          // Guardians carry no code: names are not identity, so every row is
+          // imported. The preview already warned about possible name matches.
+          const repository = createGuardianRepository(transaction, tenant);
 
-          // Codes are the ONLY identity: a code already present in the school
-          // (including archived rows) is skipped. Uncoded rows are always
-          // imported — the preview already warned the admin about possible
-          // name matches, because two real people can share an exact name.
-          const alreadyPresent = explicitCode
-            ? Boolean(repository.findByCode(normalizePeopleCode(explicitCode)))
-            : false;
-
-          if (alreadyPresent) {
-            skippedExisting += 1;
-            continue;
+          for (const row of validRows) {
+            try {
+              repository.create(toGuardianCreateInput(row));
+              imported += 1;
+            } catch (error) {
+              if (isUniqueConstraintViolation(error)) {
+                skippedExisting += 1;
+              } else {
+                errored += 1;
+              }
+            }
           }
+        } else {
+          const repository =
+            preview.kind === 'STUDENTS'
+              ? createStudentRepository(transaction, tenant)
+              : createTeacherRepository(transaction, tenant);
 
-          const code = explicitCode
-            ? normalizePeopleCode(explicitCode)
-            : generatePeopleCode(transaction, tenant, this.now, () => repository.countAll());
+          for (const row of validRows) {
+            const explicitCode = row.values.code?.trim();
 
-          try {
-            if (preview.kind === 'STUDENTS') {
-              repository.create(toStudentCreateInput(row, code));
-            } else {
-              repository.create(toTeacherCreateInput(row, code));
+            // Codes are the ONLY identity: a code already present in the school
+            // (including archived rows) is skipped. Uncoded rows are always
+            // imported — the preview already warned the admin about possible
+            // name matches, because two real people can share an exact name.
+            const alreadyPresent = explicitCode
+              ? Boolean(repository.findByCode(normalizePeopleCode(explicitCode)))
+              : false;
+
+            if (alreadyPresent) {
+              skippedExisting += 1;
+              continue;
             }
 
-            imported += 1;
-          } catch (error) {
-            if (isUniqueConstraintViolation(error)) {
-              skippedExisting += 1;
-            } else {
-              errored += 1;
+            const code = explicitCode
+              ? normalizePeopleCode(explicitCode)
+              : generatePeopleCode(transaction, tenant, this.now, () => repository.countAll());
+
+            try {
+              if (preview.kind === 'STUDENTS') {
+                repository.create(toStudentCreateInput(row, code));
+              } else {
+                repository.create(toTeacherCreateInput(row, code));
+              }
+
+              imported += 1;
+            } catch (error) {
+              if (isUniqueConstraintViolation(error)) {
+                skippedExisting += 1;
+              } else {
+                errored += 1;
+              }
             }
           }
         }
@@ -247,6 +278,8 @@ export class ImportsService {
     dataSheet['!cols'] = columns.map((column) => ({ wch: Math.max(column.label.length + 4, 18) }));
     XLSX.utils.book_append_sheet(workbook, dataSheet, 'Donnees');
 
+    const personLabel =
+      kind === 'GUARDIANS' ? 'responsable' : kind === 'STUDENTS' ? 'eleve' : 'professeur';
     const readmeRows: (string | number)[][] = [
       ['Colonne', 'Requis', 'Description'],
       ...columns.map((column) => [
@@ -258,73 +291,91 @@ export class ImportsService {
       ['Remarques'],
       ['- Ne modifiez pas la premiere ligne : elle contient les en-tetes.'],
       [
-        '- Ajoutez une ligne par eleve (ou professeur) a partir de la ligne 2 ; les lignes vides sont ignorees.',
+        `- Ajoutez une ligne par ${personLabel} a partir de la ligne 2 ; les lignes vides sont ignorees.`,
       ],
-      ["- Les dates s'ecrivent JJ/MM/AAAA (ex. 14/03/2012) ou AAAA-MM-JJ (ex. 2012-03-14)."],
-      ['- Sexe : M, F ou AUTRE.'],
-      ['- Code : optionnel. Laisses vide, un code est genere automatiquement.'],
-      ["- Un code utilise deux fois dans le fichier (ou deja present dans l'ecole) est refuse."],
-      ["- Ligne d'exemple : voir la feuille « Exemples » (non importee)."],
     ];
+
+    if (kind !== 'GUARDIANS') {
+      readmeRows.push([
+        "- Les dates s'ecrivent JJ/MM/AAAA (ex. 14/03/2012) ou AAAA-MM-JJ (ex. 2012-03-14).",
+      ]);
+    }
+
+    if (kind === 'STUDENTS') {
+      readmeRows.push(['- Sexe : M, F ou AUTRE.']);
+    }
+
+    if (kind !== 'GUARDIANS') {
+      readmeRows.push(['- Code : optionnel. Laisses vide, un code est genere automatiquement.']);
+      readmeRows.push([
+        "- Un code utilise deux fois dans le fichier (ou deja present dans l'ecole) est refuse.",
+      ]);
+    }
+
+    readmeRows.push(["- Ligne d'exemple : voir la feuille « Exemples » (non importee)."]);
     const readmeSheet = XLSX.utils.aoa_to_sheet(readmeRows);
     readmeSheet['!cols'] = [{ wch: 24 }, { wch: 10 }, { wch: 90 }];
     XLSX.utils.book_append_sheet(workbook, readmeSheet, 'Mode d emploi');
 
-    if (kind === 'STUDENTS') {
-      const examplesSheet = XLSX.utils.aoa_to_sheet([
-        columns.map((column) => column.label),
-        [
-          null,
-          'Aminata',
-          'Mahamat',
-          'F',
-          '14/03/2012',
-          'Tchadienne',
-          '+23566000001',
-          'aminata.mahamat@exemple.td',
-          'N Djamena',
-        ],
-        [
-          'NDS-DEMO-2026-X00001',
-          'Ibrahim',
-          'Ousmane',
-          'M',
-          '2010-11-02',
-          'Tchadienne',
-          '+23566000002',
-          null,
-          null,
-        ],
-      ]);
-      examplesSheet['!cols'] = dataSheet['!cols'];
-      XLSX.utils.book_append_sheet(workbook, examplesSheet, 'Exemples');
-    } else {
-      const examplesSheet = XLSX.utils.aoa_to_sheet([
-        columns.map((column) => column.label),
-        [
-          null,
-          'Jean',
-          'Nguet',
-          'Mathematiques',
-          '01/09/2015',
-          '+23566000010',
-          'j.nguet@exemple.td',
-          null,
-        ],
-        [
-          'NDS-DEMO-2026-T00001',
-          'Fatime',
-          'Abakar',
-          'Physique',
-          '2016-10-01',
-          '+23566000011',
-          null,
-          null,
-        ],
-      ]);
-      examplesSheet['!cols'] = dataSheet['!cols'];
-      XLSX.utils.book_append_sheet(workbook, examplesSheet, 'Exemples');
-    }
+    const examplesRows =
+      kind === 'STUDENTS'
+        ? [
+            [
+              null,
+              'Aminata',
+              'Mahamat',
+              'F',
+              '14/03/2012',
+              'Tchadienne',
+              '+23566000001',
+              'aminata.mahamat@exemple.td',
+              'N Djamena',
+            ],
+            [
+              'NDS-DEMO-2026-X00001',
+              'Ibrahim',
+              'Ousmane',
+              'M',
+              '2010-11-02',
+              'Tchadienne',
+              '+23566000002',
+              null,
+              null,
+            ],
+          ]
+        : kind === 'GUARDIANS'
+          ? [
+              ['Fatime', 'Abakar', '+23566000020', 'fatime.abakar@exemple.td', 'N Djamena'],
+              ['Mahamat', 'Ousmane', '+23566000021', null, null],
+            ]
+          : [
+              [
+                null,
+                'Jean',
+                'Nguet',
+                'Mathematiques',
+                '01/09/2015',
+                '+23566000010',
+                'j.nguet@exemple.td',
+                null,
+              ],
+              [
+                'NDS-DEMO-2026-T00001',
+                'Fatime',
+                'Abakar',
+                'Physique',
+                '2016-10-01',
+                '+23566000011',
+                null,
+                null,
+              ],
+            ];
+    const examplesSheet = XLSX.utils.aoa_to_sheet([
+      columns.map((column) => column.label),
+      ...examplesRows,
+    ]);
+    examplesSheet['!cols'] = dataSheet['!cols'];
+    XLSX.utils.book_append_sheet(workbook, examplesSheet, 'Exemples');
 
     return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
   }
@@ -400,6 +451,16 @@ function toStudentCreateInput(row: ParsedImportRow, code: string) {
     sex: (row.values.sex as 'M' | 'F' | 'AUTRE' | null) ?? null,
     dateOfBirth: row.values.dateOfBirth ?? null,
     nationality: row.values.nationality ?? null,
+    phone: row.values.phone ?? null,
+    email: row.values.email ?? null,
+    address: row.values.address ?? null,
+  };
+}
+
+function toGuardianCreateInput(row: ParsedImportRow) {
+  return {
+    firstName: row.values.firstName ?? '',
+    lastName: row.values.lastName ?? '',
     phone: row.values.phone ?? null,
     email: row.values.email ?? null,
     address: row.values.address ?? null,
