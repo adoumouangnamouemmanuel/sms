@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { DesktopDeploymentStatus } from '../../desktopStatus';
 import { useLogoutAction, type LogoutClient } from '../auth';
 import type { SetupStateResponse } from '@edutrack/shared';
+import { StudentsModule } from '../students';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -89,6 +90,26 @@ function DashboardIcon() {
   );
 }
 
+function PeopleIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      viewBox="0 0 24 24"
+    >
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
 function SearchIcon() {
   return (
     <svg
@@ -159,6 +180,7 @@ const MODULE_NAV_CONFIG: Partial<Record<SchoolModuleName, Omit<NavItem, 'moduleN
   // Gear icon — configuration/settings, not "home"
   SCHOOL_SETUP: { labelKey: 'setup.modules.SCHOOL_SETUP', icon: <GearIcon /> },
   ACADEMIC_STRUCTURE: { labelKey: 'setup.modules.ACADEMIC_STRUCTURE', icon: <AcademicIcon /> },
+  STUDENTS: { labelKey: 'setup.modules.STUDENTS', icon: <PeopleIcon /> },
 };
 
 // ---------------------------------------------------------------------------
@@ -430,7 +452,14 @@ export function MainAppShell({
 
         {/* Content area */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          <WelcomePlaceholder />
+          {activeModule === 'STUDENTS' ? (
+            <StudentsModule
+              apiBaseUrl={apiBaseUrl}
+              {...(capabilityToken ? { capabilityToken } : {})}
+            />
+          ) : (
+            <WelcomePlaceholder />
+          )}
         </main>
       </div>
     </div>
@@ -759,7 +788,6 @@ function WelcomePlaceholder() {
  * They must NOT use i18n keys because no real SchoolModuleName exists for them yet.
  */
 const COMING_SOON_MODULES = [
-  'Élèves',
   'Enseignants',
   'Classes',
   'Notes et bulletins',
@@ -810,26 +838,6 @@ function ComingSoonNavButton({
  * Remove an entry here when the matching module ships.
  */
 const COMING_SOON_NAV_ITEMS: { label: string; icon: React.ReactNode }[] = [
-  {
-    label: 'Élèves',
-    icon: (
-      <svg
-        aria-hidden="true"
-        className="h-5 w-5 shrink-0"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        viewBox="0 0 24 24"
-      >
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-  },
   {
     label: 'Enseignants',
     icon: (
