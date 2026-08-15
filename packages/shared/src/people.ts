@@ -85,8 +85,10 @@ export const studentResponseSchema = z.object({
 
 export const studentListQuerySchema = z.object({
   search: z.string().trim().max(120).optional(),
-  // TODO(roadmap §9.x): add a class-level filter once Classes + enrollment
-  // ship; it must query the enrollment relationship, not a raw student field.
+  /** Filter by ACTIVE enrollment in the current year, at this class level. */
+  classLevelId: z.uuid().optional(),
+  /** Filter by ACTIVE enrollment in the current year, in this classroom. */
+  classroomId: z.uuid().optional(),
   status: z.enum(RECORD_STATUS_VALUES).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   offset: z.coerce.number().int().min(0).default(0),
