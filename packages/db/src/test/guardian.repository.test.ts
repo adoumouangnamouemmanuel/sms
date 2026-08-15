@@ -61,6 +61,17 @@ describe('guardian repository', () => {
     expect(repository.listActive()).toHaveLength(2);
   });
 
+  it('finds a guardian by exact name case- and whitespace-insensitively', () => {
+    const [school] = foundationSeed.schools;
+    const repository = createGuardianRepository(db, createTenantContext(school.id));
+
+    const created = repository.create({ firstName: 'Fatime', lastName: 'Abakar' });
+    const found = repository.findByName(' fatime ', 'ABAKAR');
+
+    expect(found?.id).toBe(created.id);
+    expect(repository.findByName('Fatime', 'Ousmane')).toBeUndefined();
+  });
+
   it('searches active guardians by name fragment', () => {
     const [school] = foundationSeed.schools;
     const repository = createGuardianRepository(db, createTenantContext(school.id));
