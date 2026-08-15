@@ -155,6 +155,36 @@ describe('people routes', () => {
     expect(body.data.items[0]?.lastName).toBe('Mahamat');
   });
 
+  it('filters students by archived status so archived records stay findable', async () => {
+    const accessToken = await loginAndReadAccessToken('directeur');
+    const first = await createStudent(accessToken, 'Aminata', 'Mahamat');
+    await createStudent(accessToken, 'Ibrahim', 'Ousmane');
+    await server.inject({
+      method: 'POST',
+      url: `/students/${first.id}/archive`,
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { reason: 'Transfert vers une autre ecole' },
+    });
+
+    const active = await server.inject({
+      method: 'GET',
+      url: '/students',
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    const activeBody = readJson(active) as ApiSuccess<PaginatedStudentsResponse>;
+    expect(activeBody.data.total).toBe(1);
+    expect(activeBody.data.items[0]?.firstName).toBe('Ibrahim');
+
+    const archived = await server.inject({
+      method: 'GET',
+      url: '/students?status=archived',
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    const archivedBody = readJson(archived) as ApiSuccess<PaginatedStudentsResponse>;
+    expect(archivedBody.data.total).toBe(1);
+    expect(archivedBody.data.items[0]?.firstName).toBe('Aminata');
+  });
+
   it('searches students by code', async () => {
     const accessToken = await loginAndReadAccessToken('directeur');
     await createStudent(accessToken, 'Aminata', 'Mahamat');
