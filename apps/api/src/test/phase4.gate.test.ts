@@ -157,7 +157,10 @@ describe('phase 4 gate (roadmap §10.4)', () => {
       method: 'POST',
       url: '/class-enrollments',
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: { classroomId: classroom.classroom.id, studentIds: [studentOneId, studentTwoId, studentThreeId] },
+      payload: {
+        classroomId: classroom.classroom.id,
+        studentIds: [studentOneId, studentTwoId, studentThreeId],
+      },
     });
     expect(enrol.statusCode).toBe(200);
     expect((readJson(enrol) as ApiSuccess<EnrolStudentsResponse>).data.imported).toBe(3);
@@ -222,13 +225,15 @@ describe('phase 4 gate (roadmap §10.4)', () => {
     const classSubjectCountBefore = countRows('class_subject');
 
     // The pilot curriculum as the downloadable CLASS_SUBJECTS template.
-    const workbookRows = PILOT_CURRICULUM.map(([subjectCode, coefficient, isRequired, teacherId]) => [
-      '3E-A',
-      subjectCode,
-      coefficient,
-      isRequired ? 'OUI' : 'NON',
-      teacherCodeOf(teacherId),
-    ]);
+    const workbookRows = PILOT_CURRICULUM.map(
+      ([subjectCode, coefficient, isRequired, teacherId]) => [
+        '3E-A',
+        subjectCode,
+        coefficient,
+        isRequired ? 'OUI' : 'NON',
+        teacherCodeOf(teacherId),
+      ]
+    );
     const { payload, contentType } = buildMultipart(
       classSubjectWorkbook(workbookRows),
       'affectations-3e-a.xlsx'
@@ -237,7 +242,11 @@ describe('phase 4 gate (roadmap §10.4)', () => {
     // First confirm: the 8 assignments are created from the file.
     const firstPreview = await preview(accessToken, payload, contentType, 'CLASS_SUBJECTS');
     expect(firstPreview).toMatchObject({ validRows: 8, errorRows: 0 });
-    const firstConfirm = await confirmImport(accessToken, firstPreview.importId, 'affectations-3e-a-1');
+    const firstConfirm = await confirmImport(
+      accessToken,
+      firstPreview.importId,
+      'affectations-3e-a-1'
+    );
     expect(firstConfirm).toMatchObject({ imported: 8, skippedExisting: 0 });
     expect(countRows('class_subject')).toBe(classSubjectCountBefore + 8);
 
@@ -245,7 +254,11 @@ describe('phase 4 gate (roadmap §10.4)', () => {
     // exists, nothing is duplicated, and the audit trail still records the run.
     const secondPreview = await preview(accessToken, payload, contentType, 'CLASS_SUBJECTS');
     expect(secondPreview).toMatchObject({ validRows: 8, errorRows: 0 });
-    const secondConfirm = await confirmImport(accessToken, secondPreview.importId, 'affectations-3e-a-2');
+    const secondConfirm = await confirmImport(
+      accessToken,
+      secondPreview.importId,
+      'affectations-3e-a-2'
+    );
     expect(secondConfirm).toMatchObject({ imported: 0, skippedExisting: 8 });
     expect(countRows('class_subject')).toBe(classSubjectCountBefore + 8);
     expect(countRowsWhere('import_batch', `kind = 'CLASS_SUBJECTS'`)).toBe(2);
@@ -498,9 +511,7 @@ describe('phase 4 gate (roadmap §10.4)', () => {
 
   function findLatestAuditAction() {
     const row = sqlite
-      .prepare(
-        `SELECT action FROM audit_log WHERE school_id = ? ORDER BY rowid DESC LIMIT 1`
-      )
+      .prepare(`SELECT action FROM audit_log WHERE school_id = ? ORDER BY rowid DESC LIMIT 1`)
       .get(firstSchoolId) as { action: string } | undefined;
 
     return row?.action;
