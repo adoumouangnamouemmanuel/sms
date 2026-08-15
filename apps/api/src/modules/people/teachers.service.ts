@@ -30,6 +30,7 @@ import {
   teacherLoginNotFound,
   teacherLoginRequiresActiveRecord,
   teacherNotFound,
+  teacherVersionConflict,
 } from './people.errors.js';
 
 export interface TeachersServiceOptions {
@@ -170,9 +171,16 @@ export class TeachersService {
 
     return withTransaction(this.db, (transaction) => {
       const repository = createTeacherRepository(transaction, tenant);
+      const current = repository.findById(teacherId);
 
-      if (!repository.findById(teacherId)) {
+      if (!current) {
         throw teacherNotFound();
+      }
+
+      // Optimistic concurrency: a stale update (recordVersion mismatch) is a
+      // caller error, never a silent overwrite of a newer record.
+      if (input.recordVersion !== undefined && current.recordVersion !== input.recordVersion) {
+        throw teacherVersionConflict();
       }
 
       const updated = repository.update(teacherId, normalizeTeacherUpdate(input), updatedAt);
