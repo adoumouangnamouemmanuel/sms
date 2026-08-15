@@ -1,5 +1,8 @@
 -- Phase 3.4: track confirmed imports so re-submitting the same import
 -- identifier is a no-op and every import is auditable.
+--
+-- Rollback rationale: Irreversible. Dropping the import_batch table would 
+-- destroy audit logs of completed imports, violating compliance requirements.
 CREATE TABLE `import_batch` (
 	`id` text PRIMARY KEY NOT NULL,
 	`school_id` text NOT NULL,
