@@ -476,6 +476,7 @@ const resources = {
           TEACHERS: 'professeurs',
         },
         preview: {
+          autoCode: '(auto)',
           downloadErrors: 'Télécharger les lignes en erreur (.csv)',
           errors: '{{count}} en erreur',
           errorsColumn: 'Erreurs',
@@ -484,6 +485,7 @@ const resources = {
           total: '{{count}} au total',
           valid: '{{count}} valides',
         },
+        sessionExpiredAction: 'Se reconnecter',
         report: {
           alreadyConfirmed:
             'Cet identifiant d’import a déjà été confirmé. Rien de nouveau n’a été importé.',
@@ -965,6 +967,7 @@ const resources = {
           TEACHERS: 'المدرسين',
         },
         preview: {
+          autoCode: '(تلقائي)',
           downloadErrors: 'تنزيل الصفوف الخاطئة (.csv)',
           errors: '{{count}} خطأ',
           errorsColumn: 'الأخطاء',
@@ -973,6 +976,7 @@ const resources = {
           total: '{{count}} إجمالاً',
           valid: '{{count}} صالحة',
         },
+        sessionExpiredAction: 'إعادة الاتصال',
         report: {
           alreadyConfirmed: 'تم تأكيد معرّف الاستيراد هذا من قبل. لم يتم استيراد أي شيء جديد.',
           errors: 'في خطأ',
@@ -1455,6 +1459,7 @@ const resources = {
           TEACHERS: 'teachers',
         },
         preview: {
+          autoCode: '(auto)',
           downloadErrors: 'Download rejected rows (.csv)',
           errors: '{{count}} with errors',
           errorsColumn: 'Errors',
@@ -1463,6 +1468,7 @@ const resources = {
           total: '{{count}} total',
           valid: '{{count}} valid',
         },
+        sessionExpiredAction: 'Sign in again',
         report: {
           alreadyConfirmed:
             'This import identifier was already confirmed. Nothing new was imported.',
