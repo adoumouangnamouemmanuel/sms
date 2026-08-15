@@ -1,5 +1,8 @@
 -- Phase 3.4 follow-up: guardians are importable alongside students and
 -- teachers, so the confirmed-import audit table must accept the new kind.
+--
+-- Rollback rationale: Irreversible. Rolling back would drop the GUARDIANS import 
+-- batch history, violating audit retention requirements.
 CREATE TABLE `import_batch_new` (
 	`id` text PRIMARY KEY NOT NULL,
 	`school_id` text NOT NULL,
