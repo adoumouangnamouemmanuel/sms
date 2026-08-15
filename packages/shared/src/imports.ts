@@ -4,7 +4,7 @@ import { z } from 'zod';
 // Import kinds and column definitions
 // ---------------------------------------------------------------------------
 
-export const IMPORT_KINDS = ['STUDENTS', 'TEACHERS'] as const;
+export const IMPORT_KINDS = ['STUDENTS', 'TEACHERS', 'GUARDIANS'] as const;
 export type ImportKind = (typeof IMPORT_KINDS)[number];
 
 /**
@@ -43,6 +43,14 @@ export const STUDENT_IMPORT_COLUMNS: ImportColumnDefinition[] = [
   { key: 'address', label: 'Adresse', required: false, description: 'Optionnel.' },
 ];
 
+export const GUARDIAN_IMPORT_COLUMNS: ImportColumnDefinition[] = [
+  { key: 'firstName', label: 'Prénom', required: true, description: 'Requis.' },
+  { key: 'lastName', label: 'Nom', required: true, description: 'Requis.' },
+  { key: 'phone', label: 'Téléphone', required: false, description: 'Optionnel.' },
+  { key: 'email', label: 'Email', required: false, description: 'Optionnel.' },
+  { key: 'address', label: 'Adresse', required: false, description: 'Optionnel.' },
+];
+
 export const TEACHER_IMPORT_COLUMNS: ImportColumnDefinition[] = [
   {
     key: 'code',
@@ -68,6 +76,7 @@ export const TEACHER_IMPORT_COLUMNS: ImportColumnDefinition[] = [
 export const IMPORT_COLUMNS_BY_KIND: Record<ImportKind, ImportColumnDefinition[]> = {
   STUDENTS: STUDENT_IMPORT_COLUMNS,
   TEACHERS: TEACHER_IMPORT_COLUMNS,
+  GUARDIANS: GUARDIAN_IMPORT_COLUMNS,
 };
 
 // ---------------------------------------------------------------------------
