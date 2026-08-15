@@ -96,9 +96,7 @@ export class ImportsService {
       const explicitCode = row.values.code?.trim();
       row.possibleDuplicate = explicitCode
         ? Boolean(repository.findByCode(normalizePeopleCode(explicitCode)))
-        : Boolean(
-            repository.findByName(row.values.firstName ?? '', row.values.lastName ?? '')
-          );
+        : Boolean(repository.findByName(row.values.firstName ?? '', row.values.lastName ?? ''));
     }
 
     const stored = importPreviewStore.create({

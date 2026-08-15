@@ -40,9 +40,7 @@ export function ModalShell({
   children: React.ReactNode;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
-  const dragStartRef = useRef<{ x: number; y: number; width: number; height: number } | null>(
-    null
-  );
+  const dragStartRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
   const [dims, setDims] = useState<{ width: number; height: number } | null>(null);
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
