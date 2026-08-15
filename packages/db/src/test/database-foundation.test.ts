@@ -4,7 +4,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   applyApplicationMigrations,
   resolveSqliteMigrationsFolder,
@@ -414,6 +414,19 @@ describe('tenant-scoped database primitives', () => {
 
   afterEach(() => {
     sqlite.close();
+  });
+
+  it('rejects an invalid EDUTRACK_SEED_PASSWORD_HASH instead of persisting a broken login', async () => {
+    vi.stubEnv('EDUTRACK_SEED_PASSWORD_HASH', 'plaintext-password');
+    vi.resetModules();
+
+    try {
+      await expect(import('../seeds.js')).rejects.toThrow(
+        /EDUTRACK_SEED_PASSWORD_HASH doit être un hash bcrypt/
+      );
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it('seeds deterministic foundation data idempotently', () => {
