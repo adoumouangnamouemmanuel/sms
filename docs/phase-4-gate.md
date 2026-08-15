@@ -38,7 +38,7 @@ pnpm run test
   file is then previewed and confirmed again under a new import identifier:
   **0 imported / 8 skipped-existing**, the `class_subject` count stays at 8,
   and two `import_batch` rows remain for auditability (the `(school_id,
-  import_identifier)` unique index keeps each batch traceable).
+import_identifier)` unique index keeps each batch traceable).
 
 ### 3. Teacher assignment and optional-subject authorization tests pass
 
@@ -72,16 +72,16 @@ pnpm run test
   match the reference rows **exactly** — subject code, name, coefficient,
   required/optional flag and assigned teacher:
 
-  | Code | Matière | Coef. | Obligatoire | Professeur |
-  |------|---------|:-----:|:-----------:|------------|
-  | ANG  | Anglais | 3 | Oui | Paul Djasrangar |
-  | EC   | Éducation Civique et Morale | 1 | Oui | Claudine Mbai |
-  | EPS  | Éducation Physique et Sportive | 1 | Non | Claudine Mbai |
-  | FR   | Français | 4 | Oui | Jean Nguet |
-  | HG   | Histoire-Géographie | 3 | Oui | Jean Nguet |
-  | MATH | Mathématiques | 4 | Oui | Mariam Abakar |
-  | PC   | Physique-Chimie | 2 | Oui | Paul Djasrangar |
-  | SVT  | Sciences de la Vie et de la Terre | 2 | Oui | Mariam Abakar |
+  | Code | Matière                           | Coef. | Obligatoire | Professeur      |
+  | ---- | --------------------------------- | :---: | :---------: | --------------- |
+  | ANG  | Anglais                           |   3   |     Oui     | Paul Djasrangar |
+  | EC   | Éducation Civique et Morale       |   1   |     Oui     | Claudine Mbai   |
+  | EPS  | Éducation Physique et Sportive    |   1   |     Non     | Claudine Mbai   |
+  | FR   | Français                          |   4   |     Oui     | Jean Nguet      |
+  | HG   | Histoire-Géographie               |   3   |     Oui     | Jean Nguet      |
+  | MATH | Mathématiques                     |   4   |     Oui     | Mariam Abakar   |
+  | PC   | Physique-Chimie                   |   2   |     Oui     | Paul Djasrangar |
+  | SVT  | Sciences de la Vie et de la Terre |   2   |     Oui     | Mariam Abakar   |
 
 ## Also covered by the Phase 4.2 / 4.3 suites
 
