@@ -32,7 +32,7 @@ export function ModalShell({
     >
       <div
         className={`max-h-[90vh] w-full overflow-y-auto rounded-3xl border border-white bg-white p-6 shadow-2xl ${
-          size === 'lg' ? 'max-w-3xl' : 'max-w-md'
+          size === 'lg' ? 'max-w-4xl' : 'max-w-md'
         }`}
       >
         <div className="mb-4 flex items-center justify-between">
