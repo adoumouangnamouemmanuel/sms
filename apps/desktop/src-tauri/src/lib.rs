@@ -114,10 +114,13 @@ impl DeploymentState {
 }
 
 fn start_sidecar(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
-    let database_path = app_data_database_path().map_err(std::io::Error::other)?;
+    let app_data_dir = app_data_directory().map_err(std::io::Error::other)?;
+    let database_path = app_data_dir.join("edutrack.sqlite");
     let database_path_string = database_path.display().to_string();
     let state = app.state::<DeploymentState>();
     let token = state.token.clone();
+    let access_token_secret =
+        resolve_access_token_secret(&app_data_dir).map_err(std::io::Error::other)?;
     let sidecar_path = resolve_sidecar_executable(app).map_err(std::io::Error::other)?;
     let bcrypt_prebuild_path = resolve_bcrypt_prebuild_path(app, &sidecar_path);
 
@@ -130,6 +133,7 @@ fn start_sidecar(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error
             "tauri://localhost;http://tauri.localhost;http://127.0.0.1:5173",
         )
         .env("EDUTRACK_SIDECAR_TOKEN", &token)
+        .env("AUTH_ACCESS_TOKEN_SECRET", &access_token_secret)
         .env("EDUTRACK_SQLITE_PATH", &database_path_string)
         .env("NODE_ENV", "production")
         .stdout(Stdio::piped())
@@ -354,14 +358,40 @@ fn perform_health_check(host: &str, port: u16, path: &str, token: &str) -> Resul
     }
 }
 
-fn app_data_database_path() -> Result<PathBuf, String> {
+fn app_data_directory() -> Result<PathBuf, String> {
     std::env::var_os("APPDATA")
         .or_else(|| std::env::var_os("LOCALAPPDATA"))
         .map(PathBuf::from)
-        .map(|base| base.join("EduTrack").join("edutrack.sqlite"))
+        .map(|base| base.join("EduTrack"))
         .ok_or_else(|| {
             "APPDATA or LOCALAPPDATA is required for the local database path.".to_string()
         })
+}
+
+const ACCESS_TOKEN_SECRET_FILE: &str = "access-token-secret";
+const ACCESS_TOKEN_SECRET_BYTES: usize = 32;
+
+/// Returns the installation-scoped JWT signing secret, generating and persisting it on first
+/// launch so signed access tokens survive application restarts. The secret never leaves the
+/// device and lives next to the local SQLite database.
+fn resolve_access_token_secret(app_data_dir: &Path) -> Result<String, String> {
+    let secret_path = app_data_dir.join(ACCESS_TOKEN_SECRET_FILE);
+
+    if let Ok(existing) = fs::read_to_string(&secret_path) {
+        let existing = existing.trim().to_string();
+
+        if !existing.is_empty() {
+            return Ok(existing);
+        }
+    }
+
+    let secret = generate_hex_secret()?;
+    fs::create_dir_all(app_data_dir)
+        .map_err(|error| format!("Failed to create the EduTrack data directory: {error}"))?;
+    fs::write(&secret_path, &secret)
+        .map_err(|error| format!("Failed to persist the access token secret: {error}"))?;
+
+    Ok(secret)
 }
 
 fn stop_sidecar(app: &tauri::AppHandle) {
@@ -437,10 +467,14 @@ fn update_status(app: &tauri::AppHandle, next_status: DesktopDeploymentStatus) {
 }
 
 fn generate_capability_token() -> Result<String, String> {
-    let mut bytes = [0_u8; 32];
+    generate_hex_secret()
+}
+
+fn generate_hex_secret() -> Result<String, String> {
+    let mut bytes = [0_u8; ACCESS_TOKEN_SECRET_BYTES];
 
     getrandom::getrandom(&mut bytes)
-        .map_err(|error| format!("Failed to generate secure sidecar capability token: {error}"))?;
+        .map_err(|error| format!("Failed to generate a secure random secret: {error}"))?;
 
     Ok(bytes.iter().map(|byte| format!("{byte:02x}")).collect())
 }
