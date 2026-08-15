@@ -1065,14 +1065,13 @@ function StudentFormModal({
           type="date"
         />
         <SelectField
-          defaultValue={
-            student?.nationality && AFRICAN_COUNTRIES.includes(student.nationality)
-              ? student.nationality
-              : DEFAULT_NATIONALITY
-          }
+          defaultValue={student?.nationality ?? DEFAULT_NATIONALITY}
           label={t('students.form.nationality')}
           name="nationality"
-          options={AFRICAN_COUNTRIES.map((country) => ({ label: country, value: country }))}
+          options={(student?.nationality && !AFRICAN_COUNTRIES.includes(student.nationality)
+            ? [student.nationality, ...AFRICAN_COUNTRIES]
+            : AFRICAN_COUNTRIES
+          ).map((country) => ({ label: country, value: country }))}
           placeholderOption={t('students.form.selectPlaceholder')}
         />
         <FormField
