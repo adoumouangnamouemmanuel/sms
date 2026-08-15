@@ -2,11 +2,11 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { AuthTokenResponse, PublicAuthUser } from '@edutrack/shared';
 import { describe, expect, it, vi } from 'vitest';
-import '../../i18n';
-import { AuthApiError } from './authErrors';
-import { LoginScreen } from './LoginScreen';
-import type { LoginClient } from './useLoginForm';
-import type { LogoutClient } from './useLogoutAction';
+import '../i18n';
+import { AuthApiError } from '../modules/auth/authErrors';
+import { LoginScreen } from '../modules/auth/LoginScreen';
+import type { LoginClient } from '../modules/auth/useLoginForm';
+import type { LogoutClient } from '../modules/auth/useLogoutAction';
 
 const authUser: PublicAuthUser = {
   id: '00000000-0000-4000-8000-000000000201',

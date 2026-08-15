@@ -2,9 +2,9 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { SetupStateResponse } from '@edutrack/shared';
 import { describe, expect, it, vi } from 'vitest';
-import '../../i18n';
-import { AuthenticatedSetupApp } from './AuthenticatedSetupApp';
-import type { SetupClient } from './useSetupState';
+import '../i18n';
+import { AuthenticatedSetupApp } from '../modules/setup/AuthenticatedSetupApp';
+import type { SetupClient } from '../modules/setup/useSetupState';
 
 const user = {
   id: '00000000-0000-4000-8000-000000000201',

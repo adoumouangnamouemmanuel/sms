@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearAccessToken, rememberAccessToken } from '../auth';
-import { saveSchoolProfile } from './setupApi';
-import { resolveSetupErrorMessageKey, SetupApiError } from './setupErrors';
+import { clearAccessToken, rememberAccessToken } from '../modules/auth';
+import { saveSchoolProfile } from '../modules/setup/setupApi';
+import { resolveSetupErrorMessageKey, SetupApiError } from '../modules/setup/setupErrors';
 
 const setupStateResponse = {
   success: true,

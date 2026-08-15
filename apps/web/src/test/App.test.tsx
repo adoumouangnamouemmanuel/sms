@@ -2,11 +2,11 @@ import { APP_NAME } from '@edutrack/shared';
 import { act } from 'react';
 import { render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import './i18n';
-import { App } from './App';
-import { readDesktopDeploymentStatus } from './desktopStatus';
+import '../i18n';
+import { App } from '../App';
+import { readDesktopDeploymentStatus } from '../desktopStatus';
 
-vi.mock('./desktopStatus', () => ({
+vi.mock('../desktopStatus', () => ({
   readDesktopDeploymentStatus: vi.fn(),
 }));
 
