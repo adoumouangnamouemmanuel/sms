@@ -8,6 +8,7 @@ import type {
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatISODate } from '../../components/dateFormat';
+import type { ImportKind } from '@edutrack/shared';
 import { ImportModal } from '../imports';
 import {
   ArchiveDialog,
@@ -53,7 +54,7 @@ export function StudentsModule({
   const [editingStudent, setEditingStudent] = useState<StudentResponse | null>(null);
   const [guardianFormOpen, setGuardianFormOpen] = useState(false);
   const [editingGuardian, setEditingGuardian] = useState<GuardianResponse | null>(null);
-  const [importOpen, setImportOpen] = useState(false);
+  const [importKind, setImportKind] = useState<ImportKind | null>(null);
   const [linkOpen, setLinkOpen] = useState(false);
   const [archiveTarget, setArchiveTarget] = useState<{
     kind: 'student' | 'guardian';
@@ -122,7 +123,7 @@ export function StudentsModule({
             setStudentFormOpen(true);
           }}
           onOpenImport={() => {
-            setImportOpen(true);
+            setImportKind('STUDENTS');
           }}
           onSetArchiveTarget={setArchiveTarget}
         />
@@ -137,18 +138,21 @@ export function StudentsModule({
             setEditingGuardian(null);
             setGuardianFormOpen(true);
           }}
+          onOpenImport={() => {
+            setImportKind('GUARDIANS');
+          }}
           onSetArchiveTarget={setArchiveTarget}
         />
       )}
 
-      {importOpen ? (
+      {importKind ? (
         <ImportModal
           apiBaseUrl={apiBaseUrl}
           {...(capabilityToken ? { capabilityToken } : {})}
-          kind="STUDENTS"
+          kind={importKind}
           {...(onSessionExpired ? { onSessionExpired } : {})}
           onClose={() => {
-            setImportOpen(false);
+            setImportKind(null);
           }}
         />
       ) : null}
@@ -378,6 +382,7 @@ interface GuardiansTabProps {
   module: ReturnType<typeof useStudentsModule>;
   onEditGuardian: (guardian: GuardianResponse) => void;
   onOpenForm: () => void;
+  onOpenImport: () => void;
   onSetArchiveTarget: (target: ArchiveTarget) => void;
 }
 
@@ -385,6 +390,7 @@ function GuardiansTab({
   module,
   onEditGuardian,
   onOpenForm,
+  onOpenImport,
   onSetArchiveTarget,
 }: GuardiansTabProps) {
   const { t } = useTranslation();
@@ -410,6 +416,7 @@ function GuardiansTab({
           clearSearch: t('students.list.clearSearch'),
           count: t('students.list.total', { count: module.guardians.total }),
           filter: t('students.list.filter'),
+          import: t('imports.action'),
           new: t('students.list.newGuardian'),
           search: t('students.list.search'),
           searchPlaceholder: t('students.list.searchGuardiansPlaceholder'),
@@ -417,6 +424,7 @@ function GuardiansTab({
           statusActive: t('students.list.statusActive'),
           statusArchived: t('students.list.statusArchived'),
         }}
+        onImport={onOpenImport}
         onNew={onOpenForm}
         onSearch={(search) => {
           module.searchGuardians(search);
