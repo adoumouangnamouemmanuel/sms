@@ -346,7 +346,10 @@ export const importBatch = sqliteTable(
       table.schoolId,
       table.importIdentifier
     ),
-    kindCheck: check('import_batch_kind_check', sql`${table.kind} in ('STUDENTS', 'TEACHERS')`),
+    kindCheck: check(
+      'import_batch_kind_check',
+      sql`${table.kind} in ('STUDENTS', 'TEACHERS', 'GUARDIANS')`
+    ),
   })
 );
 
