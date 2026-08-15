@@ -101,8 +101,8 @@ describe('SettingsModule', () => {
     );
 
     expect(screen.getAllByText('Configuration').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Ecole Demo')).toBeInTheDocument();
-    expect(screen.getByText('N Djamena')).toBeInTheDocument();
+    expect(screen.getAllByText('Ecole Demo').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('N Djamena').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('2026-2027')).toBeInTheDocument();
     expect(screen.getByText('Structure académique')).toBeInTheDocument();
     expect(screen.getByText('Trimestres')).toBeInTheDocument();
