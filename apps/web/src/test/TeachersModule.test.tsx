@@ -178,6 +178,44 @@ describe('TeachersModule', () => {
     );
   });
 
+  it('resets a teacher password from the profile', async () => {
+    const userSession = userEvent.setup();
+    const resetTeacherPassword = vi.fn().mockResolvedValue({ success: true, data: { user: {} } });
+    const client = createTeachersClient({
+      getTeacherProfile: vi.fn().mockResolvedValue(teacherProfileWithLogin),
+      listTeachers: vi.fn().mockResolvedValue({ items: [teacher], total: 1, limit: 20, offset: 0 }),
+      resetTeacherPassword,
+    });
+
+    render(<TeachersModule apiBaseUrl="http://127.0.0.1:49152" client={client} />);
+
+    await screen.findByText('Nguet Jean');
+    await userSession.click(screen.getByRole('button', { name: 'Nguet Jean' }));
+    await userSession.click(
+      await screen.findByRole('button', { name: 'Réinitialiser le mot de passe' })
+    );
+
+    const dialog = await screen.findByRole('dialog');
+    await userSession.type(
+      within(dialog).getByLabelText('Nouveau mot de passe'),
+      'nouveau-pass-2026'
+    );
+    await userSession.type(
+      within(dialog).getByLabelText('Confirmer le nouveau mot de passe'),
+      'nouveau-pass-2026'
+    );
+    await userSession.click(
+      within(dialog).getByRole('button', { name: 'Réinitialiser le mot de passe' })
+    );
+
+    expect(resetTeacherPassword).toHaveBeenCalledWith(
+      credentials.userId,
+      { newPassword: 'nouveau-pass-2026' },
+      expect.any(Object)
+    );
+    expect(await screen.findByText('Nguet Jean')).toBeInTheDocument();
+  });
+
   it('requires a reason before archiving a teacher', async () => {
     const userSession = userEvent.setup();
     const archiveTeacher = vi.fn().mockResolvedValue(archivedTeacher);
@@ -238,6 +276,7 @@ function createTeachersClient(overrides: Partial<TeachersClient>): TeachersClien
     listTeachers: () => Promise.resolve(emptyPage),
     reactivateTeacher: () => Promise.resolve(teacher),
     reactivateTeacherLogin: () => Promise.resolve(teacherProfileWithLogin),
+    resetTeacherPassword: () => Promise.resolve({ success: true, data: { user: {} } }),
     updateTeacher: () => Promise.resolve(teacher),
     ...overrides,
   };
