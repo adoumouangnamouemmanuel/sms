@@ -20,9 +20,16 @@ export interface TeachersModuleProps {
   apiBaseUrl: string | null;
   capabilityToken?: string;
   client?: TeachersClient;
+  /** Session expiry (e.g. during an import) bubbles up so the app can reconnect. */
+  onSessionExpired?: () => void;
 }
 
-export function TeachersModule({ apiBaseUrl, capabilityToken, client }: TeachersModuleProps) {
+export function TeachersModule({
+  apiBaseUrl,
+  capabilityToken,
+  client,
+  onSessionExpired,
+}: TeachersModuleProps) {
   const { t } = useTranslation();
   const module = useTeachersModule({
     apiBaseUrl,
@@ -147,6 +154,7 @@ export function TeachersModule({ apiBaseUrl, capabilityToken, client }: Teachers
           apiBaseUrl={apiBaseUrl}
           {...(capabilityToken ? { capabilityToken } : {})}
           kind="TEACHERS"
+          {...(onSessionExpired ? { onSessionExpired } : {})}
           onClose={() => {
             setImportOpen(false);
           }}
