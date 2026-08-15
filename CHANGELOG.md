@@ -25,8 +25,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Excel import (Phase 3.4)**: Added the full upload → parse → preview → confirm → transact → report flow for students and teachers — French .xlsx templates with a README sheet, in-memory preview that never persists, row-level French validation (required fields, sex/date/email formats, duplicate codes), rejected-rows CSV with formula-injection protection, and idempotent confirmed imports keyed by a per-school import identifier (`import_batch`, migration 0006). Sample files and a manual walkthrough live in `docs/import-templates/` and `docs/import-guidelines.md`.
 - **Shared people UI (Phase 3.3)**: Extracted the list toolbar, pagination, badges, modal shell and archive dialog into `modules/people/ui.tsx` used by both the students and teachers modules.
 - **UI conventions**: Documented the label and input conventions (bold normal-case for editable field labels, uppercase small-caps for display labels) in ADR-008, and the teacher-login credential policy in ADR-009.
+- **Dashboard (Phase 3)**: Added the Tableau de bord landing screen with real headcount KPIs (students, teachers, guardians, archived records) and clearly marked simulated widgets (per-level distribution, recent activity) until the Classes/audit modules ship.
+- **Configuration screen (Phase 3)**: Added the Configuration screen with an editable school profile (persisted via the setup API, header-synced), calendar, system, enabled-modules and session cards.
+- **Structure académique screen (Phase 3)**: Added an editable niveaux editor (add/rename/delete/exam-year, persisted via the setup API) with a simulated classes-per-level preview.
+- **Teacher password reset (Phase 3.3)**: Added a Réinitialiser le mot de passe action on active teacher login accounts backed by the existing reset endpoint (sessions revoked).
+- **Import UX (Phase 3.4)**: Added a drag-and-drop file zone (French, replacing the native browser button), a resizable preview dialog, an import identifier prefilled from the file name + date, and advisory "Possible doublon" warnings that never block.
+- **Guardian import (Phase 3.4)**: Added the `GUARDIANS` import kind (own template, no code column), guardian preview/confirm, and sample files in `docs/import-templates/`.
+- **Phase 3.9.5 gate**: Added `apps/api/src/test/imports.gate.test.ts` — a 1,000-row import load test covering duplicate-free integrity, reimport idempotency, and duplicate names distinguishable by code (ADR-011).
 
 ### Changed
+
+- **Import deduplication (Phase 3.4)**: Names are never treated as identity — rows matching an existing name or code are flagged as possible duplicates in the preview but always import; codes remain the only hard identity.
+- **Settings labels**: The school motto field is now labelled "Devise scolaire" to avoid colliding with the currency label "Devise", and genuinely empty optional fields render a muted "Non renseigné".
 
 - **Web app**: Replaced the generated Next.js scaffold with the Version 1 Vite React shell and French-first i18n.
 - **API app**: Replaced the generated hello-world route with a local sidecar foundation, loopback defaults, and redacted logging.
