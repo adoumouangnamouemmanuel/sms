@@ -8,6 +8,7 @@ import type {
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatISODate } from '../../components/dateFormat';
+import { ImportModal } from '../imports';
 import {
   ArchiveDialog,
   DetailField,
@@ -45,6 +46,7 @@ export function StudentsModule({ apiBaseUrl, capabilityToken, client }: Students
   const [editingStudent, setEditingStudent] = useState<StudentResponse | null>(null);
   const [guardianFormOpen, setGuardianFormOpen] = useState(false);
   const [editingGuardian, setEditingGuardian] = useState<GuardianResponse | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const [archiveTarget, setArchiveTarget] = useState<{
     kind: 'student' | 'guardian';
@@ -112,6 +114,9 @@ export function StudentsModule({ apiBaseUrl, capabilityToken, client }: Students
             setEditingStudent(null);
             setStudentFormOpen(true);
           }}
+          onOpenImport={() => {
+            setImportOpen(true);
+          }}
           onSetArchiveTarget={setArchiveTarget}
         />
       ) : (
@@ -128,6 +133,17 @@ export function StudentsModule({ apiBaseUrl, capabilityToken, client }: Students
           onSetArchiveTarget={setArchiveTarget}
         />
       )}
+
+      {importOpen ? (
+        <ImportModal
+          apiBaseUrl={apiBaseUrl}
+          {...(capabilityToken ? { capabilityToken } : {})}
+          kind="STUDENTS"
+          onClose={() => {
+            setImportOpen(false);
+          }}
+        />
+      ) : null}
 
       {studentFormOpen ? (
         <StudentFormModal
@@ -264,6 +280,7 @@ interface StudentsTabProps {
   onEditStudent: (student: StudentResponse) => void;
   onLinkOpen: () => void;
   onOpenForm: () => void;
+  onOpenImport: () => void;
   onSetArchiveTarget: (target: ArchiveTarget) => void;
 }
 
@@ -272,6 +289,7 @@ function StudentsTab({
   onEditStudent,
   onLinkOpen,
   onOpenForm,
+  onOpenImport,
   onSetArchiveTarget,
 }: StudentsTabProps) {
   const { t } = useTranslation();
@@ -298,12 +316,16 @@ function StudentsTab({
           clearSearch: t('students.list.clearSearch'),
           count: t('students.list.total', { count: module.students.total }),
           filter: t('students.list.filter'),
+          import: t('imports.action'),
           new: t('students.list.new'),
           search: t('students.list.search'),
           searchPlaceholder: t('students.list.searchPlaceholder'),
           status: t('students.list.status'),
           statusActive: t('students.list.statusActive'),
           statusArchived: t('students.list.statusArchived'),
+        }}
+        onImport={() => {
+          onOpenImport();
         }}
         onNew={onOpenForm}
         onSearch={(search) => {
