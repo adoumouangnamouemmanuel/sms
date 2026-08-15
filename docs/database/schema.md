@@ -191,6 +191,8 @@ SQLite migration files live in `packages/db/migrations/sqlite`.
 
 `0003_old_sumo.sql` adds the Phase 3.1 people tables (`student`, `teacher`, `guardian`, `student_guardian`) with strict tenant-local code uniqueness and composite tenant foreign keys. It is additive and safe for non-empty databases.
 
+`0004_students_module.sql` widens the `school_module_config.module_name` CHECK to accept `STUDENTS` (hand-written table rebuild, since drizzle-kit does not emit CHECK constraints) and backfills an enabled `STUDENTS` row for every school that lacks one, so already-setup schools surface the students module too.
+
 ## Seed Policy
 
 Foundation seed data is deterministic and idempotent. It uses synthetic demo schools only; real school or student data is forbidden in seeds and tests.
