@@ -10,20 +10,71 @@ export const formSelectClassName =
 // Modal building blocks
 // ---------------------------------------------------------------------------
 
+const MIN_MODAL_WIDTH = 480;
+const MAX_MODAL_WIDTH = 1200;
+const MIN_MODAL_HEIGHT = 320;
+const MAX_MODAL_HEIGHT = 900;
+
+function clampResize(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
 export function ModalShell({
   title,
   closeLabel,
   onClose,
+  resizable = false,
   size = 'md',
   children,
 }: {
   title: string;
   closeLabel: string;
   onClose: () => void;
+  /**
+   * When true, a bottom-right drag handle lets the user resize the dialog
+   * (used by content-heavy steps such as the import preview table).
+   */
+  resizable?: boolean;
   /** 'lg' is for content-heavy steps (e.g. the import preview table). */
   size?: 'md' | 'lg';
   children: React.ReactNode;
 }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const dragStartRef = useRef<{ x: number; y: number; width: number; height: number } | null>(
+    null
+  );
+  const [dims, setDims] = useState<{ width: number; height: number } | null>(null);
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    const panel = panelRef.current;
+    if (!panel) return;
+    event.preventDefault();
+    dragStartRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      width: panel.offsetWidth,
+      height: panel.offsetHeight,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const start = dragStartRef.current;
+    if (!start) return;
+    setDims({
+      width: clampResize(start.width + (event.clientX - start.x), MIN_MODAL_WIDTH, MAX_MODAL_WIDTH),
+      height: clampResize(
+        start.height + (event.clientY - start.y),
+        MIN_MODAL_HEIGHT,
+        MAX_MODAL_HEIGHT
+      ),
+    });
+  };
+
+  const endResize = () => {
+    dragStartRef.current = null;
+  };
+
   return (
     <div
       aria-modal="true"
@@ -31,22 +82,58 @@ export function ModalShell({
       role="dialog"
     >
       <div
-        className={`max-h-[90vh] w-full overflow-y-auto rounded-3xl border border-white bg-white p-6 shadow-2xl ${
-          size === 'lg' ? 'max-w-4xl' : 'max-w-md'
-        }`}
+        className="relative"
+        ref={panelRef}
+        style={
+          dims
+            ? { width: dims.width, maxWidth: '90vw', height: dims.height, maxHeight: '90vh' }
+            : undefined
+        }
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-black tracking-tight text-slate-950">{title}</h2>
-          <button
-            aria-label={closeLabel}
-            className="cursor-pointer rounded-lg px-2 py-1 text-[13px] font-bold text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-            onClick={onClose}
-            type="button"
-          >
-            ✕
-          </button>
+        <div
+          className={`flex max-h-[90vh] w-full flex-col overflow-y-auto rounded-3xl border border-white bg-white p-6 shadow-2xl ${
+            dims ? '' : size === 'lg' ? 'max-w-4xl' : 'max-w-md'
+          }`}
+        >
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-black tracking-tight text-slate-950">{title}</h2>
+            <button
+              aria-label={closeLabel}
+              className="cursor-pointer rounded-lg px-2 py-1 text-[13px] font-bold text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+              onClick={onClose}
+              type="button"
+            >
+              ✕
+            </button>
+          </div>
+          {children}
         </div>
-        {children}
+
+        {resizable && (
+          <div
+            aria-label="Redimensionner"
+            className="absolute -bottom-2 -right-2 flex h-7 w-7 cursor-nwse-resize touch-none items-end justify-end rounded-bl-xl rounded-tr-xl bg-teal-500/90 p-1 shadow-lg ring-1 ring-teal-600/30 hover:bg-teal-500"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={endResize}
+            onPointerCancel={endResize}
+            role="separator"
+          >
+            <svg
+              aria-hidden="true"
+              className="h-3.5 w-3.5 text-white"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2.5}
+              viewBox="0 0 24 24"
+            >
+              <path d="M4 20 20 4" />
+              <path d="M13 20h7v-7" />
+            </svg>
+          </div>
+        )}
       </div>
     </div>
   );
