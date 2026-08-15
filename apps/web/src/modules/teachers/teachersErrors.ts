@@ -19,6 +19,7 @@ const TEACHERS_API_ERROR_MESSAGE_KEYS = {
   TEACHER_LOGIN_NOT_FOUND: 'teachers.errors.generic',
   TEACHER_LOGIN_REQUIRES_ACTIVE_RECORD: 'teachers.errors.loginRequiresActiveRecord',
   TEACHER_NOT_FOUND: 'teachers.errors.notFound',
+  TEACHER_VERSION_CONFLICT: 'teachers.errors.versionConflict',
   VALIDATION_ERROR: 'teachers.errors.validation',
 } as const;
 
