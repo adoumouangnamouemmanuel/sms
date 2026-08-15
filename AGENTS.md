@@ -56,18 +56,29 @@ Do not introduce a competing framework, ORM, package manager, database, auth pro
 ```text
 apps/
   api/                  Fastify REST API and application services
+    src/modules/        Feature modules (auth, setup, ...)
+    src/test/           API integration tests
   desktop/              Tauri shell and desktop integration
   web/                  React/Vite product frontend
+    src/modules/        Feature modules (auth, setup, app, ...)
+    src/test/           Component and unit tests
 packages/
   domain/               Pure domain rules, calculations, transitions
   db/                   Drizzle schemas, migrations, adapters, seeds
+    src/repositories/   Tenant-scoped repositories
+    src/test/           Database integration tests
+    migrations/sqlite/  Committed SQLite migrations
   shared/               Transport types, constants, validation schemas
   ui/                   Reusable accessible UI components
 docs/
   decisions/            ADRs
   database/             Schema documentation
 scripts/                Repeatable development, seed, build, and release scripts
+tests/
+  e2e/                  Playwright end-to-end tests
 ```
+
+Tests are grouped in a `src/test/` directory inside each package and app, so unit, integration and component tests stay together and separate from implementation files. Playwright end-to-end tests live in `tests/e2e`, and committed SQLite migrations live in `packages/db/migrations/sqlite`.
 
 Keep domain logic out of React components, Fastify route handlers, and database adapters. Prefer the flow:
 

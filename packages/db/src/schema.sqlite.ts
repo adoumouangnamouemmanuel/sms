@@ -1,8 +1,12 @@
 import {
   AUTH_USER_ROLES,
+  GUARDIAN_RELATIONSHIP_TYPES,
   IMPLEMENTED_SCHOOL_MODULES,
+  IMPORT_KINDS,
+  PERSON_SEX_VALUES,
   SCHOOL_SETUP_STATUSES,
   type AuthUserRole,
+  type ImportKind,
   type SchoolModuleName,
   type SchoolSetupStatus,
 } from '@edutrack/shared';
@@ -24,6 +28,13 @@ export const userRoles = AUTH_USER_ROLES;
 export type UserRole = AuthUserRole;
 export const schoolSetupStatuses = SCHOOL_SETUP_STATUSES;
 export const schoolModuleNames = IMPLEMENTED_SCHOOL_MODULES;
+export const personSexValues = PERSON_SEX_VALUES;
+export type PersonSex = (typeof personSexValues)[number];
+export const importKinds = IMPORT_KINDS;
+// Re-exported directly (not redefined) so the shared type stays canonical.
+export type { ImportKind };
+export const guardianRelationshipTypes = GUARDIAN_RELATIONSHIP_TYPES;
+export type GuardianRelationshipType = (typeof guardianRelationshipTypes)[number];
 
 export const auditOutcomes = ['SUCCESS', 'FAILURE'] as const;
 export type AuditOutcome = (typeof auditOutcomes)[number];
@@ -182,11 +193,163 @@ export const user = sqliteTable(
   },
   (table) => ({
     schoolIdIdx: index('user_school_id_idx').on(table.schoolId),
+    schoolIdIdUnique: uniqueIndex('user_school_id_id_unique').on(table.schoolId, table.id),
     schoolUsernameUnique: uniqueIndex('user_school_username_unique').on(
       table.schoolId,
       table.username
     ),
     roleCheck: check('user_role_check', sql`${table.role} in ('SCHOOL_MASTER', 'TEACHER')`),
+  })
+);
+
+export const student = sqliteTable(
+  'student',
+  {
+    id: uuidPrimaryKey(),
+    ...tenantColumns(),
+    code: text('code').notNull(),
+    firstName: text('first_name').notNull(),
+    lastName: text('last_name').notNull(),
+    sex: text('sex').$type<PersonSex>(),
+    dateOfBirth: text('date_of_birth'),
+    placeOfBirth: text('place_of_birth'),
+    nationality: text('nationality'),
+    photoUrl: text('photo_url'),
+    phone: text('phone'),
+    email: text('email'),
+    address: text('address'),
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    ...recordLifecycleColumns(),
+  },
+  (table) => ({
+    schoolIdIdx: index('student_school_id_idx').on(table.schoolId),
+    schoolLastNameIdx: index('student_school_last_name_idx').on(table.schoolId, table.lastName),
+    // Codes are durable identity for official records: strictly unique per school, never reused.
+    schoolCodeUnique: uniqueIndex('student_school_code_unique').on(table.schoolId, table.code),
+    schoolIdIdUnique: uniqueIndex('student_school_id_id_unique').on(table.schoolId, table.id),
+    sexCheck: check('student_sex_check', sql`${table.sex} in ('M', 'F', 'AUTRE')`),
+  })
+);
+
+export const teacher = sqliteTable(
+  'teacher',
+  {
+    id: uuidPrimaryKey(),
+    ...tenantColumns(),
+    code: text('code').notNull(),
+    firstName: text('first_name').notNull(),
+    lastName: text('last_name').notNull(),
+    specialization: text('specialization'),
+    hireDate: text('hire_date'),
+    phone: text('phone'),
+    email: text('email'),
+    address: text('address'),
+    // Optional login link: record status (is_active) stays independent of the account status.
+    userId: text('user_id'),
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    ...recordLifecycleColumns(),
+  },
+  (table) => ({
+    schoolIdIdx: index('teacher_school_id_idx').on(table.schoolId),
+    schoolLastNameIdx: index('teacher_school_last_name_idx').on(table.schoolId, table.lastName),
+    // Codes are durable identity: strictly unique per school, never reused.
+    schoolCodeUnique: uniqueIndex('teacher_school_code_unique').on(table.schoolId, table.code),
+    schoolIdIdUnique: uniqueIndex('teacher_school_id_id_unique').on(table.schoolId, table.id),
+    userFk: foreignKey({
+      columns: [table.schoolId, table.userId],
+      foreignColumns: [user.schoolId, user.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+  })
+);
+
+export const guardian = sqliteTable(
+  'guardian',
+  {
+    id: uuidPrimaryKey(),
+    ...tenantColumns(),
+    firstName: text('first_name').notNull(),
+    lastName: text('last_name').notNull(),
+    phone: text('phone'),
+    email: text('email'),
+    address: text('address'),
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    ...recordLifecycleColumns(),
+  },
+  (table) => ({
+    schoolIdIdx: index('guardian_school_id_idx').on(table.schoolId),
+    schoolLastNameIdx: index('guardian_school_last_name_idx').on(table.schoolId, table.lastName),
+    schoolIdIdUnique: uniqueIndex('guardian_school_id_id_unique').on(table.schoolId, table.id),
+  })
+);
+
+export const studentGuardian = sqliteTable(
+  'student_guardian',
+  {
+    id: uuidPrimaryKey(),
+    ...tenantColumns(),
+    studentId: text('student_id').notNull(),
+    guardianId: text('guardian_id').notNull(),
+    relationshipType: text('relationship_type').$type<GuardianRelationshipType>().notNull(),
+    isPrimary: integer('is_primary', { mode: 'boolean' }).notNull().default(false),
+    isEmergency: integer('is_emergency', { mode: 'boolean' }).notNull().default(false),
+    notes: text('notes'),
+    ...recordLifecycleColumns(),
+  },
+  (table) => ({
+    schoolIdIdx: index('student_guardian_school_id_idx').on(table.schoolId),
+    studentIdIdx: index('student_guardian_student_id_idx').on(table.studentId),
+    guardianIdIdx: index('student_guardian_guardian_id_idx').on(table.guardianId),
+    schoolStudentGuardianUnique: uniqueIndex('student_guardian_school_student_guardian_unique')
+      .on(table.schoolId, table.studentId, table.guardianId)
+      .where(sql`${table.deletedAt} is null`),
+    studentPrimaryUnique: uniqueIndex('student_guardian_student_primary_unique')
+      .on(table.schoolId, table.studentId)
+      .where(sql`${table.isPrimary} = true AND ${table.deletedAt} is null`),
+    studentFk: foreignKey({
+      columns: [table.schoolId, table.studentId],
+      foreignColumns: [student.schoolId, student.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+    guardianFk: foreignKey({
+      columns: [table.schoolId, table.guardianId],
+      foreignColumns: [guardian.schoolId, guardian.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+    relationshipTypeCheck: check(
+      'student_guardian_relationship_type_check',
+      sql`${table.relationshipType} in ('PERE', 'MERE', 'TUTEUR', 'AUTRE')`
+    ),
+  })
+);
+
+export const importBatch = sqliteTable(
+  'import_batch',
+  {
+    id: uuidPrimaryKey(),
+    ...tenantColumns(),
+    kind: text('kind').$type<ImportKind>().notNull(),
+    importIdentifier: text('import_identifier').notNull(),
+    filename: text('filename').notNull(),
+    totalRows: integer('total_rows').notNull(),
+    validRows: integer('valid_rows').notNull(),
+    errorRows: integer('error_rows').notNull(),
+    ...recordLifecycleColumns(),
+  },
+  (table) => ({
+    schoolIdIdx: index('import_batch_school_id_idx').on(table.schoolId),
+    // Re-importing the same identifier is a no-op (idempotent confirmed imports).
+    schoolIdentifierUnique: uniqueIndex('import_batch_school_identifier_unique').on(
+      table.schoolId,
+      table.importIdentifier
+    ),
+    kindCheck: check(
+      'import_batch_kind_check',
+      sql`${table.kind} in ('STUDENTS', 'TEACHERS', 'GUARDIANS')`
+    ),
   })
 );
 

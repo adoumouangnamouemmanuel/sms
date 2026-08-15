@@ -14,6 +14,13 @@ import {
 } from '@edutrack/shared';
 import Fastify, { type FastifyReply, type FastifyServerOptions } from 'fastify';
 import { AuthService, registerAuthRoutes, type AuthServiceOptions } from './modules/auth/index.js';
+import { ImportsService, registerImportsRoutes } from './modules/imports/index.js';
+import {
+  GuardiansService,
+  registerPeopleRoutes,
+  StudentsService,
+  TeachersService,
+} from './modules/people/index.js';
 import { registerSetupRoutes, SetupService } from './modules/setup/index.js';
 export { CAPABILITY_HEADER } from './sidecar-contract.js';
 import { CAPABILITY_HEADER } from './sidecar-contract.js';
@@ -25,7 +32,7 @@ const DEFAULT_ALLOWED_ORIGINS = [
   'http://tauri.localhost',
   'tauri://localhost',
 ];
-const CORS_ALLOWED_METHODS = 'GET,POST,PUT,OPTIONS';
+const CORS_ALLOWED_METHODS = 'GET,POST,PUT,DELETE,OPTIONS';
 const CORS_ALLOWED_HEADERS = ['Authorization', 'Content-Type', SIDECAR_CAPABILITY_HEADER].join(',');
 
 export interface SafeLoggerOptions {
@@ -149,7 +156,7 @@ export function buildServer(options: BuildServerOptions = {}) {
   });
 
   if (authEnabled && database) {
-    const authService = new AuthService(database, options.auth);
+    const authService = new AuthService(database, resolveAuthOptions(options.auth, process.env));
 
     registerAuthRoutes(server, {
       authService,
@@ -157,6 +164,24 @@ export function buildServer(options: BuildServerOptions = {}) {
     registerSetupRoutes(server, {
       authService,
       setupService: new SetupService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+    });
+    registerPeopleRoutes(server, {
+      authService,
+      studentsService: new StudentsService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+      guardiansService: new GuardiansService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+      teachersService: new TeachersService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+    });
+    registerImportsRoutes(server, {
+      authService,
+      importsService: new ImportsService(database, {
         ...(options.auth?.now ? { now: options.auth.now } : {}),
       }),
     });
@@ -179,6 +204,23 @@ export function buildServer(options: BuildServerOptions = {}) {
   }));
 
   return server;
+}
+
+function resolveAuthOptions(
+  auth: BuildServerOptions['auth'],
+  env: NodeJS.ProcessEnv
+): AuthServiceOptions | undefined {
+  // Explicit options win; the desktop shell injects the installation secret via environment.
+  const accessTokenSecret = auth?.accessTokenSecret ?? env.AUTH_ACCESS_TOKEN_SECRET;
+
+  if (auth) {
+    return {
+      ...auth,
+      ...(accessTokenSecret !== undefined ? { accessTokenSecret } : {}),
+    };
+  }
+
+  return accessTokenSecret !== undefined ? { accessTokenSecret } : undefined;
 }
 
 function applyCorsHeaders(reply: FastifyReply, origin: string) {

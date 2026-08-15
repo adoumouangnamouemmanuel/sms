@@ -148,6 +148,10 @@ export function useSetupState({ apiBaseUrl, capabilityToken, client }: UseSetupS
     [apiBaseUrl, client, persist, requestOptions]
   );
 
+  const updateState = useCallback((nextState: SetupStateResponse) => {
+    setState(nextState);
+  }, []);
+
   return {
     complete,
     errorKey,
@@ -158,5 +162,7 @@ export function useSetupState({ apiBaseUrl, capabilityToken, client }: UseSetupS
     saveClassLevels,
     saveProfile,
     state,
+    /** Lets screens inside the main shell (settings, structure) refresh the shared state. */
+    updateState,
   };
 }

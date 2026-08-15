@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import * as schema from './schema.sqlite';
+import * as schema from './schema.sqlite.js';
 
 export type EduTrackDatabase = BetterSQLite3Database<typeof schema>;
 export type EduTrackTransaction = Parameters<Parameters<EduTrackDatabase['transaction']>[0]>[0];

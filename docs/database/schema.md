@@ -88,6 +88,7 @@ Key columns: `id`, `school_id`, `username`, `password_hash`, `role`, `is_active`
 Indexes:
 
 - `user_school_id_idx`
+- `user_school_id_id_unique`
 - `user_school_username_unique`
 
 ### `refresh_session`
@@ -122,6 +123,64 @@ Stores local schema/seed metadata that must persist with the SQLite database. It
 
 Key columns: `key`, `value`, `description`, `created_at`, `updated_at`, `record_version`.
 
+## Phase 3.1 People Tables
+
+### `student`
+
+Stores tenant-local students. Duplicate names are valid; the student code is the durable identity and is never reused after archive.
+
+Key columns: `id`, `school_id`, `code`, `first_name`, `last_name`, `sex`, `date_of_birth`, `place_of_birth`, `nationality`, `photo_url`, `phone`, `email`, `address`, `is_active`, lifecycle metadata.
+
+Indexes and constraints:
+
+- `student_school_id_idx`
+- `student_school_last_name_idx`
+- `student_school_code_unique` (strict: no archive reuse)
+- `student_school_id_id_unique`
+- `student_sex_check` (`M`, `F`, `AUTRE`)
+
+### `teacher`
+
+Stores tenant-local teachers with an optional same-school login link. Record status (`is_active`) is independent from the linked account status (`user.is_active`).
+
+Key columns: `id`, `school_id`, `code`, `first_name`, `last_name`, `specialization`, `hire_date`, `phone`, `email`, `address`, `user_id`, `is_active`, lifecycle metadata.
+
+Indexes and constraints:
+
+- `teacher_school_id_idx`
+- `teacher_school_last_name_idx`
+- `teacher_school_code_unique` (strict: no archive reuse)
+- `teacher_school_id_id_unique`
+- composite FK `(school_id, user_id)` → `user(school_id, id)`
+
+### `guardian`
+
+Stores tenant-local guardians (parents or responsible adults). Guardians have no code; they are identified by UUID and linked to students through `student_guardian`.
+
+Key columns: `id`, `school_id`, `first_name`, `last_name`, `phone`, `email`, `address`, `is_active`, lifecycle metadata.
+
+Indexes:
+
+- `guardian_school_id_idx`
+- `guardian_school_last_name_idx`
+- `guardian_school_id_id_unique`
+
+### `student_guardian`
+
+Links students to guardians. A guardian may link to several students (siblings) and a student to several guardians, with at most one primary contact per student. Unlinking soft-archives the row so the pair can be re-linked later.
+
+Key columns: `id`, `school_id`, `student_id`, `guardian_id`, `relationship_type`, `is_primary`, `is_emergency`, `notes`, lifecycle metadata.
+
+Indexes and constraints:
+
+- `student_guardian_school_id_idx`
+- `student_guardian_student_id_idx`
+- `student_guardian_guardian_id_idx`
+- `student_guardian_school_student_guardian_unique` (one link per pair)
+- `student_guardian_student_primary_unique` (at most one primary per student)
+- `student_guardian_relationship_type_check` (`PERE`, `MERE`, `TUTEUR`, `AUTRE`)
+- composite FKs `(school_id, student_id)` → `student(school_id, id)` and `(school_id, guardian_id)` → `guardian(school_id, id)`
+
 ## Migrations
 
 SQLite migration files live in `packages/db/migrations/sqlite`.
@@ -130,9 +189,19 @@ SQLite migration files live in `packages/db/migrations/sqlite`.
 
 `0002_glorious_lizard.sql` adds the Phase 2.2 setup tables for terms, class levels and module visibility. It is additive and safe for non-empty databases that do not already violate the single-current-year invariant.
 
+`0003_old_sumo.sql` adds the Phase 3.1 people tables (`student`, `teacher`, `guardian`, `student_guardian`) with strict tenant-local code uniqueness and composite tenant foreign keys. It is additive and safe for non-empty databases.
+
+`0004_students_module.sql` widens the `school_module_config.module_name` CHECK to accept `STUDENTS` (hand-written table rebuild, since drizzle-kit does not emit CHECK constraints) and backfills an enabled `STUDENTS` row for every school that lacks one, so already-setup schools surface the students module too.
+
+`0005_teachers_module.sql` follows the same pattern for `TEACHERS` (CHECK widening + per-school backfill), so already-setup schools surface the teachers module as well. The teacher `user_id` login link keeps its `ON DELETE RESTRICT` behavior, and teacher/student/guardian list repositories accept an optional `status` filter (`active` | `archived`) so archived people stay reachable.
+
+`0006_import_batch.sql` adds the `import_batch` table that records each confirmed Excel import (kind, import identifier, filename, row counts) with a unique `(school_id, import_identifier)` index — the backbone of import idempotency (Phase 3.4). Import previews themselves are never persisted; they live in an in-memory store on the sidecar with a 30-minute TTL.
+
 ## Seed Policy
 
 Foundation seed data is deterministic and idempotent. It uses synthetic demo schools only; real school or student data is forbidden in seeds and tests.
+
+Demo credentials for the seeded schools (`NDS-DEMO`, `MND-DEMO`): school code `NDS-DEMO`, username `directeur`. The password must be provided via the `EDUTRACK_SEED_PASSWORD_HASH` environment variable during seeding as a **valid bcrypt hash with a cost factor of 12 or higher** (the app's `BCRYPT_COST`); a malformed hash or one below cost 12 fails seeding loudly rather than persisting a broken login. When the variable is unset or empty, the accounts remain locked and require administrator configuration before first login.
 
 Run after applying the schema:
 

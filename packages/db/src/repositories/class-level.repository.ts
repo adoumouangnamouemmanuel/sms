@@ -1,9 +1,9 @@
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { SetupClassLevelInput } from '@edutrack/shared';
-import type { RepositoryExecutor, TenantContext } from './base';
-import { TenantScopedRepository } from './base';
-import { classLevel } from '../schema.sqlite';
+import type { RepositoryExecutor, TenantContext } from './base.js';
+import { TenantScopedRepository } from './base.js';
+import { classLevel } from '../schema.sqlite.js';
 
 export interface ClassLevelRecord {
   id: string;

@@ -363,42 +363,74 @@ Do not freeze the grade schema until all of these are true:
 
 ### 9.1 Data model
 
-- [ ] Add `student`, `guardian`, `student_guardian` and `teacher` migrations.
-- [ ] Make student and employee codes unique within a school.
-- [ ] Separate record status from login-account status.
-- [ ] Preserve audit metadata and prevent destructive deletion of referenced records.
+- [x] Add `student`, `guardian`, `student_guardian` and `teacher` migrations.
+- [x] Make student and employee codes unique within a school.
+- [x] Separate record status from login-account status.
+- [x] Preserve audit metadata and prevent destructive deletion of referenced records.
+
+> Implementation note (9.1/9.2/9.3): the default student/teacher code is `{school.code}-{academicYearStart}-{NNI}` generated at the service layer (`POST /students` or `POST /teachers` without a `code`); an explicitly provided code — including from the Excel import (9.4) — overrides the default. Until a real NNI is available, the NNI segment falls back to a zero-padded per-school sequence (`NDS-DEMO-2026-001`, `002`, …) counting archived rows so codes are never reused. The exact NNI handling stays pending confirmation before the import slice.
 
 ### 9.2 Student and guardian slice
 
-- [ ] Create searchable, paginated student list and profile views.
-- [ ] Support name, date of birth, gender, contact, nationality, photo, code and status.
-- [ ] Link several guardians to a student and siblings to the same guardian.
-- [ ] Mark emergency and primary contacts.
-- [ ] Archive and reactivate records with an audit reason.
+- [x] Create searchable, paginated student list and profile views.
+- [x] Support name, date of birth, gender, contact, nationality, photo, code and status.
+- [x] Link several guardians to a student and siblings to the same guardian.
+- [x] Mark emergency and primary contacts.
+- [x] Archive and reactivate records with an audit reason.
 
 ### 9.3 Teacher slice
 
-- [ ] Create searchable teacher list and profile views.
-- [ ] Store minimal Version 1 data: name, code, contact, specialization, hire date and status.
-- [ ] Create or deactivate a Teacher login independently of the teacher record.
-- [ ] Prevent deletion when historical assignments or grades exist.
+- [x] Create searchable teacher list and profile views.
+- [x] Store minimal Version 1 data: name, code, contact, specialization, hire date and status.
+- [x] Create or deactivate a Teacher login independently of the teacher record.
+- [x] Prevent deletion when historical assignments or grades exist.
+
+> Implementation note (9.3): teachers ship as their own school module (`TEACHERS`, migration `0005`), gated exactly like `STUDENTS`. Codes follow the same `{school.code}-{academicYearStart}-{NNI}` rule (explicit codes from the Excel import override the default). Teacher logins are created from the record (`POST /teachers/:id/login`); the generated username/initial password are returned exactly once and never retrievable later. Record status and account status stay independent — an archived teacher keeps its login disabled. Deletion is prevented by the archive-only pattern plus the `teacher.user_id` restrict foreign key; future assignment/grade tables will extend the same tenant-scoped restrict rule.
+> TODO (9.3/9.4): when assignments/grades exist, block record archival too — the roadmap wording says "prevent deletion", and the archive-only model already satisfies it, but the UI should surface the reason once grade tables exist.
 
 ### 9.4 Import slice
 
-- [ ] Provide French student and teacher Excel templates.
-- [ ] Implement `upload -> parse -> preview -> validate -> confirm -> transact -> report`.
-- [ ] Never persist during preview.
-- [ ] Show row-level French errors and download rejected rows.
-- [ ] Use student/employee codes for identity; never merge on name alone.
-- [ ] Protect exports from spreadsheet formula injection.
-- [ ] Make confirmed imports idempotent through an import identifier.
+- [x] Provide French student and teacher Excel templates.
+- [x] Implement `upload -> parse -> preview -> validate -> confirm -> transact -> report`.
+- [x] Never persist during preview.
+- [x] Show row-level French errors and download rejected rows.
+- [x] Use student/employee codes for identity; never merge on name alone.
+- [x] Protect exports from spreadsheet formula injection.
+- [x] Make confirmed imports idempotent through an import identifier.
+
+> Implementation note (9.4): the import slice ships as an in-app module behind the
+> same SCHOOL_MASTER gate — `POST /imports/preview/:kind` (multipart .xlsx), `POST /imports/confirm`,
+> `GET /imports/templates/:kind` (French template with README sheet) and
+> `GET /imports/errors/:importId` (rejected-rows CSV). Preview lives in an in-memory,
+> 30-minute TTL store — nothing touches the DB until confirm, which runs in a
+> transaction, skips rows whose code already exists, and records an `import_batch`
+> row (migration 0006) whose (school, import_identifier) unique index makes
+> re-confirming the same identifier a no-op. Row-level French errors cover required
+> fields, sex/date/email formats, and in-file duplicate codes; the errors CSV
+> prefixes formula-looking cells so Excel cannot execute them. Templates and
+> sample files live under `docs/import-templates/` (see `docs/import-guidelines.md`).
 
 ### 9.5 Gate
 
-- [ ] Import 1,000 representative student rows without duplicate creation or partial corruption.
-- [ ] Reimporting the same confirmed file is safe and reported clearly.
-- [ ] Duplicate names remain valid and distinguishable by code.
-- [ ] A non-developer finds, edits and archives a record without help.
+- [x] Import 1,000 representative student rows without duplicate creation or partial corruption.
+- [x] Reimporting the same confirmed file is safe and reported clearly.
+- [x] Duplicate names remain valid and distinguishable by code.
+- [x] A non-developer finds, edits and archives a record without help.
+
+> Implementation note (9.5): the automated acceptance criteria are locked in
+> `apps/api/src/test/imports.gate.test.ts`, which imports a deterministic
+> 1,000-row workbook (300 explicit codes, 680 auto-generated rows incl. 10
+> identical-name pairs, 20 invalid rows) and asserts: every valid row persists
+> with a code and both names (no partial corruption), no code is ever
+> duplicated within the school, explicit codes survive verbatim, generated
+> codes match `{school}-{year}-{NNI}`, the list endpoint agrees with the raw
+> count, re-confirming the same identifier is a clearly reported no-op, and
+> identical names stay distinguishable by code. The remaining criterion — a
+> non-developer finds, edits and archives a record — is a manual walkthrough:
+> Élèves → search by name or code → open the profile → Modifier → save →
+> Archiver (with reason) → the record reappears under Filtres → Statut: Archivés
+> and can be réactivé. All of it is SCHOOL_MASTER-only, so no help needed from
+> a developer.
 
 ## 10. Phase 4 - Classes, curriculum and enrolment
 

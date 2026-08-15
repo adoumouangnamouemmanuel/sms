@@ -2,8 +2,13 @@ import { APP_NAME, type PublicAuthUser, type SchoolModuleName } from '@edutrack/
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DesktopDeploymentStatus } from '../../desktopStatus';
-import { useLogoutAction, type LogoutClient } from '../auth';
+import { clearAccessToken, useLogoutAction, type LogoutClient } from '../auth';
 import type { SetupStateResponse } from '@edutrack/shared';
+import { DashboardModule } from '../dashboard';
+import { SettingsModule } from '../settings';
+import { StudentsModule } from '../students';
+import { StructureModule } from '../structure';
+import { TeachersModule } from '../teachers';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -15,6 +20,8 @@ export interface MainAppShellProps {
   desktopStatus?: DesktopDeploymentStatus | null;
   logoutClient?: LogoutClient;
   onLoggedOut: () => void;
+  /** Called when a screen inside the shell saved new setup data (e.g. Configuration). */
+  onSetupStateChange?: (state: SetupStateResponse) => void;
   setupState: SetupStateResponse;
   user: PublicAuthUser;
 }
@@ -89,6 +96,44 @@ function DashboardIcon() {
   );
 }
 
+function PeopleIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      viewBox="0 0 24 24"
+    >
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
+function TeacherIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      viewBox="0 0 24 24"
+    >
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+    </svg>
+  );
+}
+
 function SearchIcon() {
   return (
     <svg
@@ -159,6 +204,8 @@ const MODULE_NAV_CONFIG: Partial<Record<SchoolModuleName, Omit<NavItem, 'moduleN
   // Gear icon — configuration/settings, not "home"
   SCHOOL_SETUP: { labelKey: 'setup.modules.SCHOOL_SETUP', icon: <GearIcon /> },
   ACADEMIC_STRUCTURE: { labelKey: 'setup.modules.ACADEMIC_STRUCTURE', icon: <AcademicIcon /> },
+  STUDENTS: { labelKey: 'setup.modules.STUDENTS', icon: <PeopleIcon /> },
+  TEACHERS: { labelKey: 'setup.modules.TEACHERS', icon: <TeacherIcon /> },
 };
 
 // ---------------------------------------------------------------------------
@@ -184,6 +231,7 @@ export function MainAppShell({
   desktopStatus,
   logoutClient,
   onLoggedOut,
+  onSetupStateChange,
   setupState,
   user,
 }: MainAppShellProps) {
@@ -198,6 +246,14 @@ export function MainAppShell({
     ...(logoutClient ? { logoutClient } : {}),
     onLoggedOut,
   });
+
+  // A module (e.g. the import flow) hit an invalid access token: the local
+  // session is gone, so clear the in-memory token and return to the login
+  // screen instead of leaving stale actions enabled.
+  const handleSessionExpired = () => {
+    clearAccessToken();
+    onLoggedOut();
+  };
 
   const enabledModuleNames = setupState.enabledModules.map((m) => m.moduleName);
   const currentTerm = setupState.terms.find((term) => term.isCurrent);
@@ -430,7 +486,45 @@ export function MainAppShell({
 
         {/* Content area */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          <WelcomePlaceholder />
+          {activeModule === null ? (
+            <DashboardModule
+              apiBaseUrl={apiBaseUrl}
+              {...(capabilityToken ? { capabilityToken } : {})}
+              onNavigate={setActiveModule}
+              onSessionExpired={handleSessionExpired}
+              setupState={setupState}
+              user={user}
+            />
+          ) : activeModule === 'SCHOOL_SETUP' ? (
+            <SettingsModule
+              apiBaseUrl={apiBaseUrl}
+              {...(capabilityToken ? { capabilityToken } : {})}
+              onSessionExpired={handleSessionExpired}
+              {...(onSetupStateChange ? { onSetupStateChange } : {})}
+              setupState={setupState}
+              user={user}
+            />
+          ) : activeModule === 'ACADEMIC_STRUCTURE' ? (
+            <StructureModule
+              apiBaseUrl={apiBaseUrl}
+              {...(capabilityToken ? { capabilityToken } : {})}
+              onSessionExpired={handleSessionExpired}
+              {...(onSetupStateChange ? { onSetupStateChange } : {})}
+              setupState={setupState}
+            />
+          ) : activeModule === 'STUDENTS' ? (
+            <StudentsModule
+              apiBaseUrl={apiBaseUrl}
+              {...(capabilityToken ? { capabilityToken } : {})}
+              onSessionExpired={handleSessionExpired}
+            />
+          ) : (
+            <TeachersModule
+              apiBaseUrl={apiBaseUrl}
+              {...(capabilityToken ? { capabilityToken } : {})}
+              onSessionExpired={handleSessionExpired}
+            />
+          )}
         </main>
       </div>
     </div>
@@ -683,93 +777,6 @@ function AppStatusPill({ label, tone }: { label: string; tone: 'green' | 'red' }
 }
 
 // ---------------------------------------------------------------------------
-// WelcomePlaceholder — setup-complete entry moment.
-// Teal left-border accent + check icon + fade-slide-in animation communicate success.
-// ---------------------------------------------------------------------------
-
-function WelcomePlaceholder() {
-  const { t } = useTranslation();
-
-  return (
-    <div
-      className="mx-auto max-w-2xl"
-      style={{ animation: 'mash-fade-slide-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both' }}
-    >
-      {/* Scoped keyframe — avoids polluting global styles */}
-      <style>{`
-        @keyframes mash-fade-slide-in {
-          from { opacity: 0; transform: translateY(14px); }
-          to   { opacity: 1; transform: translateY(0);    }
-        }
-      `}</style>
-
-      <div className="rounded-3xl border border-white bg-white p-8 shadow-sm [border-left:4px_solid_theme(colors.teal.500)]">
-        {/* Check icon — signals the successful setup completion */}
-        <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-teal-100 bg-teal-50">
-          <svg
-            aria-hidden="true"
-            className="h-6 w-6 text-teal-600"
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2.5}
-            viewBox="0 0 24 24"
-          >
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-            <polyline points="22 4 12 14.01 9 11.01" />
-          </svg>
-        </div>
-
-        <p className="text-xs font-black uppercase tracking-[0.22em] text-teal-700">
-          {t('app.shell.welcome.eyebrow')}
-        </p>
-        <h1 className="mt-3 text-2xl font-black tracking-tight text-slate-950">
-          {t('app.shell.welcome.title')}
-        </h1>
-        <p className="mt-3 text-sm font-medium leading-6 text-slate-500 max-w-lg">
-          {t('app.shell.welcome.body')}
-        </p>
-
-        {/* Visual "coming soon" module grid placeholder */}
-        <div className="mt-8 grid gap-3 sm:grid-cols-2">
-          {COMING_SOON_MODULES.map((label) => (
-            <div
-              key={label}
-              className="flex items-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-3.5 opacity-55"
-            >
-              <span className="inline-flex h-2 w-2 rounded-full bg-slate-300" />
-              <span className="text-[13px] font-bold text-slate-400">{label}</span>
-              <span className="ml-auto text-[10px] font-bold uppercase tracking-wide text-slate-300">
-                {/* no t() needed — this never shows a key; it's always the same short string */}
-                bientôt
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Future module labels shown as "coming soon" placeholders in the content area.
- * These are hardcoded French strings deliberately — they are purely decorative
- * placeholder content that will be removed when real modules land.
- * They must NOT use i18n keys because no real SchoolModuleName exists for them yet.
- */
-const COMING_SOON_MODULES = [
-  'Élèves',
-  'Enseignants',
-  'Classes',
-  'Notes et bulletins',
-  'Finances',
-  'Emploi du temps',
-  'Rapports',
-  'Sauvegarde',
-] as const;
-
-// ---------------------------------------------------------------------------
 // ComingSoonNavButton — greyed-out nav item previewing upcoming modules.
 // Deliberately non-interactive (aria-disabled) so it reads as "placeholder".
 // Remove each entry from COMING_SOON_NAV_ITEMS as the real module ships.
@@ -810,46 +817,6 @@ function ComingSoonNavButton({
  * Remove an entry here when the matching module ships.
  */
 const COMING_SOON_NAV_ITEMS: { label: string; icon: React.ReactNode }[] = [
-  {
-    label: 'Élèves',
-    icon: (
-      <svg
-        aria-hidden="true"
-        className="h-5 w-5 shrink-0"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        viewBox="0 0 24 24"
-      >
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Enseignants',
-    icon: (
-      <svg
-        aria-hidden="true"
-        className="h-5 w-5 shrink-0"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        viewBox="0 0 24 24"
-      >
-        <rect height="16" rx="2" width="20" x="2" y="4" />
-        <path d="M10 4v4" />
-        <path d="M2 8h20" />
-        <path d="M6 12h.01M10 12h.01M14 12h.01M18 12h.01M6 16h.01M10 16h.01M14 16h.01M18 16h.01" />
-      </svg>
-    ),
-  },
   {
     label: 'Notes & bulletins',
     icon: (

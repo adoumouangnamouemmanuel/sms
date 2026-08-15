@@ -1,8 +1,8 @@
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
-import type { RepositoryExecutor, TenantContext } from './base';
-import { TenantScopedRepository } from './base';
-import { user, type UserRole } from '../schema.sqlite';
+import type { RepositoryExecutor, TenantContext } from './base.js';
+import { TenantScopedRepository } from './base.js';
+import { user, type UserRole } from '../schema.sqlite.js';
 
 export interface SafeUserRecord {
   id: string;
@@ -55,6 +55,15 @@ export class UserRepository extends TenantScopedRepository {
       .get();
   }
 
+  /** Finds a user by username regardless of account status (usernames are never reused). */
+  findByUsername(username: string) {
+    return this.db
+      .select(safeUserColumns)
+      .from(user)
+      .where(and(eq(user.schoolId, this.schoolId), eq(user.username, username)))
+      .get();
+  }
+
   findActiveByUsernameForAuth(username: string) {
     return this.db
       .select(credentialUserColumns)
@@ -82,6 +91,15 @@ export class UserRepository extends TenantScopedRepository {
           isNull(user.deletedAt)
         )
       )
+      .get();
+  }
+
+  /** Finds a user by id regardless of account status, e.g. for profile display. */
+  findByIdAnyStatus(userId: string) {
+    return this.db
+      .select(safeUserColumns)
+      .from(user)
+      .where(and(eq(user.schoolId, this.schoolId), eq(user.id, userId)))
       .get();
   }
 
@@ -156,6 +174,36 @@ export class UserRepository extends TenantScopedRepository {
         failedLoginAttempts: 0,
         lockedUntil: null,
         updatedAt: changedAt,
+        recordVersion: sql`${user.recordVersion} + 1`,
+      })
+      .where(and(eq(user.schoolId, this.schoolId), eq(user.id, userId)))
+      .returning(safeUserColumns)
+      .get();
+  }
+
+  /** Disables a login account; the user row (username, audit trail) is kept. */
+  deactivate(userId: string, updatedAt: string) {
+    return this.db
+      .update(user)
+      .set({
+        isActive: false,
+        updatedAt,
+        recordVersion: sql`${user.recordVersion} + 1`,
+      })
+      .where(and(eq(user.schoolId, this.schoolId), eq(user.id, userId)))
+      .returning(safeUserColumns)
+      .get();
+  }
+
+  /** Re-enables a previously deactivated login account. */
+  reactivate(userId: string, updatedAt: string) {
+    return this.db
+      .update(user)
+      .set({
+        isActive: true,
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+        updatedAt,
         recordVersion: sql`${user.recordVersion} + 1`,
       })
       .where(and(eq(user.schoolId, this.schoolId), eq(user.id, userId)))

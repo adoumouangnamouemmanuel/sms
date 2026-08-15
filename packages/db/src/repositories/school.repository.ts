@@ -1,7 +1,7 @@
 import { and, eq, isNull, sql } from 'drizzle-orm';
-import type { RepositoryExecutor, TenantContext } from './base';
-import { TenantScopedRepository } from './base';
-import { school } from '../schema.sqlite';
+import type { RepositoryExecutor, TenantContext } from './base.js';
+import { TenantScopedRepository } from './base.js';
+import { school } from '../schema.sqlite.js';
 import type { SchoolSetupStatus } from '@edutrack/shared';
 
 export interface SafeSchoolRecord {

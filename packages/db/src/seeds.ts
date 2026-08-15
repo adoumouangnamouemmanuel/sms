@@ -1,10 +1,45 @@
 import { eq } from 'drizzle-orm';
-import type { EduTrackDatabase } from './client';
-import { schemaMetadata, school, user, type UserRole } from './schema.sqlite';
+import type { EduTrackDatabase } from './client.js';
+import { schemaMetadata, school, user, type UserRole } from './schema.sqlite.js';
 
-const seedPasswordHash = '$2b$12$C6UzMDM.H6dfI/f/IKcEeOq8GmUiZ6ztp7Z8VsYzHf5fQK1x6ZVdW';
+/**
+ * Demo credentials for the synthetic foundation schools (NDS-DEMO and MND-DEMO).
+ *
+ * - School code: `NDS-DEMO` (or `MND-DEMO`)
+ * - Username: `directeur`
+ * - Password: (set via EDUTRACK_SEED_PASSWORD_HASH)
+ *
+ * Synthetic demo data only — never use in a real school.
+ */
+const seedPasswordHash = resolveSeedPasswordHash(process.env.EDUTRACK_SEED_PASSWORD_HASH);
 
-export const foundationSeedVersion = 'phase-1.3-foundation-2026-08-12';
+/**
+ * Resolves the demo password hash for the foundation schools. When a value is
+ * set it must be a real bcrypt hash with a cost factor of at least 12 (the
+ * app's BCRYPT_COST); anything else fails seeding loudly instead of silently
+ * persisting a broken login. An unset or empty value keeps the accounts
+ * locked with an unusable placeholder until an administrator configures a
+ * real password.
+ */
+export function resolveSeedPasswordHash(configured: string | undefined): string {
+  if (!configured) {
+    return '!UNUSABLE_PASSWORD_HASH!';
+  }
+
+  // Full bcrypt shape: $2a|2b|2y$ + 2-digit cost + 53-char salt/hash body.
+  const match = /^\$2[aby]\$(\d{2})\$[./A-Za-z0-9]{53}$/.exec(configured);
+  const cost = match ? Number(match[1]) : NaN;
+
+  if (!match || Number.isNaN(cost) || cost < 12) {
+    throw new Error(
+      'EDUTRACK_SEED_PASSWORD_HASH doit être un hash bcrypt valide avec un facteur de coût >= 12.'
+    );
+  }
+
+  return configured;
+}
+
+export const foundationSeedVersion = 'phase-1.4-foundation-2026-08-15';
 
 export const foundationSeed = {
   schools: [
@@ -112,7 +147,7 @@ export function seedFoundation(db: EduTrackDatabase) {
         target: schemaMetadata.key,
         set: {
           value: foundationSeedVersion,
-          description: 'Deterministic Phase 1.3 foundation seed version.',
+          description: 'Deterministic Phase 1.4 foundation seed version.',
         },
       })
       .run();

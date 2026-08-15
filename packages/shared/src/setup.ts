@@ -12,7 +12,12 @@ export type SchoolSetupStatus = (typeof SCHOOL_SETUP_STATUSES)[number];
 export const TERM_SYSTEMS = ['TRIMESTER', 'SEMESTER'] as const;
 export type TermSystem = (typeof TERM_SYSTEMS)[number];
 
-export const IMPLEMENTED_SCHOOL_MODULES = ['SCHOOL_SETUP', 'ACADEMIC_STRUCTURE'] as const;
+export const IMPLEMENTED_SCHOOL_MODULES = [
+  'SCHOOL_SETUP',
+  'ACADEMIC_STRUCTURE',
+  'STUDENTS',
+  'TEACHERS',
+] as const;
 export type SchoolModuleName = (typeof IMPLEMENTED_SCHOOL_MODULES)[number];
 
 export const SETUP_STEP_IDS = ['profile', 'calendar', 'classLevels', 'review'] as const;
@@ -168,4 +173,5 @@ export type SetupCalendarRequest = z.infer<typeof setupCalendarRequestSchema>;
 export type SetupClassLevelsRequest = z.infer<typeof setupClassLevelsRequestSchema>;
 export type SetupTermInput = z.infer<typeof setupTermInputSchema>;
 export type SetupClassLevelInput = z.infer<typeof setupClassLevelInputSchema>;
+export type SetupClassLevel = z.infer<typeof setupClassLevelSchema>;
 export type SetupStateResponse = z.infer<typeof setupStateResponseSchema>;
