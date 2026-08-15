@@ -390,13 +390,25 @@ Do not freeze the grade schema until all of these are true:
 
 ### 9.4 Import slice
 
-- [ ] Provide French student and teacher Excel templates.
-- [ ] Implement `upload -> parse -> preview -> validate -> confirm -> transact -> report`.
-- [ ] Never persist during preview.
-- [ ] Show row-level French errors and download rejected rows.
-- [ ] Use student/employee codes for identity; never merge on name alone.
-- [ ] Protect exports from spreadsheet formula injection.
-- [ ] Make confirmed imports idempotent through an import identifier.
+- [x] Provide French student and teacher Excel templates.
+- [x] Implement `upload -> parse -> preview -> validate -> confirm -> transact -> report`.
+- [x] Never persist during preview.
+- [x] Show row-level French errors and download rejected rows.
+- [x] Use student/employee codes for identity; never merge on name alone.
+- [x] Protect exports from spreadsheet formula injection.
+- [x] Make confirmed imports idempotent through an import identifier.
+
+> Implementation note (9.4): the import slice ships as an in-app module behind the
+> same SCHOOL_MASTER gate — `POST /imports/preview/:kind` (multipart .xlsx), `POST /imports/confirm`,
+> `GET /imports/templates/:kind` (French template with README sheet) and
+> `GET /imports/errors/:importId` (rejected-rows CSV). Preview lives in an in-memory,
+> 30-minute TTL store — nothing touches the DB until confirm, which runs in a
+> transaction, skips rows whose code already exists, and records an `import_batch`
+> row (migration 0006) whose (school, import_identifier) unique index makes
+> re-confirming the same identifier a no-op. Row-level French errors cover required
+> fields, sex/date/email formats, and in-file duplicate codes; the errors CSV
+> prefixes formula-looking cells so Excel cannot execute them. Templates and
+> sample files live under `docs/import-templates/` (see `docs/import-guidelines.md`).
 
 ### 9.5 Gate
 
