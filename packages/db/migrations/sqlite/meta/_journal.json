@@ -36,6 +36,13 @@
       "when": 1786793822870,
       "tag": "0004_students_module",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1786981200000,
+      "tag": "0005_teachers_module",
+      "breakpoints": true
     }
   ]
 }
