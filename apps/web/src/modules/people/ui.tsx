@@ -133,6 +133,8 @@ export interface ListToolbarLabels {
   status: string;
   statusActive: string;
   statusArchived: string;
+  /** Optional import action shown next to the create button (Phase 3.4). */
+  import?: string;
 }
 
 /**
@@ -142,6 +144,7 @@ export interface ListToolbarLabels {
  */
 export function ListToolbar({
   labels,
+  onImport,
   onNew,
   onSearch,
   onSearchValueChange,
@@ -150,6 +153,7 @@ export function ListToolbar({
   status,
 }: {
   labels: ListToolbarLabels;
+  onImport?: () => void;
   onNew: () => void;
   onSearch: (search: string) => void;
   onSearchValueChange: (value: string) => void;
@@ -260,6 +264,15 @@ export function ListToolbar({
 
       <div className="flex items-center gap-3">
         <span aria-hidden="true" className="hidden h-6 w-px bg-slate-200 sm:block" />
+        {onImport && labels.import ? (
+          <button
+            className="h-9 cursor-pointer whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+            onClick={onImport}
+            type="button"
+          >
+            {labels.import}
+          </button>
+        ) : null}
         <button
           className="h-9 cursor-pointer whitespace-nowrap rounded-xl bg-teal-500 px-4 text-[13px] font-bold text-white shadow-sm hover:bg-teal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
           onClick={onNew}
