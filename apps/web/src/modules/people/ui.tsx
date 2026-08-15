@@ -267,6 +267,16 @@ export interface ListToolbarLabels {
   statusArchived: string;
   /** Optional import action shown next to the create button (Phase 3.4). */
   import?: string;
+  /** Optional class-level/classroom filter labels (students list, Phase 4). */
+  classLevel?: string;
+  classroom?: string;
+  allLevels?: string;
+  allClassrooms?: string;
+}
+
+export interface ClassFilterOption {
+  id: string;
+  label: string;
 }
 
 /**
@@ -275,7 +285,13 @@ export interface ListToolbarLabels {
  * separate zone behind a divider.
  */
 export function ListToolbar({
+  classLevelId,
+  classroomId,
+  classLevels,
+  classrooms,
   labels,
+  onClassLevelChange,
+  onClassroomChange,
   onImport,
   onNew,
   onSearch,
@@ -284,6 +300,13 @@ export function ListToolbar({
   searchValue,
   status,
 }: {
+  /** Optional ACTIVE-enrollment class filters (students list, Phase 4). */
+  classLevelId?: string | null;
+  classroomId?: string | null;
+  classLevels?: ClassFilterOption[];
+  classrooms?: ClassFilterOption[];
+  onClassLevelChange?: (classLevelId: string | null) => void;
+  onClassroomChange?: (classroomId: string | null) => void;
   labels: ListToolbarLabels;
   onImport?: () => void;
   onNew: () => void;
@@ -382,12 +405,50 @@ export function ListToolbar({
                     <option value="archived">{labels.statusArchived}</option>
                   </select>
                 </label>
-                {/*
-                  TODO(roadmap §9.x): add the class-level (Niveau) filter once
-                  Classes + enrollment ship; it must query the enrollment
-                  relationship, not a raw field on the person record.
-                  TODO: add the sex filter (lower priority; the field exists).
-                */}
+
+                {classLevels && onClassLevelChange && labels.classLevel ? (
+                  <label className="flex flex-col gap-2">
+                    <span className="text-[13px] font-bold text-slate-800">
+                      {labels.classLevel}
+                    </span>
+                    <select
+                      className={`${formSelectClassName} h-10`}
+                      onChange={(event) => {
+                        onClassLevelChange(event.target.value || null);
+                      }}
+                      value={classLevelId ?? ''}
+                    >
+                      <option value="">{labels.allLevels ?? ''}</option>
+                      {classLevels.map((level) => (
+                        <option key={level.id} value={level.id}>
+                          {level.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+
+                {classrooms && onClassroomChange && labels.classroom ? (
+                  <label className="flex flex-col gap-2">
+                    <span className="text-[13px] font-bold text-slate-800">{labels.classroom}</span>
+                    <select
+                      className={`${formSelectClassName} h-10`}
+                      onChange={(event) => {
+                        onClassroomChange(event.target.value || null);
+                      }}
+                      value={classroomId ?? ''}
+                    >
+                      <option value="">{labels.allClassrooms ?? ''}</option>
+                      {classrooms.map((classroom) => (
+                        <option key={classroom.id} value={classroom.id}>
+                          {classroom.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+
+                {/* TODO: add the sex filter (lower priority; the field exists). */}
               </div>
             ) : null}
           </div>
