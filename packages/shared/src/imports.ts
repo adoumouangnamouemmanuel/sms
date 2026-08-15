@@ -4,7 +4,14 @@ import { z } from 'zod';
 // Import kinds and column definitions
 // ---------------------------------------------------------------------------
 
-export const IMPORT_KINDS = ['STUDENTS', 'TEACHERS', 'GUARDIANS'] as const;
+export const IMPORT_KINDS = [
+  'STUDENTS',
+  'TEACHERS',
+  'GUARDIANS',
+  'SUBJECTS',
+  'CLASSROOMS',
+  'CLASS_SUBJECTS',
+] as const;
 export type ImportKind = (typeof IMPORT_KINDS)[number];
 
 /**
@@ -80,10 +87,84 @@ export const TEACHER_IMPORT_COLUMNS: ImportColumnDefinition[] = [
   { key: 'address', label: 'Adresse', required: false, description: 'Optionnel.' },
 ];
 
+export const SUBJECT_IMPORT_COLUMNS: ImportColumnDefinition[] = [
+  { key: 'code', label: 'Code', required: true, description: 'Requis. Ex. MATH.' },
+  { key: 'name', label: 'Nom', required: true, description: 'Requis. Nom affiché de la matière.' },
+  { key: 'nameEn', label: 'Nom (anglais)', required: false, description: 'Optionnel.' },
+  { key: 'nameAr', label: 'Nom (arabe)', required: false, description: 'Optionnel.' },
+  { key: 'shortLabel', label: 'Libellé court', required: false, description: 'Optionnel.' },
+  {
+    key: 'category',
+    label: 'Catégorie',
+    required: true,
+    description:
+      'Requis. LANGUES, SCIENCES, MATHEMATIQUES, SCIENCES_SOCIALES, ARTS, SPORTS ou AUTRE.',
+  },
+];
+
+export const CLASSROOM_IMPORT_COLUMNS: ImportColumnDefinition[] = [
+  {
+    key: 'academicYearLabel',
+    label: 'Année scolaire',
+    required: true,
+    description: "Requis. Libellé exact de l'année (ex. 2026-2027).",
+  },
+  {
+    key: 'classLevelCode',
+    label: 'Code niveau',
+    required: true,
+    description: 'Requis. Code du niveau (ex. 6E, 3E, TLE).',
+  },
+  { key: 'code', label: 'Code classe', required: true, description: 'Requis. Ex. 3E-A.' },
+  { key: 'name', label: 'Nom', required: false, description: 'Optionnel.' },
+  {
+    key: 'capacity',
+    label: 'Capacité',
+    required: false,
+    description: 'Optionnel. Nombre entier ≥ 1.',
+  },
+];
+
+export const CLASS_SUBJECT_IMPORT_COLUMNS: ImportColumnDefinition[] = [
+  {
+    key: 'classroomCode',
+    label: 'Code classe',
+    required: true,
+    description: "Requis. Code de la classe déjà créée (ex. 3E-A) dans l'année active.",
+  },
+  {
+    key: 'subjectCode',
+    label: 'Code matière',
+    required: true,
+    description: 'Requis. Code de la matière déjà créée (ex. MATH).',
+  },
+  {
+    key: 'coefficient',
+    label: 'Coefficient',
+    required: true,
+    description: 'Requis. Entier ≥ 1 et ≤ 20.',
+  },
+  {
+    key: 'isRequired',
+    label: 'Obligatoire',
+    required: false,
+    description: 'OUI ou NON (par défaut OUI).',
+  },
+  {
+    key: 'teacherCode',
+    label: 'Code professeur',
+    required: false,
+    description: 'Optionnel. Code du professeur déjà créé (ex. NDS-DEMO-2026-...).',
+  },
+];
+
 export const IMPORT_COLUMNS_BY_KIND: Record<ImportKind, ImportColumnDefinition[]> = {
   STUDENTS: STUDENT_IMPORT_COLUMNS,
   TEACHERS: TEACHER_IMPORT_COLUMNS,
   GUARDIANS: GUARDIAN_IMPORT_COLUMNS,
+  SUBJECTS: SUBJECT_IMPORT_COLUMNS,
+  CLASSROOMS: CLASSROOM_IMPORT_COLUMNS,
+  CLASS_SUBJECTS: CLASS_SUBJECT_IMPORT_COLUMNS,
 };
 
 // ---------------------------------------------------------------------------
