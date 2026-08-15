@@ -40,6 +40,138 @@ describe('database foundation migrations', () => {
     sqlite.close();
   });
 
+  it('adds the Phase 4 tables to a non-empty Phase 3 database', () => {
+    sqlite = new Database(':memory:');
+    sqlite.pragma('foreign_keys = ON');
+
+    // Phase 1-3 schema only (up to 0008).
+    const phase3Migrations = readdirSync(migrationsDir)
+      .filter(
+        (file) => file.endsWith('.sql') && !file.startsWith('0009') && !file.startsWith('0010')
+      )
+      .sort();
+    for (const migrationFile of phase3Migrations) {
+      applyMigration(sqlite, migrationFile);
+    }
+
+    // Existing Phase 3 data that must survive and stay referenceable.
+    sqlite
+      .prepare(`INSERT INTO school (id, code, name) VALUES (?, ?, ?)`)
+      .run(legacySchoolId, 'LEGACY', 'Legacy School');
+    sqlite
+      .prepare(`INSERT INTO academic_year (id, school_id, label, is_current) VALUES (?, ?, ?, 1)`)
+      .run('00000000-0000-4000-8000-000000000401', legacySchoolId, '2026-2027');
+    sqlite
+      .prepare(
+        `INSERT INTO class_level (id, school_id, code, name, display_order) VALUES (?, ?, ?, ?, 1)`
+      )
+      .run('00000000-0000-4000-8000-000000000601', legacySchoolId, '3E', 'Troisième');
+    sqlite
+      .prepare(
+        `INSERT INTO student (id, school_id, code, first_name, last_name) VALUES (?, ?, ?, ?, ?)`
+      )
+      .run(
+        '00000000-0000-4000-8000-000000000701',
+        legacySchoolId,
+        'LEGACY-2026-001',
+        'Aminata',
+        'Mahamat'
+      );
+    sqlite
+      .prepare(
+        `INSERT INTO teacher (id, school_id, code, first_name, last_name) VALUES (?, ?, ?, ?, ?)`
+      )
+      .run(
+        '00000000-0000-4000-8000-000000000801',
+        legacySchoolId,
+        'LEGACY-2026-001',
+        'Ibrahim',
+        'Ousmane'
+      );
+
+    applyMigration(sqlite, '0009_gifted_kronos.sql');
+    applyMigration(sqlite, '0010_slippery_mother_askani.sql');
+
+    // The five new tables accept tenant-scoped rows referencing existing data.
+    sqlite
+      .prepare(`INSERT INTO subject (id, school_id, code, name, category) VALUES (?, ?, ?, ?, ?)`)
+      .run(
+        '00000000-0000-4000-8000-000000000901',
+        legacySchoolId,
+        'MATH',
+        'Mathématiques',
+        'MATHEMATIQUES'
+      );
+    sqlite
+      .prepare(
+        `INSERT INTO classroom
+           (id, school_id, academic_year_id, class_level_id, code)
+         VALUES (?, ?, ?, ?, ?)`
+      )
+      .run(
+        '00000000-0000-4000-8000-000000000a01',
+        legacySchoolId,
+        '00000000-0000-4000-8000-000000000401',
+        '00000000-0000-4000-8000-000000000601',
+        '3E-A'
+      );
+    sqlite
+      .prepare(
+        `INSERT INTO class_subject
+           (id, school_id, classroom_id, subject_id, coefficient)
+         VALUES (?, ?, ?, ?, ?)`
+      )
+      .run(
+        '00000000-0000-4000-8000-000000000b01',
+        legacySchoolId,
+        '00000000-0000-4000-8000-000000000a01',
+        '00000000-0000-4000-8000-000000000901',
+        4
+      );
+    sqlite
+      .prepare(
+        `INSERT INTO class_enrollment
+           (id, school_id, student_id, classroom_id, academic_year_id, enrollment_date)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        '00000000-0000-4000-8000-000000000c01',
+        legacySchoolId,
+        '00000000-0000-4000-8000-000000000701',
+        '00000000-0000-4000-8000-000000000a01',
+        '00000000-0000-4000-8000-000000000401',
+        '2026-09-01'
+      );
+    sqlite
+      .prepare(
+        `INSERT INTO student_subject_enrollment
+           (id, school_id, class_enrollment_id, class_subject_id)
+         VALUES (?, ?, ?, ?)`
+      )
+      .run(
+        '00000000-0000-4000-8000-000000000d01',
+        legacySchoolId,
+        '00000000-0000-4000-8000-000000000c01',
+        '00000000-0000-4000-8000-000000000b01'
+      );
+
+    // The domain CHECK constraints are live on the migrated tables.
+    expect(() =>
+      sqlite
+        .prepare(
+          `INSERT INTO class_subject
+             (id, school_id, classroom_id, subject_id, coefficient)
+           VALUES (?, ?, ?, ?, 0)`
+        )
+        .run(
+          '00000000-0000-4000-8000-000000000b02',
+          legacySchoolId,
+          '00000000-0000-4000-8000-000000000a01',
+          '00000000-0000-4000-8000-000000000901'
+        )
+    ).toThrow(/CHECK/i);
+  });
+
   it('applies the 7.3 migration to a non-empty scaffold database', () => {
     sqlite = new Database(':memory:');
     sqlite.pragma('foreign_keys = ON');
