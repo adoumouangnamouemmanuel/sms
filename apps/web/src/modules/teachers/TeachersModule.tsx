@@ -48,6 +48,11 @@ export function TeachersModule({
     id: string;
     name: string;
   } | null>(null);
+  const [loginResetTarget, setLoginResetTarget] = useState<{
+    userId: string;
+    teacherId: string;
+    username: string;
+  } | null>(null);
 
   const errorKey = module.mutationErrorKey ?? module.profileErrorKey;
 
@@ -85,6 +90,9 @@ export function TeachersModule({
               id: teacher.id,
               name: `${teacher.firstName} ${teacher.lastName}`,
             });
+          }}
+          onLoginReset={(teacher, userId, username) => {
+            setLoginResetTarget({ userId, teacherId: teacher.id, username });
           }}
           onSetArchiveTarget={setArchiveTarget}
         />
@@ -232,6 +240,19 @@ export function TeachersModule({
           }}
         />
       ) : null}
+
+      {loginResetTarget ? (
+        <ResetPasswordDialog
+          onClose={() => {
+            setLoginResetTarget(null);
+          }}
+          onConfirm={async (newPassword) => {
+            await module.resetTeacherPassword(loginResetTarget.userId, newPassword);
+            setLoginResetTarget(null);
+          }}
+          username={loginResetTarget.username}
+        />
+      ) : null}
     </section>
   );
 }
@@ -336,12 +357,14 @@ function TeacherDetail({
   onBack,
   onEdit,
   onLoginDeactivate,
+  onLoginReset,
   onSetArchiveTarget,
 }: {
   module: ReturnType<typeof useTeachersModule>;
   onBack: () => void;
   onEdit: (teacher: TeacherResponse) => void;
   onLoginDeactivate: (teacher: TeacherResponse) => void;
+  onLoginReset: (teacher: TeacherResponse, userId: string, username: string) => void;
   onSetArchiveTarget: (target: { id: string; name: string; reactivate: boolean }) => void;
 }) {
   const { t } = useTranslation();
@@ -429,6 +452,11 @@ function TeacherDetail({
         onReactivate={() => {
           void module.reactivateLogin(teacher.id);
         }}
+        onReset={(username) => {
+          if (login?.userId) {
+            onLoginReset(teacher, login.userId, username);
+          }
+        }}
         recordActive={teacher.isActive}
       />
     </div>
@@ -440,12 +468,14 @@ function LoginSection({
   onCreate,
   onDeactivate,
   onReactivate,
+  onReset,
   recordActive,
 }: {
   login: TeacherLoginView | null;
   onCreate: () => void;
   onDeactivate: () => void;
   onReactivate: () => void;
+  onReset: (username: string) => void;
   recordActive: boolean;
 }) {
   const { t } = useTranslation();
@@ -459,13 +489,24 @@ function LoginSection({
         {login ? (
           <div className="flex items-center gap-2">
             {login.isActive ? (
-              <button
-                className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-red-300 hover:text-red-600"
-                onClick={onDeactivate}
-                type="button"
-              >
-                {t('teachers.login.deactivate')}
-              </button>
+              <>
+                <button
+                  className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700"
+                  onClick={() => {
+                    onReset(login.username);
+                  }}
+                  type="button"
+                >
+                  {t('teachers.login.reset')}
+                </button>
+                <button
+                  className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-red-300 hover:text-red-600"
+                  onClick={onDeactivate}
+                  type="button"
+                >
+                  {t('teachers.login.deactivate')}
+                </button>
+              </>
             ) : (
               <button
                 className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700"
@@ -784,6 +825,120 @@ function LoginDeactivateDialog({
             type="submit"
           >
             {t('teachers.login.deactivate')}
+          </button>
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+function ResetPasswordDialog({
+  onClose,
+  onConfirm,
+  username,
+}: {
+  onClose: () => void;
+  onConfirm: (newPassword: string) => Promise<void>;
+  username: string;
+}) {
+  const { t } = useTranslation();
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [show, setShow] = useState(false);
+  const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  return (
+    <ModalShell
+      closeLabel={t('teachers.form.cancel')}
+      onClose={onClose}
+      title={t('teachers.login.resetTitle')}
+    >
+      <form
+        className="space-y-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+
+          if (password.length < 8) {
+            setErrorKey(t('teachers.login.passwordTooShort'));
+            return;
+          }
+
+          if (password !== confirm) {
+            setErrorKey(t('teachers.login.passwordsMismatch'));
+            return;
+          }
+
+          setErrorKey(null);
+          setIsSaving(true);
+          void onConfirm(password)
+            .catch(() => {
+              setErrorKey(t('teachers.login.resetFailed'));
+            })
+            .finally(() => {
+              setIsSaving(false);
+            });
+        }}
+      >
+        <p className="text-[13px] font-semibold leading-6 text-slate-500">
+          {t('teachers.login.resetBody', { username })}
+        </p>
+        <label className="flex flex-col gap-2">
+          <span className="text-[13px] font-bold text-slate-800">
+            {t('teachers.login.newPassword')}
+          </span>
+          <input
+            className="h-[50px] w-full cursor-text rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[14px] font-medium text-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] outline-none transition-all placeholder:font-medium placeholder:text-slate-400 hover:border-slate-300 focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-600/10"
+            onChange={(event) => {
+              setPassword(event.target.value);
+            }}
+            placeholder={t('teachers.login.newPasswordPlaceholder')}
+            type={show ? 'text' : 'password'}
+            value={password}
+          />
+        </label>
+        <label className="flex flex-col gap-2">
+          <span className="text-[13px] font-bold text-slate-800">
+            {t('teachers.login.confirmPassword')}
+          </span>
+          <input
+            className="h-[50px] w-full cursor-text rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[14px] font-medium text-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] outline-none transition-all placeholder:font-medium placeholder:text-slate-400 hover:border-slate-300 focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-600/10"
+            onChange={(event) => {
+              setConfirm(event.target.value);
+            }}
+            placeholder={t('teachers.login.confirmPasswordPlaceholder')}
+            type={show ? 'text' : 'password'}
+            value={confirm}
+          />
+        </label>
+        <label className="flex cursor-pointer items-center gap-2">
+          <input
+            checked={show}
+            className="h-4 w-4 accent-teal-600"
+            onChange={(event) => {
+              setShow(event.target.checked);
+            }}
+            type="checkbox"
+          />
+          <span className="text-[12px] font-bold text-slate-600">
+            {t('teachers.login.showPassword')}
+          </span>
+        </label>
+
+        {errorKey ? (
+          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] font-bold text-red-700">
+            {errorKey}
+          </p>
+        ) : null}
+
+        <div className="flex justify-end gap-2">
+          <ModalCancelButton label={t('teachers.form.cancel')} onClose={onClose} />
+          <button
+            className="cursor-pointer rounded-xl bg-teal-500 px-4 py-2 text-[13px] font-bold text-white transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={isSaving}
+            type="submit"
+          >
+            {isSaving ? t('teachers.login.resetting') : t('teachers.login.reset')}
           </button>
         </div>
       </form>
