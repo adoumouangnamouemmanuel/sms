@@ -112,11 +112,18 @@ async function downloadBlob(url: string, options: ImportsRequestOptions) {
   }
 
   if (!response.ok) {
-    throw new ImportsApiError(
-      'REQUEST_REJECTED',
-      'La requete locale a ete refusee.',
-      response.status
-    );
+    let errorCode = 'REQUEST_REJECTED';
+    let errorMessage = 'La requete locale a ete refusee.';
+
+    try {
+      const payload = (await response.json()) as ApiErrorResponse;
+      errorCode = payload.error.code;
+      errorMessage = payload.error.message;
+    } catch {
+      // Ignored
+    }
+
+    throw new ImportsApiError(errorCode, errorMessage, response.status);
   }
 
   return response.blob();
