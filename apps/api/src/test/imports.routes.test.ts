@@ -276,7 +276,7 @@ describe('imports routes', () => {
     expect((readJson(listResponse) as ApiSuccess<PaginatedStudentsResponse>).data.total).toBe(2);
   });
 
-  it('skips already-present people when the same file is re-imported under a new identifier', async () => {
+  it('flags possible duplicates in the preview but never blocks on names', async () => {
     const accessToken = await loginAndReadAccessToken('directeur');
     const { payload, contentType } = buildMultipart(
       studentWorkbook([
@@ -295,19 +295,23 @@ describe('imports routes', () => {
     });
     expect((readJson(firstConfirm) as ApiSuccess<ConfirmImportResponse>).data.imported).toBe(2);
 
-    // Same file, different identifier: the codes are generated, so the only
-    // way to catch the duplicate is the exact full-name check.
-    const secondPreview = await preview(accessToken, payload, contentType);
+    // Same file, different identifier. The preview now warns that the names
+    // already exist in the school …
+    const secondPreviewData = await preview(accessToken, payload, contentType);
+    expect(secondPreviewData.rows.every((row) => row.possibleDuplicate)).toBe(true);
+
+    // … but names are NOT identity: two real people can share an exact name,
+    // so confirm imports the rows anyway with fresh generated codes.
     const secondConfirm = await server.inject({
       method: 'POST',
       url: '/imports/confirm',
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: { importId: secondPreview.importId, importIdentifier: 'rentree-septembre' },
+      payload: { importId: secondPreviewData.importId, importIdentifier: 'rentree-septembre' },
     });
 
     expect(readJson(secondConfirm) as ApiSuccess<ConfirmImportResponse>).toMatchObject({
       success: true,
-      data: { alreadyConfirmed: false, imported: 0, skippedExisting: 2, errorRows: 0 },
+      data: { alreadyConfirmed: false, imported: 2, skippedExisting: 0, errorRows: 0 },
     });
 
     const listResponse = await server.inject({
@@ -315,7 +319,7 @@ describe('imports routes', () => {
       url: '/students',
       headers: { authorization: `Bearer ${accessToken}` },
     });
-    expect((readJson(listResponse) as ApiSuccess<PaginatedStudentsResponse>).data.total).toBe(2);
+    expect((readJson(listResponse) as ApiSuccess<PaginatedStudentsResponse>).data.total).toBe(4);
   });
 
   it('does not block coded rows that share a name with existing students', async () => {
