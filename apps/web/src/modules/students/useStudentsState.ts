@@ -127,6 +127,10 @@ export interface PaginatedListState<T> {
   pageCount: number;
   search: string;
   status: RecordStatus;
+  /** ACTIVE-enrollment class level filter (current year), null = all. */
+  classLevelId: string | null;
+  /** ACTIVE-enrollment classroom filter (current year), null = all. */
+  classroomId: string | null;
   total: number;
 }
 
@@ -157,7 +161,13 @@ export function useStudentsModule({
   );
 
   const loadStudents = useCallback(
-    async (search: string, offset: number, status: RecordStatus) => {
+    async (
+      search: string,
+      offset: number,
+      status: RecordStatus,
+      classLevelId: string | null,
+      classroomId: string | null
+    ) => {
       if (!apiBaseUrl && !client) {
         return;
       }
@@ -167,12 +177,26 @@ export function useStudentsModule({
       try {
         const page = client
           ? await client.listStudents(
-              { search, status, limit: PAGE_SIZE, offset },
+              {
+                search,
+                status,
+                limit: PAGE_SIZE,
+                offset,
+                ...(classLevelId ? { classLevelId } : {}),
+                ...(classroomId ? { classroomId } : {}),
+              },
               requestOptions()
             )
           : await listStudents(
               apiBaseUrl ?? '',
-              { search, status, limit: PAGE_SIZE, offset },
+              {
+                search,
+                status,
+                limit: PAGE_SIZE,
+                offset,
+                ...(classLevelId ? { classLevelId } : {}),
+                ...(classroomId ? { classroomId } : {}),
+              },
               requestOptions()
             );
 
@@ -185,6 +209,8 @@ export function useStudentsModule({
           pageCount: Math.max(1, Math.ceil(page.total / page.limit)),
           search,
           status,
+          classLevelId,
+          classroomId,
           total: page.total,
         });
       } catch (error) {
@@ -227,6 +253,8 @@ export function useStudentsModule({
           pageCount: Math.max(1, Math.ceil(page.total / page.limit)),
           search,
           status,
+          classLevelId: null,
+          classroomId: null,
           total: page.total,
         });
       } catch (error) {
@@ -246,7 +274,7 @@ export function useStudentsModule({
     }
 
     const loadHandle = window.setTimeout(() => {
-      void loadStudents('', 0, 'active');
+      void loadStudents('', 0, 'active', null, null);
       void loadGuardians('', 0, 'active');
     }, 0);
 
@@ -257,9 +285,15 @@ export function useStudentsModule({
 
   const searchStudents = useCallback(
     (search: string) => {
-      void loadStudents(search.trim(), 0, studentsList.status);
+      void loadStudents(
+        search.trim(),
+        0,
+        studentsList.status,
+        studentsList.classLevelId,
+        studentsList.classroomId
+      );
     },
-    [loadStudents, studentsList.status]
+    [loadStudents, studentsList]
   );
 
   const searchGuardians = useCallback(
@@ -271,9 +305,36 @@ export function useStudentsModule({
 
   const setStudentsStatus = useCallback(
     (status: RecordStatus) => {
-      void loadStudents(studentsList.search, 0, status);
+      void loadStudents(
+        studentsList.search,
+        0,
+        status,
+        studentsList.classLevelId,
+        studentsList.classroomId
+      );
     },
-    [loadStudents, studentsList.search]
+    [loadStudents, studentsList]
+  );
+
+  const setStudentsClassLevel = useCallback(
+    (classLevelId: string | null) => {
+      // Changing the level invalidates any classroom selection from another level.
+      void loadStudents(studentsList.search, 0, studentsList.status, classLevelId, null);
+    },
+    [loadStudents, studentsList]
+  );
+
+  const setStudentsClassroom = useCallback(
+    (classroomId: string | null) => {
+      void loadStudents(
+        studentsList.search,
+        0,
+        studentsList.status,
+        studentsList.classLevelId,
+        classroomId
+      );
+    },
+    [loadStudents, studentsList]
   );
 
   const setGuardiansStatus = useCallback(
@@ -287,7 +348,13 @@ export function useStudentsModule({
     const nextOffset = studentsList.offset + studentsList.limit;
 
     if (nextOffset < studentsList.total) {
-      void loadStudents(studentsList.search, nextOffset, studentsList.status);
+      void loadStudents(
+        studentsList.search,
+        nextOffset,
+        studentsList.status,
+        studentsList.classLevelId,
+        studentsList.classroomId
+      );
     }
   }, [loadStudents, studentsList]);
 
@@ -295,7 +362,13 @@ export function useStudentsModule({
     const previousOffset = Math.max(0, studentsList.offset - studentsList.limit);
 
     if (previousOffset !== studentsList.offset) {
-      void loadStudents(studentsList.search, previousOffset, studentsList.status);
+      void loadStudents(
+        studentsList.search,
+        previousOffset,
+        studentsList.status,
+        studentsList.classLevelId,
+        studentsList.classroomId
+      );
     }
   }, [loadStudents, studentsList]);
 
@@ -385,7 +458,13 @@ export function useStudentsModule({
   );
 
   const refreshStudents = useCallback(() => {
-    return loadStudents(studentsList.search, studentsList.offset, studentsList.status);
+    return loadStudents(
+      studentsList.search,
+      studentsList.offset,
+      studentsList.status,
+      studentsList.classLevelId,
+      studentsList.classroomId
+    );
   }, [loadStudents, studentsList]);
 
   const refreshGuardians = useCallback(() => {
@@ -591,6 +670,8 @@ export function useStudentsModule({
     searchGuardians,
     searchStudents,
     setGuardiansStatus,
+    setStudentsClassLevel,
+    setStudentsClassroom,
     setStudentsStatus,
     studentProfile,
     students: studentsList,
@@ -613,6 +694,8 @@ function emptyListState<T>(): PaginatedListState<T> {
     pageCount: 1,
     search: '',
     status: 'active',
+    classLevelId: null,
+    classroomId: null,
     total: 0,
   };
 }
