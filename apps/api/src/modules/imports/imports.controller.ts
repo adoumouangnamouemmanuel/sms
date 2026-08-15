@@ -124,7 +124,7 @@ async function readMultipartBuffer(stream: NodeJS.ReadableStream | undefined) {
 
 function readKindParam(request: FastifyRequest) {
   const rawKind = readParam(request, 'kind').toLocaleUpperCase('fr');
-  const kind = rawKind === 'STUDENTS' || rawKind === 'TEACHERS' ? rawKind : undefined;
+  const kind = IMPORT_KINDS.find((candidate) => candidate === rawKind);
 
   if (!kind || !IMPORT_KINDS.includes(kind)) {
     throw invalidImportFile("Le type d'import est inconnu.");
