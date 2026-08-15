@@ -7,7 +7,6 @@ import type {
 } from '@edutrack/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DatePicker } from '../../components/DatePicker';
 import { formatISODate } from '../../components/dateFormat';
 import {
   useStudentsModule,
@@ -34,7 +33,9 @@ export function StudentsModule({ apiBaseUrl, capabilityToken, client }: Students
     ...(client ? { client } : {}),
   });
   const [studentFormOpen, setStudentFormOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<StudentResponse | null>(null);
   const [guardianFormOpen, setGuardianFormOpen] = useState(false);
+  const [editingGuardian, setEditingGuardian] = useState<GuardianResponse | null>(null);
   const [linkOpen, setLinkOpen] = useState(false);
   const [archiveTarget, setArchiveTarget] = useState<{
     kind: 'student' | 'guardian';
@@ -91,10 +92,15 @@ export function StudentsModule({ apiBaseUrl, capabilityToken, client }: Students
       {module.tab === 'students' ? (
         <StudentsTab
           module={module}
+          onEditStudent={(student) => {
+            setEditingStudent(student);
+            setStudentFormOpen(true);
+          }}
           onLinkOpen={() => {
             setLinkOpen(true);
           }}
           onOpenForm={() => {
+            setEditingStudent(null);
             setStudentFormOpen(true);
           }}
           onSetArchiveTarget={setArchiveTarget}
@@ -102,7 +108,12 @@ export function StudentsModule({ apiBaseUrl, capabilityToken, client }: Students
       ) : (
         <GuardiansTab
           module={module}
+          onEditGuardian={(guardian) => {
+            setEditingGuardian(guardian);
+            setGuardianFormOpen(true);
+          }}
           onOpenForm={() => {
+            setEditingGuardian(null);
             setGuardianFormOpen(true);
           }}
           onSetArchiveTarget={setArchiveTarget}
@@ -113,11 +124,19 @@ export function StudentsModule({ apiBaseUrl, capabilityToken, client }: Students
         <StudentFormModal
           onClose={() => {
             setStudentFormOpen(false);
+            setEditingStudent(null);
           }}
           onSubmit={async (input) => {
-            await module.createStudent(input);
+            if (editingStudent) {
+              await module.updateStudent(editingStudent.id, input);
+            } else {
+              await module.createStudent(input);
+            }
+
             setStudentFormOpen(false);
+            setEditingStudent(null);
           }}
+          {...(editingStudent ? { student: editingStudent } : {})}
         />
       ) : null}
 
@@ -125,10 +144,18 @@ export function StudentsModule({ apiBaseUrl, capabilityToken, client }: Students
         <GuardianFormModal
           onClose={() => {
             setGuardianFormOpen(false);
+            setEditingGuardian(null);
           }}
+          {...(editingGuardian ? { guardian: editingGuardian } : {})}
           onSubmit={async (input) => {
-            await module.createGuardian(input);
+            if (editingGuardian) {
+              await module.updateGuardian(editingGuardian.id, input);
+            } else {
+              await module.createGuardian(input);
+            }
+
             setGuardianFormOpen(false);
+            setEditingGuardian(null);
           }}
         />
       ) : null}
@@ -209,12 +236,19 @@ function TabButton({
 
 interface StudentsTabProps {
   module: ReturnType<typeof useStudentsModule>;
+  onEditStudent: (student: StudentResponse) => void;
   onLinkOpen: () => void;
   onOpenForm: () => void;
   onSetArchiveTarget: (target: ArchiveTarget) => void;
 }
 
-function StudentsTab({ module, onLinkOpen, onOpenForm, onSetArchiveTarget }: StudentsTabProps) {
+function StudentsTab({
+  module,
+  onEditStudent,
+  onLinkOpen,
+  onOpenForm,
+  onSetArchiveTarget,
+}: StudentsTabProps) {
   const { t } = useTranslation();
   const [draftSearch, setDraftSearch] = useState('');
 
@@ -223,6 +257,7 @@ function StudentsTab({ module, onLinkOpen, onOpenForm, onSetArchiveTarget }: Stu
       <StudentDetail
         module={module}
         onBack={module.closeStudent}
+        onEdit={onEditStudent}
         onLinkOpen={onLinkOpen}
         onSetArchiveTarget={onSetArchiveTarget}
       />
@@ -273,11 +308,17 @@ function StudentsTab({ module, onLinkOpen, onOpenForm, onSetArchiveTarget }: Stu
 
 interface GuardiansTabProps {
   module: ReturnType<typeof useStudentsModule>;
+  onEditGuardian: (guardian: GuardianResponse) => void;
   onOpenForm: () => void;
   onSetArchiveTarget: (target: ArchiveTarget) => void;
 }
 
-function GuardiansTab({ module, onOpenForm, onSetArchiveTarget }: GuardiansTabProps) {
+function GuardiansTab({
+  module,
+  onEditGuardian,
+  onOpenForm,
+  onSetArchiveTarget,
+}: GuardiansTabProps) {
   const { t } = useTranslation();
   const [draftSearch, setDraftSearch] = useState('');
 
@@ -286,6 +327,7 @@ function GuardiansTab({ module, onOpenForm, onSetArchiveTarget }: GuardiansTabPr
       <GuardianDetail
         module={module}
         onBack={module.closeGuardian}
+        onEdit={onEditGuardian}
         onSetArchiveTarget={onSetArchiveTarget}
       />
     );
@@ -666,11 +708,13 @@ function GuardianTable({
 function StudentDetail({
   module,
   onBack,
+  onEdit,
   onLinkOpen,
   onSetArchiveTarget,
 }: {
   module: ReturnType<typeof useStudentsModule>;
   onBack: () => void;
+  onEdit: (student: StudentResponse) => void;
   onLinkOpen: () => void;
   onSetArchiveTarget: (target: ArchiveTarget) => void;
 }) {
@@ -706,6 +750,15 @@ function StudentDetail({
           <StatusBadge active={profile.student.isActive} />
           <button
             className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700"
+            onClick={() => {
+              onEdit(profile.student);
+            }}
+            type="button"
+          >
+            {t('students.actions.edit')}
+          </button>
+          <button
+            className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-red-300 hover:text-red-600"
             onClick={() => {
               onSetArchiveTarget({
                 kind: 'student',
@@ -821,10 +874,12 @@ function StudentDetail({
 function GuardianDetail({
   module,
   onBack,
+  onEdit,
   onSetArchiveTarget,
 }: {
   module: ReturnType<typeof useStudentsModule>;
   onBack: () => void;
+  onEdit: (guardian: GuardianResponse) => void;
   onSetArchiveTarget: (target: ArchiveTarget) => void;
 }) {
   const { t } = useTranslation();
@@ -856,6 +911,15 @@ function GuardianDetail({
           <StatusBadge active={profile.guardian.isActive} />
           <button
             className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700"
+            onClick={() => {
+              onEdit(profile.guardian);
+            }}
+            type="button"
+          >
+            {t('students.actions.edit')}
+          </button>
+          <button
+            className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-red-300 hover:text-red-600"
             onClick={() => {
               onSetArchiveTarget({
                 kind: 'guardian',
@@ -963,18 +1027,22 @@ function ModalShell({
 }
 
 function StudentFormModal({
+  student,
   onClose,
   onSubmit,
 }: {
+  student?: StudentResponse;
   onClose: () => void;
   onSubmit: (input: CreateStudentRequest) => Promise<void>;
 }) {
   const { t } = useTranslation();
   const [errorKey, setErrorKey] = useState<string | null>(null);
-  const [dateOfBirth, setDateOfBirth] = useState('');
 
   return (
-    <ModalShell onClose={onClose} title={t('students.form.studentTitle')}>
+    <ModalShell
+      onClose={onClose}
+      title={t(student ? 'students.form.editStudentTitle' : 'students.form.studentTitle')}
+    >
       <form
         className="grid grid-cols-2 gap-3"
         onSubmit={(event) => {
@@ -991,6 +1059,7 @@ function StudentFormModal({
           setErrorKey(null);
 
           const code = readFormValue(form, 'code').trim();
+          const dateOfBirth = readFormValue(form, 'dateOfBirth').trim();
 
           void onSubmit({
             ...(code ? { code } : {}),
@@ -1005,10 +1074,27 @@ function StudentFormModal({
           }).catch(() => undefined);
         }}
       >
-        <FormField label={t('students.form.code')} name="code" />
-        <FormField label={t('students.form.firstName')} name="firstName" required />
-        <FormField label={t('students.form.lastName')} name="lastName" required />
+        {student ? (
+          <p className="col-span-2 -mt-1 font-mono text-[12px] font-bold text-slate-400">
+            {student.code}
+          </p>
+        ) : (
+          <FormField label={t('students.form.code')} name="code" />
+        )}
+        <FormField
+          defaultValue={student?.firstName ?? ''}
+          label={t('students.form.firstName')}
+          name="firstName"
+          required
+        />
+        <FormField
+          defaultValue={student?.lastName ?? ''}
+          label={t('students.form.lastName')}
+          name="lastName"
+          required
+        />
         <SelectField
+          defaultValue={student?.sex ?? ''}
           label={t('students.form.sex')}
           name="sex"
           options={[
@@ -1017,17 +1103,34 @@ function StudentFormModal({
             { label: t('students.sex.AUTRE'), value: 'AUTRE' },
           ]}
         />
-        <div className="flex flex-col gap-2">
-          <span className="text-[13px] font-bold text-slate-800">
-            {t('students.form.dateOfBirth')}
-          </span>
-          <DatePicker onChange={setDateOfBirth} value={dateOfBirth} />
-        </div>
-        <FormField label={t('students.form.nationality')} name="nationality" />
-        <FormField label={t('students.form.phone')} name="phone" />
-        <FormField label={t('students.form.email')} name="email" type="email" />
+        <FormField
+          defaultValue={student?.dateOfBirth ?? ''}
+          label={t('students.form.dateOfBirth')}
+          name="dateOfBirth"
+          type="date"
+        />
+        <FormField
+          defaultValue={student?.nationality ?? ''}
+          label={t('students.form.nationality')}
+          name="nationality"
+        />
+        <FormField
+          defaultValue={student?.phone ?? ''}
+          label={t('students.form.phone')}
+          name="phone"
+        />
+        <FormField
+          defaultValue={student?.email ?? ''}
+          label={t('students.form.email')}
+          name="email"
+          type="email"
+        />
         <div className="col-span-2">
-          <FormField label={t('students.form.address')} name="address" />
+          <FormField
+            defaultValue={student?.address ?? ''}
+            label={t('students.form.address')}
+            name="address"
+          />
         </div>
 
         {errorKey ? (
@@ -1051,9 +1154,11 @@ function StudentFormModal({
 }
 
 function GuardianFormModal({
+  guardian,
   onClose,
   onSubmit,
 }: {
+  guardian?: GuardianResponse;
   onClose: () => void;
   onSubmit: (input: CreateGuardianRequest) => Promise<void>;
 }) {
@@ -1061,7 +1166,10 @@ function GuardianFormModal({
   const [errorKey, setErrorKey] = useState<string | null>(null);
 
   return (
-    <ModalShell onClose={onClose} title={t('students.form.guardianTitle')}>
+    <ModalShell
+      onClose={onClose}
+      title={t(guardian ? 'students.form.editGuardianTitle' : 'students.form.guardianTitle')}
+    >
       <form
         className="grid grid-cols-2 gap-3"
         onSubmit={(event) => {
@@ -1086,12 +1194,35 @@ function GuardianFormModal({
           }).catch(() => undefined);
         }}
       >
-        <FormField label={t('students.form.firstName')} name="firstName" required />
-        <FormField label={t('students.form.lastName')} name="lastName" required />
-        <FormField label={t('students.form.phone')} name="phone" />
-        <FormField label={t('students.form.email')} name="email" type="email" />
+        <FormField
+          defaultValue={guardian?.firstName ?? ''}
+          label={t('students.form.firstName')}
+          name="firstName"
+          required
+        />
+        <FormField
+          defaultValue={guardian?.lastName ?? ''}
+          label={t('students.form.lastName')}
+          name="lastName"
+          required
+        />
+        <FormField
+          defaultValue={guardian?.phone ?? ''}
+          label={t('students.form.phone')}
+          name="phone"
+        />
+        <FormField
+          defaultValue={guardian?.email ?? ''}
+          label={t('students.form.email')}
+          name="email"
+          type="email"
+        />
         <div className="col-span-2">
-          <FormField label={t('students.form.address')} name="address" />
+          <FormField
+            defaultValue={guardian?.address ?? ''}
+            label={t('students.form.address')}
+            name="address"
+          />
         </div>
 
         {errorKey ? (
@@ -1295,11 +1426,13 @@ function ModalCancelButton({ label, onClose }: { label: string; onClose: () => v
 }
 
 function FormField({
+  defaultValue,
   label,
   name,
   type = 'text',
   required = false,
 }: {
+  defaultValue?: string;
   label: string;
   name: string;
   type?: string;
@@ -1311,16 +1444,24 @@ function FormField({
         {label}
         {required ? ' *' : ''}
       </span>
-      <input className={formInputClassName} name={name} required={required} type={type} />
+      <input
+        className={formInputClassName}
+        defaultValue={defaultValue}
+        name={name}
+        required={required}
+        type={type}
+      />
     </label>
   );
 }
 
 function SelectField({
+  defaultValue,
   label,
   name,
   options,
 }: {
+  defaultValue?: string;
   label: string;
   name: string;
   options: { label: string; value: string }[];
@@ -1330,7 +1471,7 @@ function SelectField({
   return (
     <label className="flex flex-col gap-2">
       <span className="text-[13px] font-bold text-slate-800">{label}</span>
-      <select className={formSelectClassName} name={name}>
+      <select className={formSelectClassName} defaultValue={defaultValue} name={name}>
         <option value="">{t('students.form.selectPlaceholder')}</option>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
