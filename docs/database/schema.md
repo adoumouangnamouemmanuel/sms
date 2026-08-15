@@ -193,6 +193,8 @@ SQLite migration files live in `packages/db/migrations/sqlite`.
 
 `0004_students_module.sql` widens the `school_module_config.module_name` CHECK to accept `STUDENTS` (hand-written table rebuild, since drizzle-kit does not emit CHECK constraints) and backfills an enabled `STUDENTS` row for every school that lacks one, so already-setup schools surface the students module too.
 
+`0005_teachers_module.sql` follows the same pattern for `TEACHERS` (CHECK widening + per-school backfill), so already-setup schools surface the teachers module as well. The teacher `user_id` login link keeps its `ON DELETE RESTRICT` behavior, and teacher/student/guardian list repositories accept an optional `status` filter (`active` | `archived`) so archived people stay reachable.
+
 ## Seed Policy
 
 Foundation seed data is deterministic and idempotent. It uses synthetic demo schools only; real school or student data is forbidden in seeds and tests.
