@@ -165,8 +165,13 @@ export const createTeacherRequestSchema = z.object({
   address: peopleLongTextSchema,
 });
 
-// The code is durable identity and cannot be changed after creation.
-export const updateTeacherRequestSchema = createTeacherRequestSchema.omit({ code: true }).partial();
+// The code is durable identity and cannot be changed after creation. An
+// optional recordVersion enables optimistic concurrency: when provided it must
+// match the stored version or the update is rejected with a 409 conflict.
+export const updateTeacherRequestSchema = createTeacherRequestSchema
+  .omit({ code: true })
+  .partial()
+  .extend({ recordVersion: z.number().int().positive().optional() });
 
 export const teacherResponseSchema = z.object({
   id: z.uuid(),
