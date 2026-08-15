@@ -137,14 +137,26 @@ export class ImportsService {
         let errored = 0;
 
         for (const row of validRows) {
-          const code = row.values.code?.trim()
-            ? normalizePeopleCode(row.values.code)
-            : generatePeopleCode(transaction, tenant, this.now, () => repository.countAll());
+          const explicitCode = row.values.code?.trim();
+          const firstName = row.values.firstName ?? '';
+          const lastName = row.values.lastName ?? '';
 
-          if (repository.findByCode(code)) {
+          // Codes are the strong identity: a code already present in the school
+          // (including archived rows) is skipped. Rows without a code fall back
+          // to an exact full-name check so re-importing the same file under a
+          // new identifier cannot create duplicate people.
+          const alreadyPresent = explicitCode
+            ? Boolean(repository.findByCode(normalizePeopleCode(explicitCode)))
+            : Boolean(repository.findByName(firstName, lastName));
+
+          if (alreadyPresent) {
             skippedExisting += 1;
             continue;
           }
+
+          const code = explicitCode
+            ? normalizePeopleCode(explicitCode)
+            : generatePeopleCode(transaction, tenant, this.now, () => repository.countAll());
 
           try {
             if (preview.kind === 'STUDENTS') {
