@@ -44,10 +44,11 @@ describe('database foundation migrations', () => {
     sqlite = new Database(':memory:');
     sqlite.pragma('foreign_keys = ON');
 
-    // Phase 1-3 schema only (up to 0008).
+    // Phase 1-3 schema only (the Phase 4 classes data model was renumbered
+    // from 0009/0010 to 0014/0015, so those are the ones to exclude here).
     const phase3Migrations = readdirSync(migrationsDir)
       .filter(
-        (file) => file.endsWith('.sql') && !file.startsWith('0009') && !file.startsWith('0010')
+        (file) => file.endsWith('.sql') && !file.startsWith('0014') && !file.startsWith('0015')
       )
       .sort();
     for (const migrationFile of phase3Migrations) {
@@ -89,8 +90,8 @@ describe('database foundation migrations', () => {
         'Ousmane'
       );
 
-    applyMigration(sqlite, '0009_gifted_kronos.sql');
-    applyMigration(sqlite, '0010_slippery_mother_askani.sql');
+    applyMigration(sqlite, '0014_classes_data_model.sql');
+    applyMigration(sqlite, '0015_class_level_id_unique.sql');
 
     // The five new tables accept tenant-scoped rows referencing existing data.
     sqlite
