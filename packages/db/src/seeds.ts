@@ -147,7 +147,7 @@ export function seedFoundation(db: EduTrackDatabase) {
         target: schemaMetadata.key,
         set: {
           value: foundationSeedVersion,
-          description: 'Deterministic Phase 1.3 foundation seed version.',
+          description: 'Deterministic Phase 1.4 foundation seed version.',
         },
       })
       .run();
