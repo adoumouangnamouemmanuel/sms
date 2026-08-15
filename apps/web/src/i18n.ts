@@ -689,8 +689,28 @@ const resources = {
           targetClass: 'Classe cible',
         },
         errors: {
+          capacityExceeded: 'La capacité maximale de la classe serait dépassée.',
+          classroomCodeExists: 'Une classe avec ce code existe déjà pour cette année scolaire.',
+          classroomNotFound: 'Classe introuvable.',
+          classSubjectPairExists: 'Cette matière est déjà affectée à cette classe.',
+          classSubjectRequiredLink:
+            'Les matières obligatoires sont automatiquement affectées aux élèves de la classe.',
+          enrollmentNotFound: 'Inscription introuvable.',
+          forbidden: 'Votre rôle ne permet pas de gérer les classes et le curriculum.',
+          generic: 'Une erreur est survenue. Réessayez.',
           invalidRows: 'Vérifiez les lignes avant de continuer.',
           localService: 'La session locale est indisponible. Réessayez.',
+          sessionExpired: 'La session locale est expirée. Reconnectez-vous.',
+          studentAlreadyEnrolled:
+            'Cet élève est déjà inscrit dans une classe pour cette année scolaire.',
+          studentNotFound: 'Élève introuvable.',
+          subjectCodeExists:
+            'Une matière avec ce code existe déjà. Les codes ne sont jamais réutilisés.',
+          subjectNotFound: 'Matière introuvable.',
+          teacherNotFound: 'Professeur introuvable.',
+          validation: 'Vérifiez les informations avant de continuer.',
+          versionConflict:
+            'Ce dossier a été modifié depuis votre dernière consultation. Rechargez-le avant de réessayer.',
         },
         exporting: 'Export…',
         levels: {
@@ -1558,8 +1578,24 @@ const resources = {
           targetClass: 'القسم الهدف',
         },
         errors: {
+          capacityExceeded: 'سيتم تجاوز السعة القصوى للقسم.',
+          classroomCodeExists: 'يوجد قسم بهذا الرمز بالفعل لهذه السنة الدراسية.',
+          classroomNotFound: 'القسم غير موجود.',
+          classSubjectPairExists: 'هذه المادة مسندة بالفعل إلى هذا القسم.',
+          classSubjectRequiredLink: 'تُسند المواد الإلزامية تلقائياً إلى طلاب القسم.',
+          enrollmentNotFound: 'التسجيل غير موجود.',
+          forbidden: 'دورك لا يسمح بإدارة الأقسام والبرامج.',
+          generic: 'حدث خطأ. حاول مرة أخرى.',
           invalidRows: 'تحقق من الصفوف قبل المتابعة.',
           localService: 'الجلسة المحلية غير متاحة. حاول مرة أخرى.',
+          sessionExpired: 'انتهت الجلسة المحلية. سجل الدخول مرة أخرى.',
+          studentAlreadyEnrolled: 'هذا الطالب مسجل بالفعل في قسم لهذه السنة الدراسية.',
+          studentNotFound: 'الطالب غير موجود.',
+          subjectCodeExists: 'يوجد مادة بهذا الرمز بالفعل. لا تُعاد الرموز أبداً.',
+          subjectNotFound: 'المادة غير موجودة.',
+          teacherNotFound: 'المعلم غير موجود.',
+          validation: 'تحقق من المعلومات قبل المتابعة.',
+          versionConflict: 'تم تعديل هذا الملف منذ آخر اطلاع لك. أعد تحميله قبل المحاولة مرة أخرى.',
         },
         exporting: 'جارٍ التصدير…',
         levels: {
@@ -2400,8 +2436,27 @@ const resources = {
           targetClass: 'Target class',
         },
         errors: {
+          capacityExceeded: 'The maximum capacity of the class would be exceeded.',
+          classroomCodeExists: 'A class with this code already exists for this academic year.',
+          classroomNotFound: 'Class not found.',
+          classSubjectPairExists: 'This subject is already assigned to this class.',
+          classSubjectRequiredLink:
+            'Required subjects are automatically assigned to the students of the class.',
+          enrollmentNotFound: 'Enrolment not found.',
+          forbidden: 'Your role cannot manage classes and curriculum.',
+          generic: 'An error occurred. Try again.',
           invalidRows: 'Check the rows before continuing.',
           localService: 'The local session is unavailable. Try again.',
+          sessionExpired: 'The local session has expired. Sign in again.',
+          studentAlreadyEnrolled:
+            'This student is already enrolled in a class for this academic year.',
+          studentNotFound: 'Student not found.',
+          subjectCodeExists: 'A subject with this code already exists. Codes are never reused.',
+          subjectNotFound: 'Subject not found.',
+          teacherNotFound: 'Teacher not found.',
+          validation: 'Check the information before continuing.',
+          versionConflict:
+            'This record was modified since your last view. Reload it before trying again.',
         },
         exporting: 'Exporting…',
         levels: {
