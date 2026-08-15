@@ -13,6 +13,7 @@ import {
   SIDECAR_CAPABILITY_HEADER,
 } from '@edutrack/shared';
 import Fastify, { type FastifyReply, type FastifyServerOptions } from 'fastify';
+import { registerAuditRoutes, AuditService } from './modules/audit/index.js';
 import { AuthService, registerAuthRoutes, type AuthServiceOptions } from './modules/auth/index.js';
 import {
   ClassEnrollmentsService,
@@ -166,6 +167,10 @@ export function buildServer(options: BuildServerOptions = {}) {
   if (authEnabled && database) {
     const authService = new AuthService(database, resolveAuthOptions(options.auth, process.env));
 
+    registerAuditRoutes(server, {
+      authService,
+      auditService: new AuditService(database),
+    });
     registerAuthRoutes(server, {
       authService,
     });
