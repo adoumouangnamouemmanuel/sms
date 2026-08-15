@@ -87,7 +87,8 @@ identifiant **différent** pour chaque fichier réellement nouveau.
    manquant ligne 3, Sexe invalide ligne 4, Code dupliqué ligne 5).
    Téléchargez le CSV des lignes en erreur et vérifiez qu'il s'ouvre dans
    Excel.
-7. **Test 6 — sécurité** : confirmez que seuls les 3 élèves valides du test 5
-   ont été ajoutés (identifiant `test-eleves-2`), et que le compte d'un
-   **enseignant** ne peut pas ouvrir la fenêtre d'import (bouton absent ou
-   refus `403`).
+7. **Test 6 — sécurité** : confirmez l'import avec un nouvel identifiant
+   (`test-eleves-2`), puis vérifiez que seuls les 3 élèves valides du test 5
+   ont été ajoutés (les lignes en erreur ne sont jamais importées), et que le
+   compte d'un **enseignant** ne peut pas ouvrir la fenêtre d'import (bouton
+   absent ou refus `403`).
