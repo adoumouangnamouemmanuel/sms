@@ -199,6 +199,24 @@ describe('teacher repository', () => {
     expect(repository.list({ status: 'archived', search: 'Ousmane' })).toHaveLength(0);
   });
 
+  it('finds an exact full-name match case-insensitively, including archived rows', () => {
+    const [school] = foundationSeed.schools;
+    const repository = createTeacherRepository(db, createTenantContext(school.id));
+
+    const created = repository.create({
+      code: 'NDS-DEMO-2026-T00001',
+      firstName: 'Jean',
+      lastName: 'Nguet',
+    });
+    expect(repository.findByName('jean', 'NGUET')?.id).toBe(created.id);
+    expect(repository.findByName('Jean ', 'Nguet')?.id).toBe(created.id);
+    expect(repository.findByName('Fatime', 'Abakar')).toBeUndefined();
+
+    // Archived rows still count as present: re-importing must not duplicate.
+    repository.archive(created.id, '2026-08-15T10:00:00.000Z');
+    expect(repository.findByName('Jean', 'Nguet')?.id).toBe(created.id);
+  });
+
   it('finds a teacher by login user id and counts all rows for the code sequence', () => {
     const [school] = foundationSeed.schools;
     const tenant = createTenantContext(school.id);
