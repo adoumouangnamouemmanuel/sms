@@ -29,6 +29,13 @@
       "when": 1786788450843,
       "tag": "0003_old_sumo",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1786793822870,
+      "tag": "0004_students_module",
+      "breakpoints": true
     }
   ]
 }
