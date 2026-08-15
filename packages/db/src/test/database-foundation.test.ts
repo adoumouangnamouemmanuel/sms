@@ -129,6 +129,65 @@ describe('database foundation migrations', () => {
     ).toThrow();
   });
 
+  it('applies the 3.2 migration to a non-empty database', () => {
+    sqlite = new Database(':memory:');
+    sqlite.pragma('foreign_keys = ON');
+    applyMigration(sqlite, '0000_public_mongu.sql');
+    applyMigration(sqlite, '0001_aspiring_fixer.sql');
+    applyMigration(sqlite, '0002_glorious_lizard.sql');
+    applyMigration(sqlite, '0003_old_sumo.sql');
+
+    sqlite
+      .prepare(
+        `
+          INSERT INTO school (id, code, name, short_name, created_at)
+          VALUES (?, ?, ?, ?, ?)
+        `
+      )
+      .run(legacySchoolId, 'LEGACY', 'Legacy School', 'Legacy', '2026-01-01 00:00:00');
+    sqlite
+      .prepare(
+        `
+          INSERT INTO school_module_config
+            (id, school_id, module_name, is_enabled, created_at, updated_at, record_version)
+          VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1)
+        `
+      )
+      .run('66666666-6666-4666-8666-666666666666', legacySchoolId, 'SCHOOL_SETUP', 1);
+
+    applyMigration(sqlite, '0004_students_module.sql');
+
+    const moduleRows = sqlite
+      .prepare(
+        `
+          SELECT module_name, is_enabled
+          FROM school_module_config
+          WHERE school_id = ?
+          ORDER BY module_name
+        `
+      )
+      .all(legacySchoolId) as { module_name: string; is_enabled: number }[];
+
+    // The pre-existing row survives the rebuild and STUDENTS is backfilled enabled.
+    expect(moduleRows).toEqual([
+      { module_name: 'SCHOOL_SETUP', is_enabled: 1 },
+      { module_name: 'STUDENTS', is_enabled: 1 },
+    ]);
+
+    // The widened CHECK still rejects unknown modules.
+    expect(() =>
+      sqlite
+        .prepare(
+          `
+            INSERT INTO school_module_config
+              (id, school_id, module_name, is_enabled, created_at, updated_at, record_version)
+            VALUES (?, ?, 'NOT_A_MODULE', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1)
+          `
+        )
+        .run('77777777-7777-4777-8777-777777777777', legacySchoolId)
+    ).toThrow();
+  });
+
   it('rejects unmapped legacy user roles during the 7.3 migration', () => {
     sqlite = new Database(':memory:');
     sqlite.pragma('foreign_keys = ON');
