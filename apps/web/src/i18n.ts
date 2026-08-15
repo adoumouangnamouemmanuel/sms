@@ -381,6 +381,8 @@ const resources = {
           notFound: 'Enregistrement introuvable.',
           sessionExpired: 'La session locale est expirée. Reconnectez-vous.',
           validation: 'Vérifiez les champs du formulaire avant de continuer.',
+          versionConflict:
+            'Ce dossier a été modifié depuis votre dernière consultation. Rechargez-le avant de réessayer.',
         },
         eyebrow: 'Personnel enseignant',
         form: {
@@ -1048,6 +1050,7 @@ const resources = {
           notFound: 'السجل غير موجود.',
           sessionExpired: 'انتهت الجلسة المحلية. سجل الدخول مرة أخرى.',
           validation: 'تحقق من حقول النموذج قبل المتابعة.',
+          versionConflict: 'تم تعديل هذا الملف منذ آخر عرض. أعد تحميله قبل المحاولة مرة أخرى.',
         },
         eyebrow: 'هيئة التدريس',
         form: {
@@ -1685,6 +1688,8 @@ const resources = {
           notFound: 'Record not found.',
           sessionExpired: 'The local session has expired. Sign in again.',
           validation: 'Check the form fields before continuing.',
+          versionConflict:
+            'This record was changed since you last viewed it. Reload it before trying again.',
         },
         eyebrow: 'Teaching staff',
         form: {
