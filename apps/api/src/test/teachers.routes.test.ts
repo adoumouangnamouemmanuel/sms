@@ -177,7 +177,7 @@ describe('teachers routes', () => {
       method: 'PUT',
       url: `/teachers/${created.id}`,
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: { lastName: 'Ahmat', phone: '+23500000020' },
+      payload: { lastName: 'Ahmat', phone: '+23500000020', recordVersion: 1 },
     });
 
     expect(response.statusCode).toBe(200);
@@ -187,6 +187,43 @@ describe('teachers routes', () => {
     expect(body.data.code).toBe(created.code);
     expect(body.data.recordVersion).toBe(2);
     expect(findLatestAuditAction()).toBe('TEACHER_UPDATE');
+  });
+
+  it('rejects a stale teacher update with a 409 version conflict', async () => {
+    const accessToken = await loginAndReadAccessToken('directeur');
+    const created = await createTeacher(accessToken, 'Ibrahim', 'Ousmane');
+
+    // Advance the record first so the stored version is 2.
+    const firstUpdate = await server.inject({
+      method: 'PUT',
+      url: `/teachers/${created.id}`,
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { phone: '+23500000020', recordVersion: 1 },
+    });
+    expect(firstUpdate.statusCode).toBe(200);
+
+    // A stale version (1 instead of 2) must be rejected, never overwritten.
+    const stale = await server.inject({
+      method: 'PUT',
+      url: `/teachers/${created.id}`,
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { lastName: 'Ahmat', recordVersion: 1 },
+    });
+
+    expect(stale.statusCode).toBe(409);
+    expect(readJson(stale) as ApiError).toMatchObject({
+      error: { code: 'TEACHER_VERSION_CONFLICT' },
+    });
+
+    // The persisted record is unchanged and still at version 2.
+    const profile = await server.inject({
+      method: 'GET',
+      url: `/teachers/${created.id}`,
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    const profileBody = readJson(profile) as ApiSuccess<TeacherProfileResponse>;
+    expect(profileBody.data.teacher.lastName).toBe('Ousmane');
+    expect(profileBody.data.teacher.recordVersion).toBe(2);
   });
 
   it('archives and reactivates a teacher with an audit reason', async () => {
