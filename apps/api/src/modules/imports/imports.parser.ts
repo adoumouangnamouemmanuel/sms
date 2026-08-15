@@ -25,6 +25,16 @@ export interface ParsedImportRow {
    * confirm. The parser itself never touches the database.
    */
   linkedStudentId?: string | null;
+  /** CLASSROOMS: resolved at preview from the academic-year label. */
+  linkedAcademicYearId?: string | null;
+  /** CLASSROOMS: resolved at preview from the class-level code. */
+  linkedClassLevelId?: string | null;
+  /** CLASS_SUBJECTS: resolved at preview from the classroom code. */
+  linkedClassroomId?: string | null;
+  /** CLASS_SUBJECTS: resolved at preview from the subject code. */
+  linkedSubjectId?: string | null;
+  /** CLASS_SUBJECTS: resolved at preview from the teacher code (optional). */
+  linkedTeacherId?: string | null;
 }
 
 export interface ParsedImportWorkbook {
@@ -58,11 +68,11 @@ export function parseImportWorkbook(kind: ImportKind, buffer: Buffer): ParsedImp
         defval: null,
       })
     : [];
-  const headerIndex = findHeaderRow(rawRows);
+  const headerIndex = findHeaderRow(kind, rawRows);
 
   if (headerIndex === -1) {
     return importFileError(
-      "La première ligne doit contenir les en-têtes 'Prénom' et 'Nom' (modèle à télécharger)."
+      'La première ligne doit contenir les en-têtes attendus (modèle à télécharger).'
     );
   }
 
@@ -107,14 +117,29 @@ export function parseImportWorkbook(kind: ImportKind, buffer: Buffer): ParsedImp
 // Header mapping
 // ---------------------------------------------------------------------------
 
-function findHeaderRow(rawRows: unknown[][]): number {
+function findHeaderRow(kind: ImportKind, rawRows: unknown[][]): number {
   // sheet_to_json with header: 1 can leave holes for blank rows — skip them.
+  const requiredHeaders = requiredHeaderPair(kind);
+
   return rawRows.findIndex(
     (row) =>
       Array.isArray(row) &&
-      row.some((cell) => normalizeHeader(cell) === 'prénom') &&
-      row.some((cell) => normalizeHeader(cell) === 'nom')
+      requiredHeaders.every((header) => row.some((cell) => normalizeHeader(cell) === header))
   );
+}
+
+/** The two identifying headers that locate the header row for a kind. */
+function requiredHeaderPair(kind: ImportKind): string[] {
+  switch (kind) {
+    case 'SUBJECTS':
+      return ['code', 'nom'];
+    case 'CLASSROOMS':
+      return ['année scolaire', 'code classe'];
+    case 'CLASS_SUBJECTS':
+      return ['code classe', 'code matière'];
+    default:
+      return ['prénom', 'nom'];
+  }
 }
 
 function mapHeaderColumns(
@@ -198,6 +223,27 @@ function isEmptyRow(values: Record<string, string | null>) {
 
 function validateImportRow(kind: ImportKind, values: Record<string, string | null>): string[] {
   const errors: string[] = [];
+
+  if (kind === 'STUDENTS' || kind === 'TEACHERS' || kind === 'GUARDIANS') {
+    validatePersonIdentityFields(values, errors);
+  }
+
+  if (kind === 'STUDENTS') {
+    validateStudentFields(values, errors);
+  } else if (kind === 'TEACHERS') {
+    validateTeacherFields(values, errors);
+  } else if (kind === 'SUBJECTS') {
+    validateSubjectFields(values, errors);
+  } else if (kind === 'CLASSROOMS') {
+    validateClassroomFields(values, errors);
+  } else if (kind === 'CLASS_SUBJECTS') {
+    validateClassSubjectFields(values, errors);
+  }
+
+  return errors;
+}
+
+function validatePersonIdentityFields(values: Record<string, string | null>, errors: string[]) {
   const firstName = values.firstName?.trim();
   const lastName = values.lastName?.trim();
 
@@ -237,19 +283,156 @@ function validateImportRow(kind: ImportKind, values: Record<string, string | nul
     }
   }
 
-  if (kind === 'STUDENTS') {
-    validateStudentFields(values, errors);
-  } else {
-    validateTeacherFields(values, errors);
-  }
-
   const email = values.email?.trim();
 
   if (email && !isValidEmail(email)) {
     errors.push('Adresse email invalide.');
   }
+}
 
-  return errors;
+function validateSubjectFields(values: Record<string, string | null>, errors: string[]) {
+  const code = values.code?.trim();
+
+  if (!code) {
+    errors.push('Code requis.');
+  } else if (code.length > 30) {
+    errors.push('Code trop long (30 caractères maximum).');
+  }
+
+  const name = values.name?.trim();
+
+  if (!name) {
+    errors.push('Nom requis.');
+  } else if (name.length > 120) {
+    errors.push('Nom trop long (120 caractères maximum).');
+  }
+
+  const category = values.category?.trim().toUpperCase();
+  const normalizedCategory = normalizeSubjectCategory(category);
+
+  if (!category || !normalizedCategory) {
+    errors.push(
+      'Catégorie invalide (LANGUES, SCIENCES, MATHEMATIQUES, SCIENCES_SOCIALES, ARTS, SPORTS ou AUTRE).'
+    );
+  } else {
+    values.category = normalizedCategory;
+  }
+}
+
+function validateClassroomFields(values: Record<string, string | null>, errors: string[]) {
+  const yearLabel = values.academicYearLabel?.trim();
+
+  if (!yearLabel) {
+    errors.push('Année scolaire requise.');
+  } else if (yearLabel.length > 40) {
+    errors.push('Année scolaire trop longue (40 caractères maximum).');
+  }
+
+  const levelCode = values.classLevelCode?.trim();
+
+  if (!levelCode) {
+    errors.push('Code niveau requis.');
+  } else if (levelCode.length > 30) {
+    errors.push('Code niveau trop long (30 caractères maximum).');
+  }
+
+  const code = values.code?.trim();
+
+  if (!code) {
+    errors.push('Code classe requis.');
+  } else if (code.length > 30) {
+    errors.push('Code classe trop long (30 caractères maximum).');
+  }
+
+  const capacity = values.capacity?.trim();
+
+  if (capacity) {
+    const numericCapacity = Number(capacity);
+
+    if (!Number.isInteger(numericCapacity) || numericCapacity < 1 || numericCapacity > 1000) {
+      errors.push('Capacité invalide (entier ≥ 1 et ≤ 1000).');
+    } else {
+      values.capacity = String(numericCapacity);
+    }
+  }
+}
+
+function validateClassSubjectFields(values: Record<string, string | null>, errors: string[]) {
+  const classroomCode = values.classroomCode?.trim();
+
+  if (!classroomCode) {
+    errors.push('Code classe requis.');
+  } else if (classroomCode.length > 30) {
+    errors.push('Code classe trop long (30 caractères maximum).');
+  }
+
+  const subjectCode = values.subjectCode?.trim();
+
+  if (!subjectCode) {
+    errors.push('Code matière requis.');
+  } else if (subjectCode.length > 30) {
+    errors.push('Code matière trop long (30 caractères maximum).');
+  }
+
+  const coefficient = values.coefficient?.trim();
+
+  if (!coefficient) {
+    errors.push('Coefficient requis.');
+  } else {
+    const numericCoefficient = Number(coefficient);
+
+    if (
+      !Number.isInteger(numericCoefficient) ||
+      numericCoefficient < 1 ||
+      numericCoefficient > 20
+    ) {
+      errors.push('Coefficient invalide (entier ≥ 1 et ≤ 20).');
+    } else {
+      values.coefficient = String(numericCoefficient);
+    }
+  }
+
+  const isRequired = values.isRequired?.trim().toUpperCase();
+
+  if (isRequired) {
+    if (isRequired === 'OUI' || isRequired === 'YES' || isRequired === '1') {
+      values.isRequired = 'OUI';
+    } else if (isRequired === 'NON' || isRequired === 'NO' || isRequired === '0') {
+      values.isRequired = 'NON';
+    } else {
+      errors.push('Obligatoire invalide (OUI ou NON).');
+    }
+  }
+
+  const teacherCode = values.teacherCode?.trim();
+
+  if (teacherCode && teacherCode.length > 64) {
+    errors.push('Code professeur trop long (64 caractères maximum).');
+  }
+}
+
+function normalizeSubjectCategory(rawCategory: string | null | undefined) {
+  if (!rawCategory) {
+    return null;
+  }
+
+  const normalized = rawCategory.trim().toUpperCase();
+
+  if (
+    [
+      'LANGUES',
+      'SCIENCES',
+      'MATHEMATIQUES',
+      'SCIENCES_SOCIALES',
+      'ARTS',
+      'SPORTS',
+      'AUTRE',
+    ].includes(normalized)
+  ) {
+    return normalized;
+  }
+
+  return null;
 }
 
 function validateStudentFields(values: Record<string, string | null>, errors: string[]) {
