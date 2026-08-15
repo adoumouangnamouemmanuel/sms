@@ -12,7 +12,7 @@ import {
   previewImport as previewImportRequest,
   type ImportsRequestOptions,
 } from './importsApi';
-import { resolveImportsErrorMessageKey } from './importsErrors';
+import { ImportsApiError, resolveImportsErrorMessageKey } from './importsErrors';
 
 export interface ImportsClient {
   confirmImport(
@@ -40,6 +40,7 @@ export function useImportState({ apiBaseUrl, capabilityToken, client }: UseImpor
   const [step, setStep] = useState<ImportStep>('choose');
   const [isBusy, setIsBusy] = useState(false);
   const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [isSessionExpired, setIsSessionExpired] = useState(false);
   const [preview, setPreview] = useState<ImportPreviewResponse | null>(null);
   const [report, setReport] = useState<ConfirmImportResponse | null>(null);
 
@@ -59,6 +60,7 @@ export function useImportState({ apiBaseUrl, capabilityToken, client }: UseImpor
 
       setIsBusy(true);
       setErrorKey(null);
+      setIsSessionExpired(false);
 
       try {
         const result = client
@@ -70,6 +72,7 @@ export function useImportState({ apiBaseUrl, capabilityToken, client }: UseImpor
         setStep('preview');
       } catch (error) {
         setErrorKey(resolveImportsErrorMessageKey(error));
+        setIsSessionExpired(isSessionExpiredError(error));
       } finally {
         setIsBusy(false);
       }
@@ -92,6 +95,7 @@ export function useImportState({ apiBaseUrl, capabilityToken, client }: UseImpor
 
       setIsBusy(true);
       setErrorKey(null);
+      setIsSessionExpired(false);
 
       try {
         const input = { importId: preview.importId, importIdentifier: identifier };
@@ -103,6 +107,7 @@ export function useImportState({ apiBaseUrl, capabilityToken, client }: UseImpor
         setStep('report');
       } catch (error) {
         setErrorKey(resolveImportsErrorMessageKey(error));
+        setIsSessionExpired(isSessionExpiredError(error));
       } finally {
         setIsBusy(false);
       }
@@ -148,6 +153,7 @@ export function useImportState({ apiBaseUrl, capabilityToken, client }: UseImpor
     setPreview(null);
     setReport(null);
     setErrorKey(null);
+    setIsSessionExpired(false);
     setIsBusy(false);
   }, []);
 
@@ -158,9 +164,15 @@ export function useImportState({ apiBaseUrl, capabilityToken, client }: UseImpor
     downloadTemplate,
     errorKey,
     isBusy,
+    isSessionExpired,
     preview,
     report,
     reset,
     step,
   };
+}
+
+/** Session-expiry errors block the flow instead of leaving a live action button. */
+function isSessionExpiredError(error: unknown) {
+  return error instanceof ImportsApiError && error.code === 'INVALID_ACCESS_TOKEN';
 }
