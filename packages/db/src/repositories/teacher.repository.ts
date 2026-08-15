@@ -95,6 +95,27 @@ export class TeacherRepository extends TenantScopedRepository {
       .get();
   }
 
+  /**
+   * Case-insensitive exact full-name match, including archived rows: used by the
+   * import slice to block duplicate people when no code identity is available.
+   */
+  findByName(firstName: string, lastName: string) {
+    const trimmedFirstName = firstName.trim();
+    const trimmedLastName = lastName.trim();
+
+    return this.db
+      .select(teacherColumns)
+      .from(teacher)
+      .where(
+        and(
+          eq(teacher.schoolId, this.schoolId),
+          sql`lower(${teacher.firstName}) = lower(${trimmedFirstName})`,
+          sql`lower(${teacher.lastName}) = lower(${trimmedLastName})`
+        )
+      )
+      .get();
+  }
+
   /** Finds the teacher linked to a login account, regardless of record status. */
   findByUserId(userId: string) {
     return this.db
