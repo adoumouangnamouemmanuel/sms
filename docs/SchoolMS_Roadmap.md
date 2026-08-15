@@ -439,35 +439,37 @@ Do not freeze the grade schema until all of these are true:
 
 ### 10.1 Data model
 
-- [ ] Add `subject`, `classroom`, `class_subject`, `class_enrollment` and `student_subject_enrollment`.
-- [ ] Enforce tenant, academic-year and effective-date constraints.
-- [ ] Store coefficients as positive integers and maximum grade as 20.00 policy.
+- [x] Add `subject`, `classroom`, `class_subject`, `class_enrollment` and `student_subject_enrollment`.
+- [x] Enforce tenant, academic-year and effective-date constraints.
+- [x] Store coefficients as positive integers and maximum grade as 20.00 policy.
 
 ### 10.2 Curriculum slice
 
-- [ ] Create a school subject catalogue with localized display names, codes and categories.
-- [ ] Create classrooms for an academic year and level.
-- [ ] Assign subjects, coefficients and teachers to classrooms.
-- [ ] Mark a class-subject optional without automatically assigning every student.
-- [ ] Enrol applicable students in optional subjects explicitly.
-- [ ] Extend the preview/validation/import pipeline to subjects, classrooms, class-subjects, coefficients and assignments.
-- [ ] Copy a curriculum from a previous class/year with review before confirmation.
+- [x] Create a school subject catalogue with localized display names, codes and categories.
+- [x] Create classrooms for an academic year and level.
+- [x] Assign subjects, coefficients and teachers to classrooms.
+- [x] Mark a class-subject optional without automatically assigning every student.
+- [x] Enrol applicable students in optional subjects explicitly.
+- [x] Extend the preview/validation/import pipeline to subjects, classrooms, class-subjects, coefficients and assignments.
+- [x] Copy a curriculum from a previous class/year with review before confirmation.
 
 ### 10.3 Enrolment slice
 
-- [ ] Enrol one or many students in a classroom for the year.
-- [ ] Prevent simultaneous active classroom enrolments for the same student/year.
-- [ ] Transfer with effective date and reason while preserving history.
-- [ ] Show class roster, capacity and students missing an active class.
-- [ ] Export a basic class register.
+- [x] Enrol one or many students in a classroom for the year.
+- [x] Prevent simultaneous active classroom enrolments for the same student/year.
+- [x] Transfer with effective date and reason while preserving history.
+- [x] Show class roster, capacity and students missing an active class.
+- [x] Export a basic class register.
 
 ### 10.4 Gate
 
-- [ ] A SchoolMaster configures a realistic class and curriculum from a pilot fixture.
-- [ ] Reimporting the same confirmed curriculum file is idempotent and does not duplicate assignments.
-- [ ] Teacher assignment and optional-subject authorization tests pass.
-- [ ] Transfer and historical-enrolment tests pass.
-- [ ] The structure produces the exact subject rows expected on a reference bulletin.
+- [x] A SchoolMaster configures a realistic class and curriculum from a pilot fixture.
+- [x] Reimporting the same confirmed curriculum file is idempotent and does not duplicate assignments.
+- [x] Teacher assignment and optional-subject authorization tests pass.
+- [x] Transfer and historical-enrolment tests pass.
+- [x] The structure produces the exact subject rows expected on a reference bulletin.
+
+> Gate evidence lives in `docs/phase-4-gate.md` and `apps/api/src/test/phase4.gate.test.ts`.
 
 ## 11. Phase 5 - Grade entry and validation
 
