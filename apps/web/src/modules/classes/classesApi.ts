@@ -376,11 +376,20 @@ async function requestJson<T>(
   }
 
   if (!response.ok || !payload.success) {
-    throw new ClassesApiError(
-      payload.success ? 'REQUEST_REJECTED' : payload.error.code,
-      payload.success ? 'Requete locale refusee.' : payload.error.message,
-      response.status
-    );
+    // Fastify's default 404 body (route not registered on the running sidecar)
+    // has no `error.code` — fall back to a stable code so the UI can tell a
+    // stale-service situation apart from a real application error.
+    const errorBody = (payload as { error?: { code?: unknown; message?: unknown } }).error;
+    const code =
+      typeof errorBody?.code === 'string'
+        ? errorBody.code
+        : response.status === 404
+          ? 'ROUTE_NOT_FOUND'
+          : 'UNKNOWN_ERROR';
+    const message =
+      typeof errorBody?.message === 'string' ? errorBody.message : 'Requete locale refusee.';
+
+    throw new ClassesApiError(code, message, response.status);
   }
 
   return payload.data;
