@@ -45,6 +45,10 @@ export async function listStudents(
     params.set('search', query.search);
   }
 
+  if (query.status) {
+    params.set('status', query.status);
+  }
+
   return requestJson<PaginatedStudentsResponse>(apiBaseUrl, `/students?${params.toString()}`, {
     method: 'GET',
     options,
@@ -128,6 +132,10 @@ export async function listGuardians(
 
   if (query.search) {
     params.set('search', query.search);
+  }
+
+  if (query.status) {
+    params.set('status', query.status);
   }
 
   return requestJson<PaginatedGuardiansResponse>(apiBaseUrl, `/guardians?${params.toString()}`, {
