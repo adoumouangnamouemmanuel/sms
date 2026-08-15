@@ -86,9 +86,10 @@ identifiant **différent** pour chaque fichier réellement nouveau.
    `eleves_avec_erreurs.xlsx` → analyser. Attendu : **3 en erreur** (Prénom
    manquant ligne 3, Sexe invalide ligne 4, Code dupliqué ligne 5).
    Téléchargez le CSV des lignes en erreur et vérifiez qu'il s'ouvre dans
-   Excel.
-7. **Test 6 — sécurité** : confirmez l'import avec un nouvel identifiant
-   (`test-eleves-2`), puis vérifiez que seuls les 3 élèves valides du test 5
-   ont été ajoutés (les lignes en erreur ne sont jamais importées), et que le
-   compte d'un **enseignant** ne peut pas ouvrir la fenêtre d'import (bouton
-   absent ou refus `403`).
+   Excel. Saisissez l'identifiant `test-eleves-2` et cliquez sur
+   **Confirmer l'import**. Attendu au rapport : **3 importés / 3 en erreur**
+   — les lignes invalides ne sont jamais importées.
+7. **Test 6 — sécurité** : vérifiez que seuls les 3 élèves valides du test 5
+   sont dans la liste (aucune ligne en erreur), et que le compte d'un
+   **enseignant** ne peut pas ouvrir la fenêtre d'import (bouton absent ou
+   refus `403`).
