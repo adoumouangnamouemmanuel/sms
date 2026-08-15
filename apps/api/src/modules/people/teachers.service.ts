@@ -110,8 +110,12 @@ export class TeachersService {
         try {
           const code = input.code?.trim()
             ? normalizePeopleCode(input.code)
-            : generatePeopleCode(transaction, tenant, this.now, () =>
-                createTeacherRepository(transaction, tenant).countAll()
+            : generatePeopleCode(
+                transaction,
+                tenant,
+                this.now,
+                () => createTeacherRepository(transaction, tenant).countAll(),
+                attempt
               );
 
           const teacher = repository.create({
@@ -260,57 +264,72 @@ export class TeachersService {
   ): Promise<TeacherLoginCreatedResponse> {
     this.assertSchoolMaster(actor);
     const tenant = createTenantContext(actor.schoolId);
-    const teacher = createTeacherRepository(this.db, tenant).findById(teacherId);
-
-    if (!teacher) {
-      throw teacherNotFound();
-    }
-
-    if (!teacher.isActive) {
-      throw teacherLoginRequiresActiveRecord();
-    }
-
-    if (teacher.userId) {
-      throw teacherLoginAlreadyExists();
-    }
-
     const initialPassword = generateInitialPassword();
     const passwordHash = await hashPassword(initialPassword);
-    const username = findUniqueUsername(
-      createUserRepository(this.db, tenant),
-      teacher.firstName,
-      teacher.lastName
-    );
-
     const updatedAt = this.now().toISOString();
 
-    return withTransaction(this.db, (transaction) => {
-      const account = createUserRepository(transaction, tenant).createUser({
-        username,
-        passwordHash,
-        role: 'TEACHER',
-      });
-      createTeacherRepository(transaction, tenant).update(
-        teacherId,
-        { userId: account.id },
-        updatedAt
-      );
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        return withTransaction(this.db, (transaction) => {
+          const teacher = createTeacherRepository(transaction, tenant).findById(teacherId);
 
-      createAuditLogRepository(transaction, tenant).createEvent({
-        actorUserId: actor.id,
-        action: 'TEACHER_LOGIN_CREATE',
-        targetType: 'teacher',
-        targetId: teacherId,
-        correlationId: requestContext.correlationId ?? null,
-        metadata: { userId: account.id, username: account.username },
-      });
+          if (!teacher) {
+            throw teacherNotFound();
+          }
 
-      return {
-        userId: account.id,
-        username: account.username,
-        initialPassword,
-      };
-    });
+          if (!teacher.isActive) {
+            throw teacherLoginRequiresActiveRecord();
+          }
+
+          if (teacher.userId) {
+            throw teacherLoginAlreadyExists();
+          }
+
+          const username = findUniqueUsername(
+            createUserRepository(transaction, tenant),
+            teacher.firstName,
+            teacher.lastName
+          );
+
+          const account = createUserRepository(transaction, tenant).createUser({
+            username,
+            passwordHash,
+            role: 'TEACHER',
+          });
+          createTeacherRepository(transaction, tenant).update(
+            teacherId,
+            { userId: account.id },
+            updatedAt
+          );
+
+          createAuditLogRepository(transaction, tenant).createEvent({
+            actorUserId: actor.id,
+            action: 'TEACHER_LOGIN_CREATE',
+            targetType: 'teacher',
+            targetId: teacherId,
+            correlationId: requestContext.correlationId ?? null,
+            metadata: { userId: account.id, username: account.username },
+          });
+
+          return {
+            userId: account.id,
+            username: account.username,
+            initialPassword,
+          };
+        });
+      } catch (error: unknown) {
+        const err = error as Error & { code?: string };
+        if (
+          err.code === 'SQLITE_CONSTRAINT_UNIQUE' ||
+          err.message.includes('UNIQUE constraint failed')
+        ) {
+          if (attempt < 3) continue;
+        }
+        throw error;
+      }
+    }
+
+    throw new Error('Failed to generate a unique username after 3 attempts');
   }
 
   deactivateLogin(
