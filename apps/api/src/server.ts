@@ -149,7 +149,7 @@ export function buildServer(options: BuildServerOptions = {}) {
   });
 
   if (authEnabled && database) {
-    const authService = new AuthService(database, options.auth);
+    const authService = new AuthService(database, resolveAuthOptions(options.auth, process.env));
 
     registerAuthRoutes(server, {
       authService,
@@ -179,6 +179,23 @@ export function buildServer(options: BuildServerOptions = {}) {
   }));
 
   return server;
+}
+
+function resolveAuthOptions(
+  auth: BuildServerOptions['auth'],
+  env: NodeJS.ProcessEnv
+): AuthServiceOptions | undefined {
+  // Explicit options win; the desktop shell injects the installation secret via environment.
+  const accessTokenSecret = auth?.accessTokenSecret ?? env.AUTH_ACCESS_TOKEN_SECRET;
+
+  if (auth) {
+    return {
+      ...auth,
+      ...(accessTokenSecret !== undefined ? { accessTokenSecret } : {}),
+    };
+  }
+
+  return accessTokenSecret !== undefined ? { accessTokenSecret } : undefined;
 }
 
 function applyCorsHeaders(reply: FastifyReply, origin: string) {

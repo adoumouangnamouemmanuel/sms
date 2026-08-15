@@ -3,6 +3,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+  openEduTrackDatabase,
+  type EduTrackDatabase,
+  type EduTrackDatabaseConnection,
+} from '@edutrack/db';
+import {
   buildServer,
   CAPABILITY_HEADER,
   createLoggerOptions,
@@ -282,6 +287,63 @@ describe('api sidecar foundation', () => {
     expect(warnings).toEqual([
       'EDUTRACK_SIDECAR_TOKEN is not set; local API capability checks are disabled outside production.',
     ]);
+  });
+
+  it('requires and reads the access token secret from the environment in production', () => {
+    const previousNodeEnv = process.env.NODE_ENV;
+    const previousSecret = process.env.AUTH_ACCESS_TOKEN_SECRET;
+    let connection: EduTrackDatabaseConnection | undefined;
+
+    try {
+      process.env.NODE_ENV = 'production';
+      delete process.env.AUTH_ACCESS_TOKEN_SECRET;
+      connection = openEduTrackDatabase(':memory:');
+      const database: EduTrackDatabase = connection.db;
+
+      expect(() =>
+        buildServer({
+          database,
+          databaseStatus,
+          logger: false,
+          security: {
+            allowedOrigins: ['tauri://localhost'],
+            capabilityToken: 'expected-token',
+          },
+        })
+      ).toThrow('AUTH_ACCESS_TOKEN_SECRET is required');
+
+      connection.close();
+      connection = undefined;
+
+      process.env.AUTH_ACCESS_TOKEN_SECRET = 'phase-2-server-test-secret';
+      connection = openEduTrackDatabase(':memory:');
+
+      expect(() =>
+        buildServer({
+          database: connection.db,
+          databaseStatus,
+          logger: false,
+          security: {
+            allowedOrigins: ['tauri://localhost'],
+            capabilityToken: 'expected-token',
+          },
+        })
+      ).not.toThrow();
+    } finally {
+      connection?.close();
+
+      if (previousNodeEnv === undefined) {
+        delete process.env.NODE_ENV;
+      } else {
+        process.env.NODE_ENV = previousNodeEnv;
+      }
+
+      if (previousSecret === undefined) {
+        delete process.env.AUTH_ACCESS_TOKEN_SECRET;
+      } else {
+        process.env.AUTH_ACCESS_TOKEN_SECRET = previousSecret;
+      }
+    }
   });
 
   it('creates a sidecar ready payload for Tauri supervision', () => {
