@@ -14,6 +14,7 @@ import {
 } from '@edutrack/shared';
 import Fastify, { type FastifyReply, type FastifyServerOptions } from 'fastify';
 import { AuthService, registerAuthRoutes, type AuthServiceOptions } from './modules/auth/index.js';
+import { GuardiansService, registerPeopleRoutes, StudentsService } from './modules/people/index.js';
 import { registerSetupRoutes, SetupService } from './modules/setup/index.js';
 export { CAPABILITY_HEADER } from './sidecar-contract.js';
 import { CAPABILITY_HEADER } from './sidecar-contract.js';
@@ -25,7 +26,7 @@ const DEFAULT_ALLOWED_ORIGINS = [
   'http://tauri.localhost',
   'tauri://localhost',
 ];
-const CORS_ALLOWED_METHODS = 'GET,POST,PUT,OPTIONS';
+const CORS_ALLOWED_METHODS = 'GET,POST,PUT,DELETE,OPTIONS';
 const CORS_ALLOWED_HEADERS = ['Authorization', 'Content-Type', SIDECAR_CAPABILITY_HEADER].join(',');
 
 export interface SafeLoggerOptions {
@@ -157,6 +158,15 @@ export function buildServer(options: BuildServerOptions = {}) {
     registerSetupRoutes(server, {
       authService,
       setupService: new SetupService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+    });
+    registerPeopleRoutes(server, {
+      authService,
+      studentsService: new StudentsService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+      guardiansService: new GuardiansService(database, {
         ...(options.auth?.now ? { now: options.auth.now } : {}),
       }),
     });
