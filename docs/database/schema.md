@@ -195,6 +195,8 @@ SQLite migration files live in `packages/db/migrations/sqlite`.
 
 Foundation seed data is deterministic and idempotent. It uses synthetic demo schools only; real school or student data is forbidden in seeds and tests.
 
+Demo credentials for the seeded schools (`NDS-DEMO`, `MND-DEMO`): school code `NDS-DEMO`, username `directeur`, password `Directeur2026!` (also exported as `foundationSeedDemoPassword` in `packages/db/src/seeds.ts`). Change the password from the app after first login.
+
 Run after applying the schema:
 
 ```bash
