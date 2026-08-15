@@ -197,11 +197,15 @@ const resources = {
         shell: {
           collapse: 'Réduire le menu',
           comingSoon: 'À venir',
+          comingSoonLabel: 'Bientôt',
           dashboard: 'Tableau de bord',
           expand: 'Développer le menu',
           header: {
+            notifications: 'Notifications',
             offline: 'Hors ligne',
             online: 'Service local prêt',
+            search: 'Rechercher',
+            searchPlaceholder: 'Rechercher…',
             syncLabel: 'État de synchronisation',
             termLabel: 'Période courante',
             yearLabel: 'Année scolaire',
@@ -300,6 +304,10 @@ const resources = {
           title: 'Lier un responsable',
         },
         list: {
+          allClassrooms: 'Toutes les classes',
+          allLevels: 'Tous les niveaux',
+          classLevel: 'Niveau',
+          classroom: 'Classe',
           clearSearch: 'Effacer la recherche',
           empty: 'Aucun élève trouvé.',
           emptyGuardians: 'Aucun responsable trouvé.',
@@ -460,15 +468,95 @@ const resources = {
           teachers: 'Voir les professeurs',
         },
         activity: {
-          studentArchived: 'Un élève a été archivé',
-          studentsImported: 'Import de 6 élèves confirmé',
-          teacherLogin: 'Compte professeur activé',
-          termOpened: 'Nouveau trimestre ouvert',
+          empty: 'Aucune activité enregistrée pour le moment.',
+          events: {
+            auth: {
+              login: 'Connexion',
+              logout: 'Déconnexion',
+              password: {
+                change: 'Mot de passe modifié',
+                reset: 'Mot de passe réinitialisé',
+              },
+              refresh: 'Session renouvelée',
+            },
+            classroom: {
+              archive: 'Classe archivée',
+              create: 'Classe créée',
+              reactivate: 'Classe réactivée',
+              update: 'Classe modifiée',
+            },
+            class: {
+              subject: {
+                assign: 'Matière affectée à une classe',
+                remove: 'Matière retirée d’une classe',
+                update: 'Affectation matière-classe modifiée',
+              },
+            },
+            curriculum: {
+              copy: 'Curriculum copié',
+            },
+            enrolment: {
+              bulk: 'Inscriptions groupées confirmées',
+              optional: {
+                subjects: 'Options inscrites pour un élève',
+              },
+              transfer: 'Élève transféré',
+            },
+            guardian: {
+              archive: 'Responsable archivé',
+              create: 'Responsable créé',
+              reactivate: 'Responsable réactivé',
+              update: 'Responsable modifié',
+            },
+            import: {
+              confirmed: 'Import confirmé',
+            },
+            other: 'Activité enregistrée',
+            setup: {
+              calendar: {
+                save: 'Calendrier scolaire enregistré',
+              },
+              class: {
+                levels: {
+                  save: 'Niveaux de classe enregistrés',
+                },
+              },
+              complete: 'Configuration de l’école terminée',
+              profile: {
+                save: 'Profil de l’école enregistré',
+              },
+            },
+            student: {
+              archive: 'Élève archivé',
+              create: 'Élève créé',
+              guardian: {
+                link: 'Responsable lié à un élève',
+                unlink: 'Responsable retiré d’un élève',
+                update: 'Lien élève-responsable modifié',
+              },
+              reactivate: 'Élève réactivé',
+              update: 'Élève modifié',
+            },
+            subject: {
+              archive: 'Matière archivée',
+              create: 'Matière créée',
+              reactivate: 'Matière réactivée',
+              update: 'Matière modifiée',
+            },
+            teacher: {
+              archive: 'Professeur archivé',
+              create: 'Professeur créé',
+              login: {
+                create: 'Compte professeur créé',
+                deactivate: 'Compte professeur désactivé',
+                reactivate: 'Compte professeur réactivé',
+                reset: 'Mot de passe professeur réinitialisé',
+              },
+              reactivate: 'Professeur réactivé',
+              update: 'Professeur modifié',
+            },
+          },
           title: 'Activité récente',
-          today: "Aujourd'hui",
-          twoDaysAgo: 'Il y a 2 jours',
-          weekAgo: 'Il y a une semaine',
-          yesterday: 'Hier',
         },
         errors: {
           unavailable: 'Les indicateurs sont temporairement indisponibles.',
@@ -482,13 +570,12 @@ const resources = {
           students: 'Élèves actifs',
           teachers: 'Professeurs',
         },
-        simulation: 'Simulation',
         structure: {
           classesCount: '{{count}} classes',
           classesShort: '{{count}} classes',
           empty: 'Aucun niveau configuré pour le moment.',
           levelsCount: '{{count}} niveaux',
-          studentsSim: '~{{count}} élèves (simulé)',
+          studentsEnrolled: '{{count}} élèves inscrits dans les classes actives',
           title: 'Structure académique',
         },
         subtitle: 'Vue d’ensemble de {{school}}',
@@ -1094,11 +1181,15 @@ const resources = {
         shell: {
           collapse: 'طي القائمة',
           comingSoon: 'قريباً',
+          comingSoonLabel: 'قريباً',
           dashboard: 'لوحة التحكم',
           expand: 'توسيع القائمة',
           header: {
+            notifications: 'الإشعارات',
             offline: 'غير متصل',
             online: 'الخدمة المحلية جاهزة',
+            search: 'بحث',
+            searchPlaceholder: 'بحث…',
             syncLabel: 'حالة المزامنة',
             termLabel: 'الفترة الحالية',
             yearLabel: 'السنة الدراسية',
@@ -1197,6 +1288,10 @@ const resources = {
           title: 'ربط ولي أمر',
         },
         list: {
+          allClassrooms: 'جميع الأقسام',
+          allLevels: 'جميع المستويات',
+          classLevel: 'المستوى',
+          classroom: 'القسم',
           clearSearch: 'مسح البحث',
           empty: 'لم يتم العثور على طلاب.',
           emptyGuardians: 'لم يتم العثور على أوصياء.',
@@ -1352,15 +1447,95 @@ const resources = {
           teachers: 'عرض المعلمين',
         },
         activity: {
-          studentArchived: 'تمت أرشفة طالب',
-          studentsImported: 'تم تأكيد استيراد 6 طلاب',
-          teacherLogin: 'تم تفعيل حساب معلم',
-          termOpened: 'تم فتح فصل دراسي جديد',
+          empty: 'لا يوجد نشاط مسجل حالياً.',
+          events: {
+            auth: {
+              login: 'تسجيل دخول',
+              logout: 'تسجيل خروج',
+              password: {
+                change: 'تم تغيير كلمة المرور',
+                reset: 'تمت إعادة تعيين كلمة المرور',
+              },
+              refresh: 'تم تجديد الجلسة',
+            },
+            classroom: {
+              archive: 'تمت أرشفة القسم',
+              create: 'تم إنشاء القسم',
+              reactivate: 'تمت إعادة تفعيل القسم',
+              update: 'تم تعديل القسم',
+            },
+            class: {
+              subject: {
+                assign: 'تم إسناد مادة إلى قسم',
+                remove: 'تمت إزالة مادة من قسم',
+                update: 'تم تعديل إسناد المادة إلى القسم',
+              },
+            },
+            curriculum: {
+              copy: 'تم نسخ المنهاج',
+            },
+            enrolment: {
+              bulk: 'تم تأكيد التسجيلات الجماعية',
+              optional: {
+                subjects: 'تم تسجيل المواد الاختيارية لطالب',
+              },
+              transfer: 'تم نقل طالب',
+            },
+            guardian: {
+              archive: 'تمت أرشفة ولي',
+              create: 'تم إنشاء ولي',
+              reactivate: 'تمت إعادة تفعيل ولي',
+              update: 'تم تعديل ولي',
+            },
+            import: {
+              confirmed: 'تم تأكيد الاستيراد',
+            },
+            other: 'نشاط مسجل',
+            setup: {
+              calendar: {
+                save: 'تم حفظ التقويم الدراسي',
+              },
+              class: {
+                levels: {
+                  save: 'تم حفظ المستويات الدراسية',
+                },
+              },
+              complete: 'اكتمل إعداد المدرسة',
+              profile: {
+                save: 'تم حفظ ملف المدرسة',
+              },
+            },
+            student: {
+              archive: 'تمت أرشفة طالب',
+              create: 'تم إنشاء طالب',
+              guardian: {
+                link: 'تم ربط ولي بطالب',
+                unlink: 'تمت إزالة ولي من طالب',
+                update: 'تم تعديل رابط الطالب-الولي',
+              },
+              reactivate: 'تمت إعادة تفعيل طالب',
+              update: 'تم تعديل طالب',
+            },
+            subject: {
+              archive: 'تمت أرشفة مادة',
+              create: 'تم إنشاء مادة',
+              reactivate: 'تمت إعادة تفعيل مادة',
+              update: 'تم تعديل مادة',
+            },
+            teacher: {
+              archive: 'تمت أرشفة معلم',
+              create: 'تم إنشاء معلم',
+              login: {
+                create: 'تم إنشاء حساب معلم',
+                deactivate: 'تم تعطيل حساب معلم',
+                reactivate: 'تمت إعادة تفعيل حساب معلم',
+                reset: 'تمت إعادة تعيين كلمة مرور معلم',
+              },
+              reactivate: 'تمت إعادة تفعيل معلم',
+              update: 'تم تعديل معلم',
+            },
+          },
           title: 'النشاط الأخير',
-          today: 'اليوم',
-          twoDaysAgo: 'قبل يومين',
-          weekAgo: 'قبل أسبوع',
-          yesterday: 'أمس',
         },
         errors: {
           unavailable: 'المؤشرات غير متاحة مؤقتاً.',
@@ -1374,13 +1549,12 @@ const resources = {
           students: 'الطلاب النشطون',
           teachers: 'المعلمون',
         },
-        simulation: 'محاكاة',
         structure: {
           classesCount: '{{count}} أقسام',
           classesShort: '{{count}} أقسام',
           empty: 'لا توجد مستويات مكوّنة حالياً.',
           levelsCount: '{{count}} مستويات',
-          studentsSim: '~{{count}} طالب (محاكاة)',
+          studentsEnrolled: '{{count}} طالباً مسجلاً في الأقسام النشطة',
           title: 'الهيكل الأكاديمي',
         },
         subtitle: 'نظرة عامة على {{school}}',
@@ -1950,11 +2124,15 @@ const resources = {
         shell: {
           collapse: 'Collapse menu',
           comingSoon: 'Coming soon',
+          comingSoonLabel: 'Coming soon',
           dashboard: 'Dashboard',
           expand: 'Expand menu',
           header: {
+            notifications: 'Notifications',
             offline: 'Offline',
             online: 'Local service ready',
+            search: 'Search',
+            searchPlaceholder: 'Search…',
             syncLabel: 'Sync status',
             termLabel: 'Current period',
             yearLabel: 'Academic year',
@@ -2053,6 +2231,10 @@ const resources = {
           title: 'Link a guardian',
         },
         list: {
+          allClassrooms: 'All classrooms',
+          allLevels: 'All levels',
+          classLevel: 'Level',
+          classroom: 'Classroom',
           clearSearch: 'Clear search',
           empty: 'No student found.',
           emptyGuardians: 'No guardian found.',
@@ -2211,15 +2393,95 @@ const resources = {
           teachers: 'View teachers',
         },
         activity: {
-          studentArchived: 'A student was archived',
-          studentsImported: 'Import of 6 students confirmed',
-          teacherLogin: 'Teacher account activated',
-          termOpened: 'New term opened',
+          empty: 'No activity recorded yet.',
+          events: {
+            auth: {
+              login: 'Signed in',
+              logout: 'Signed out',
+              password: {
+                change: 'Password changed',
+                reset: 'Password reset',
+              },
+              refresh: 'Session renewed',
+            },
+            classroom: {
+              archive: 'Classroom archived',
+              create: 'Classroom created',
+              reactivate: 'Classroom reactivated',
+              update: 'Classroom updated',
+            },
+            class: {
+              subject: {
+                assign: 'Subject assigned to a classroom',
+                remove: 'Subject removed from a classroom',
+                update: 'Classroom-subject assignment updated',
+              },
+            },
+            curriculum: {
+              copy: 'Curriculum copied',
+            },
+            enrolment: {
+              bulk: 'Bulk enrolment confirmed',
+              optional: {
+                subjects: 'Optional subjects enrolled for a student',
+              },
+              transfer: 'Student transferred',
+            },
+            guardian: {
+              archive: 'Guardian archived',
+              create: 'Guardian created',
+              reactivate: 'Guardian reactivated',
+              update: 'Guardian updated',
+            },
+            import: {
+              confirmed: 'Import confirmed',
+            },
+            other: 'Activity recorded',
+            setup: {
+              calendar: {
+                save: 'School calendar saved',
+              },
+              class: {
+                levels: {
+                  save: 'Class levels saved',
+                },
+              },
+              complete: 'School setup completed',
+              profile: {
+                save: 'School profile saved',
+              },
+            },
+            student: {
+              archive: 'Student archived',
+              create: 'Student created',
+              guardian: {
+                link: 'Guardian linked to a student',
+                unlink: 'Guardian unlinked from a student',
+                update: 'Student-guardian link updated',
+              },
+              reactivate: 'Student reactivated',
+              update: 'Student updated',
+            },
+            subject: {
+              archive: 'Subject archived',
+              create: 'Subject created',
+              reactivate: 'Subject reactivated',
+              update: 'Subject updated',
+            },
+            teacher: {
+              archive: 'Teacher archived',
+              create: 'Teacher created',
+              login: {
+                create: 'Teacher account created',
+                deactivate: 'Teacher account deactivated',
+                reactivate: 'Teacher account reactivated',
+                reset: 'Teacher password reset',
+              },
+              reactivate: 'Teacher reactivated',
+              update: 'Teacher updated',
+            },
+          },
           title: 'Recent activity',
-          today: 'Today',
-          twoDaysAgo: '2 days ago',
-          weekAgo: 'A week ago',
-          yesterday: 'Yesterday',
         },
         errors: {
           unavailable: 'Dashboard indicators are temporarily unavailable.',
@@ -2233,13 +2495,12 @@ const resources = {
           students: 'Active students',
           teachers: 'Teachers',
         },
-        simulation: 'Simulation',
         structure: {
           classesCount: '{{count}} classes',
           classesShort: '{{count}} classes',
           empty: 'No levels configured yet.',
           levelsCount: '{{count}} levels',
-          studentsSim: '~{{count}} students (simulated)',
+          studentsEnrolled: '{{count}} students enrolled in active classrooms',
           title: 'Academic structure',
         },
         subtitle: 'Overview of {{school}}',
