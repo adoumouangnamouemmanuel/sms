@@ -3,6 +3,9 @@
 -- (SQLite cannot alter a CHECK constraint in place), preserving all rows and
 -- indexes, then backfills the enabled TEACHERS row for every school that
 -- lacks it so already-setup schools see the module too.
+--
+-- Rollback rationale: Irreversible. Rolling back would remove the TEACHERS module config 
+-- and drop any data associated with it, which violates data retention rules.
 PRAGMA foreign_keys=OFF;--> statement-breakpoint
 CREATE TABLE `__new_school_module_config` (
 	`id` text PRIMARY KEY NOT NULL,
