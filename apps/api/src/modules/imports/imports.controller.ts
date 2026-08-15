@@ -72,13 +72,15 @@ export class ImportsController {
       await this.authenticateRequest(request);
       const kind = readKindParam(request);
 
+      const templateBuffer = this.importsService.template(kind);
+
       reply.header('Content-Type', TEMPLATE_CONTENT_TYPE);
       reply.header(
         'Content-Disposition',
         `attachment; filename="modele-${kind.toLocaleLowerCase('fr')}.xlsx"`
       );
 
-      return await reply.send(this.importsService.template(kind));
+      return await reply.send(templateBuffer);
     } catch (error) {
       return sendImportsError(reply, error);
     }
@@ -89,13 +91,16 @@ export class ImportsController {
       const actor = await this.authenticateRequest(request);
       const importId = readParam(request, 'importId');
 
+      const csv = this.importsService.errorsCsv(actor, importId);
+      const safeImportId = importId.replace(/[^A-Za-z0-9._-]/g, '');
+
       reply.header('Content-Type', 'text/csv; charset=utf-8');
       reply.header(
         'Content-Disposition',
-        `attachment; filename="lignes-en-erreur-${importId}.csv"`
+        `attachment; filename="lignes-en-erreur-${safeImportId}.csv"`
       );
 
-      return await reply.send(this.importsService.errorsCsv(actor, importId));
+      return await reply.send(csv);
     } catch (error) {
       return sendImportsError(reply, error);
     }
