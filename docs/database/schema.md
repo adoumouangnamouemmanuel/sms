@@ -199,6 +199,10 @@ SQLite migration files live in `packages/db/migrations/sqlite`.
 
 `0009_gifted_kronos.sql` and `0010_slippery_mother_askani.sql` add the Phase 4 classes and curriculum data model (roadmap §10.1): five new tenant-scoped tables with composite `(school_id, id)` foreign keys and partial unique indexes — `subject` (school catalogue with code, localized names, category), `classroom` (cohort/section within an academic year and class level, year-local code), `class_subject` (subject/coefficient/teacher assignment per classroom, required/optional policy), `class_enrollment` (student ↔ classroom for a year with a controlled status; the partial unique index enforces at most one `ACTIVE` enrollment per student/year), and `student_subject_enrollment` (explicit links to optional class-subjects). `0010` adds the `(school_id, id)` unique index on `class_level` that SQLite requires for the composite tenant foreign keys from `classroom`. Domain CHECK constraints (subject category, coefficient ≥ 1, enrollment status, capacity ≥ 1) are enforced in both the migration and the source schema.
 
+`0011_classes_import_kinds.sql` rebuilds `import_batch` so its `kind` CHECK accepts the three Phase 4.2/4.3 import kinds (`SUBJECTS`, `CLASSROOMS`, `CLASS_SUBJECTS`), preserving all rows and indexes — confirmed-import history stays auditable for the new templates.
+
+`0012_classes_module.sql` registers the `CLASSES` school module (roadmap §10.2): it rebuilds `school_module_config` so the `module_name` CHECK accepts `CLASSES` and backfills an enabled `CLASSES` row for every school that lacks one, so already-setup schools surface the classes & curriculum module as well.
+
 ## Seed Policy
 
 Foundation seed data is deterministic and idempotent. It uses synthetic demo schools only; real school or student data is forbidden in seeds and tests.
