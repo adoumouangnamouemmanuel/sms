@@ -393,15 +393,10 @@ describe('people routes', () => {
     });
 
     expect(response.statusCode).toBe(400);
-    expect(readJson(response) as ApiError).toMatchObject({
-      success: false,
-      error: {
-        code: 'VALIDATION_ERROR',
-        fields: {
-          firstName: expect.any(String),
-        },
-      },
-    });
+    const error = readJson(response) as ApiError;
+    expect(error.success).toBe(false);
+    expect(error.error.code).toBe('VALIDATION_ERROR');
+    expect(typeof error.error.fields?.firstName).toBe('string');
   });
 
   async function createStudent(accessToken: string, firstName: string, lastName: string) {
