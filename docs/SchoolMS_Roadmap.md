@@ -368,7 +368,7 @@ Do not freeze the grade schema until all of these are true:
 - [x] Separate record status from login-account status.
 - [x] Preserve audit metadata and prevent destructive deletion of referenced records.
 
-> Implementation note (9.1/9.2): the default student/teacher code is `{school.code}-{academicYearStart}-{NNI}` generated at the service layer (`POST /students` without a `code`); an explicitly provided code — including from the Excel import (9.4) — overrides the default. Until a real NNI is available, the NNI segment falls back to a zero-padded per-school sequence (`NDS-DEMO-2026-001`, `002`, …) counting archived rows so codes are never reused. The exact NNI handling stays pending confirmation before the import slice.
+> Implementation note (9.1/9.2/9.3): the default student/teacher code is `{school.code}-{academicYearStart}-{NNI}` generated at the service layer (`POST /students` or `POST /teachers` without a `code`); an explicitly provided code — including from the Excel import (9.4) — overrides the default. Until a real NNI is available, the NNI segment falls back to a zero-padded per-school sequence (`NDS-DEMO-2026-001`, `002`, …) counting archived rows so codes are never reused. The exact NNI handling stays pending confirmation before the import slice.
 
 ### 9.2 Student and guardian slice
 
@@ -380,10 +380,13 @@ Do not freeze the grade schema until all of these are true:
 
 ### 9.3 Teacher slice
 
-- [ ] Create searchable teacher list and profile views.
-- [ ] Store minimal Version 1 data: name, code, contact, specialization, hire date and status.
-- [ ] Create or deactivate a Teacher login independently of the teacher record.
-- [ ] Prevent deletion when historical assignments or grades exist.
+- [x] Create searchable teacher list and profile views.
+- [x] Store minimal Version 1 data: name, code, contact, specialization, hire date and status.
+- [x] Create or deactivate a Teacher login independently of the teacher record.
+- [x] Prevent deletion when historical assignments or grades exist.
+
+> Implementation note (9.3): teachers ship as their own school module (`TEACHERS`, migration `0005`), gated exactly like `STUDENTS`. Codes follow the same `{school.code}-{academicYearStart}-{NNI}` rule (explicit codes from the Excel import override the default). Teacher logins are created from the record (`POST /teachers/:id/login`); the generated username/initial password are returned exactly once and never retrievable later. Record status and account status stay independent — an archived teacher keeps its login disabled. Deletion is prevented by the archive-only pattern plus the `teacher.user_id` restrict foreign key; future assignment/grade tables will extend the same tenant-scoped restrict rule.
+> TODO (9.3/9.4): when assignments/grades exist, block record archival too — the roadmap wording says "prevent deletion", and the archive-only model already satisfies it, but the UI should surface the reason once grade tables exist.
 
 ### 9.4 Import slice
 
