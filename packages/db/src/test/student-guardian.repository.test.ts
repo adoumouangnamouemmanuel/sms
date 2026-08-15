@@ -278,6 +278,54 @@ describe('student-guardian repository', () => {
     ).toBeUndefined();
     expect(repository.findById(link.id)?.deletedAt).toBeNull();
   });
+
+  it('demotes the primary flag across a student links while keeping an exempted link', () => {
+    const [school] = foundationSeed.schools;
+    const tenant = createTenantContext(school.id);
+    const student = createStudentRepository(db, tenant).create({
+      code: 'NDS-DEMO-2026-000000109',
+      firstName: 'Aminata',
+      lastName: 'Mahamat',
+    });
+    const repository = createStudentGuardianRepository(db, tenant);
+    const primaryGuardian = createGuardianRepository(db, tenant).create({
+      firstName: 'Fatime',
+      lastName: 'Abakar',
+    });
+    const otherGuardian = createGuardianRepository(db, tenant).create({
+      firstName: 'Mahamat',
+      lastName: 'Ousmane',
+    });
+    const thirdGuardian = createGuardianRepository(db, tenant).create({
+      firstName: 'Hawa',
+      lastName: 'Mahamat',
+    });
+    const primaryLink = repository.link({
+      studentId: student.id,
+      guardianId: primaryGuardian.id,
+      relationshipType: 'PERE',
+      isPrimary: true,
+    });
+    const otherLink = repository.link({
+      studentId: student.id,
+      guardianId: otherGuardian.id,
+      relationshipType: 'MERE',
+    });
+    const thirdLink = repository.link({
+      studentId: student.id,
+      guardianId: thirdGuardian.id,
+      relationshipType: 'TUTEUR',
+    });
+
+    // Keep only `otherLink` untouched: the primary flag must be cleared elsewhere.
+    repository.demotePrimary(student.id, otherLink.id, '2026-09-04T00:00:00.000Z');
+
+    expect(repository.findById(primaryLink.id)?.isPrimary).toBe(false);
+    expect(repository.findById(primaryLink.id)?.recordVersion).toBe(2);
+    expect(repository.findById(otherLink.id)?.isPrimary).toBe(false);
+    expect(repository.findById(otherLink.id)?.recordVersion).toBe(1);
+    expect(repository.findById(thirdLink.id)?.isPrimary).toBe(false);
+  });
 });
 
 function applyAllMigrations(sqlite: Database.Database) {

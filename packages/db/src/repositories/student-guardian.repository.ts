@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNull, ne, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { GuardianRelationshipType } from '@edutrack/shared';
 import type { RepositoryExecutor, TenantContext } from './base.js';
@@ -117,6 +117,30 @@ export class StudentGuardianRepository extends TenantScopedRepository {
       .where(and(eq(studentGuardian.id, id), eq(studentGuardian.schoolId, this.schoolId)))
       .returning(studentGuardianColumns)
       .get();
+  }
+
+  /**
+   * Clears the primary flag on every active link of a student, optionally
+   * keeping one link untouched. Used to keep the at-most-one-primary invariant
+   * when a new primary is chosen.
+   */
+  demotePrimary(studentId: string, exceptLinkId: string | undefined, updatedAt: string) {
+    this.db
+      .update(studentGuardian)
+      .set({
+        isPrimary: false,
+        updatedAt,
+        recordVersion: sql`${studentGuardian.recordVersion} + 1`,
+      })
+      .where(
+        and(
+          eq(studentGuardian.schoolId, this.schoolId),
+          eq(studentGuardian.studentId, studentId),
+          isNull(studentGuardian.deletedAt),
+          exceptLinkId ? ne(studentGuardian.id, exceptLinkId) : undefined
+        )
+      )
+      .run();
   }
 }
 
