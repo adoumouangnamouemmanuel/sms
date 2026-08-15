@@ -2,6 +2,7 @@ import {
   createAuditLogRepository,
   createGuardianRepository,
   createImportBatchRepository,
+  createStudentGuardianRepository,
   createStudentRepository,
   createTeacherRepository,
   createTenantContext,
@@ -98,6 +99,24 @@ export class ImportsService {
         row.possibleDuplicate = Boolean(
           repository.findByName(row.values.firstName ?? '', row.values.lastName ?? '')
         );
+
+        // Optional student code: when present, the guardian is auto-linked to
+        // the matching student at confirm. An unknown code is a hard row error
+        // — the admin explicitly asked for a link that cannot exist.
+        const studentCode = row.values.studentCode?.trim();
+
+        if (studentCode) {
+          const student = createStudentRepository(this.db, tenant).findByCode(
+            normalizePeopleCode(studentCode)
+          );
+
+          if (!student) {
+            row.errors.push('Code élève inconnu dans cette école.');
+          } else {
+            row.linkedStudentId = student.id;
+          }
+        }
+
         continue;
       }
 
@@ -168,10 +187,29 @@ export class ImportsService {
           // Guardians carry no code: names are not identity, so every row is
           // imported. The preview already warned about possible name matches.
           const repository = createGuardianRepository(transaction, tenant);
+          const linkRepository = createStudentGuardianRepository(transaction, tenant);
 
           for (const row of validRows) {
             try {
-              repository.create(toGuardianCreateInput(row));
+              const guardian = repository.create(toGuardianCreateInput(row));
+
+              // Optional auto-link to the student whose code was provided in
+              // the workbook (resolved at preview time). The pair may already
+              // exist when the same guardian links the same student twice.
+              if (row.linkedStudentId) {
+                try {
+                  linkRepository.link({
+                    studentId: row.linkedStudentId,
+                    guardianId: guardian.id,
+                    relationshipType: 'AUTRE',
+                  });
+                } catch (error) {
+                  if (!isUniqueConstraintViolation(error)) {
+                    throw error;
+                  }
+                }
+              }
+
               imported += 1;
             } catch (error) {
               if (isUniqueConstraintViolation(error)) {
@@ -305,6 +343,12 @@ export class ImportsService {
       readmeRows.push(['- Sexe : M, F ou AUTRE.']);
     }
 
+    if (kind === 'GUARDIANS') {
+      readmeRows.push([
+        "- Code eleve : optionnel. Renseigne, le responsable est automatiquement lie a l'eleve portant ce code (a importer avant ou deja present dans l'ecole). Un code inconnu bloque la ligne.",
+      ]);
+    }
+
     if (kind !== 'GUARDIANS') {
       readmeRows.push(['- Code : optionnel. Laisses vide, un code est genere automatiquement.']);
       readmeRows.push([
@@ -345,8 +389,15 @@ export class ImportsService {
           ]
         : kind === 'GUARDIANS'
           ? [
-              ['Fatime', 'Abakar', '+23566000020', 'fatime.abakar@exemple.td', 'N Djamena'],
-              ['Mahamat', 'Ousmane', '+23566000021', null, null],
+              [
+                'Fatime',
+                'Abakar',
+                '+23566000020',
+                'fatime.abakar@exemple.td',
+                'N Djamena',
+                'NDS-DEMO-2026-X00001',
+              ],
+              ['Mahamat', 'Ousmane', '+23566000021', null, null, null],
             ]
           : [
               [
