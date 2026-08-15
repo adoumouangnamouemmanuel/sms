@@ -62,14 +62,16 @@ describe('guardian repository', () => {
   });
 
   it('finds a guardian by exact name case- and whitespace-insensitively', () => {
-    const [school] = foundationSeed.schools;
+    const [school, secondSchool] = foundationSeed.schools;
     const repository = createGuardianRepository(db, createTenantContext(school.id));
+    const secondRepository = createGuardianRepository(db, createTenantContext(secondSchool.id));
 
     const created = repository.create({ firstName: 'Fatime', lastName: 'Abakar' });
     const found = repository.findByName(' fatime ', 'ABAKAR');
 
     expect(found?.id).toBe(created.id);
     expect(repository.findByName('Fatime', 'Ousmane')).toBeUndefined();
+    expect(secondRepository.findByName('Fatime', 'Abakar')).toBeUndefined();
   });
 
   it('searches active guardians by name fragment', () => {
