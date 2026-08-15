@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Architecture records**: Accepted ADRs for Vite product UI, Tauri desktop shell, Fastify sidecar, and SQLite-only Version 1.
 - **Workspace packages**: Added `@edutrack/domain`, `@edutrack/shared`, and `@edutrack/ui` package boundaries.
 - **Setup wizard**: Added the authenticated Phase 2 school setup flow for school profile, academic year, terms, class levels, and implemented-module navigation.
+- **Phase 3 data model**: Added `student`, `guardian`, `student_guardian` and `teacher` tables with strict tenant-local code uniqueness, composite tenant foreign keys, soft-archive lifecycle columns, and tenant-scoped repositories for each.
 
 ### Changed
 
