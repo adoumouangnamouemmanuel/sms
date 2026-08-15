@@ -17,7 +17,7 @@ import type {
   UpdateGuardianRequest,
 } from '@edutrack/shared';
 import type { AuthenticatedUser, RequestAuditContext } from '../auth/index.js';
-import { toGuardianResponse } from './people.mappers.js';
+import { toGuardianResponse, toLinkResponse, toStudentResponse } from './people.mappers.js';
 import { guardianNotFound, peopleForbidden } from './people.errors.js';
 
 export interface GuardiansServiceOptions {
@@ -71,7 +71,7 @@ export class GuardiansService {
       .flatMap((link) => {
         const student = createStudentRepository(this.db, tenant).findById(link.studentId);
 
-        return student ? [{ link, student }] : [];
+        return student ? [{ link: toLinkResponse(link), student: toStudentResponse(student) }] : [];
       });
 
     return {
