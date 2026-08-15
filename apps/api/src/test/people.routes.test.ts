@@ -1,4 +1,5 @@
 import type Database from 'better-sqlite3';
+import { randomUUID } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -198,6 +199,83 @@ describe('people routes', () => {
     const body = readJson(response) as ApiSuccess<PaginatedStudentsResponse>;
     expect(body.data.total).toBe(1);
     expect(body.data.items[0]?.firstName).toBe('Aminata');
+  });
+
+  it('filters students by class level and classroom through their active enrolment', async () => {
+    const accessToken = await loginAndReadAccessToken('directeur');
+    const aminata = await createStudent(accessToken, 'Aminata', 'Mahamat');
+    const ibrahim = await createStudent(accessToken, 'Ibrahim', 'Ousmane');
+    const third = await createStudent(accessToken, 'Fatime', 'Mahamat');
+
+    seedEnrolmentContext(sqlite);
+    const sixLevelId = '00000000-0000-4000-8000-00000000c101';
+    const threeClassroomId = '00000000-0000-4000-8000-00000000c202';
+
+    // Aminata is enrolled in 6e A; Ibrahim and Fatime in 3e A.
+    sqlite
+      .prepare(
+        `
+          INSERT INTO class_enrollment
+            (id, school_id, student_id, classroom_id, academic_year_id, enrollment_date)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `
+      )
+      .run(
+        '00000000-0000-4000-8000-00000000c301',
+        firstSchoolId,
+        aminata.id,
+        '00000000-0000-4000-8000-00000000c201',
+        '00000000-0000-4000-8000-00000000c001',
+        '2026-09-01'
+      );
+    for (const studentId of [ibrahim.id, third.id]) {
+      sqlite
+        .prepare(
+          `
+            INSERT INTO class_enrollment
+              (id, school_id, student_id, classroom_id, academic_year_id, enrollment_date)
+            VALUES (?, ?, ?, ?, ?, ?)
+          `
+        )
+        .run(
+          randomUUID(),
+          firstSchoolId,
+          studentId,
+          threeClassroomId,
+          '00000000-0000-4000-8000-00000000c001',
+          '2026-09-01'
+        );
+    }
+
+    // By class level (Troisième): only the two students of 3e A.
+    const byLevel = await server.inject({
+      method: 'GET',
+      url: `/students?classLevelId=${sixLevelId}`,
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    const byLevelBody = readJson(byLevel) as ApiSuccess<PaginatedStudentsResponse>;
+    expect(byLevelBody.data.total).toBe(1);
+    expect(byLevelBody.data.items[0]?.id).toBe(aminata.id);
+
+    // By classroom (3e A): the two Troisième students only.
+    const byClassroom = await server.inject({
+      method: 'GET',
+      url: `/students?classroomId=${threeClassroomId}`,
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    const byClassroomBody = readJson(byClassroom) as ApiSuccess<PaginatedStudentsResponse>;
+    expect(byClassroomBody.data.total).toBe(2);
+    expect(new Set(byClassroomBody.data.items.map((item) => item.id))).toEqual(
+      new Set([ibrahim.id, third.id])
+    );
+
+    // Unfiltered: everyone is still listed.
+    const all = await server.inject({
+      method: 'GET',
+      url: '/students',
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect((readJson(all) as ApiSuccess<PaginatedStudentsResponse>).data.total).toBe(3);
   });
 
   it('updates only the provided student fields and audits the change', async () => {
@@ -510,6 +588,61 @@ describe('people routes', () => {
     return row;
   }
 });
+
+/** Current year + 6e/3e levels + one classroom each, for the class filter. */
+function seedEnrolmentContext(sqlite: Database.Database) {
+  sqlite
+    .prepare(
+      `
+        INSERT INTO academic_year (id, school_id, label, start_date, end_date, is_current)
+        VALUES (?, ?, ?, ?, ?, 1)
+      `
+    )
+    .run(
+      '00000000-0000-4000-8000-00000000c001',
+      firstSchoolId,
+      '2026-2027',
+      '2026-09-01',
+      '2027-06-30'
+    );
+
+  const levels = [
+    ['00000000-0000-4000-8000-00000000c101', '6E', 'Sixième', 1, 0],
+    ['00000000-0000-4000-8000-00000000c102', '3E', 'Troisième', 5, 1],
+  ] as const;
+
+  for (const [id, code, name, order, exam] of levels) {
+    sqlite
+      .prepare(
+        `
+          INSERT INTO class_level (id, school_id, code, name, display_order, is_exam_year)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `
+      )
+      .run(id, firstSchoolId, code, name, order, exam);
+  }
+
+  const classrooms = [
+    ['00000000-0000-4000-8000-00000000c201', '6E', '6E-A'],
+    ['00000000-0000-4000-8000-00000000c202', '3E', '3E-A'],
+  ] as const;
+
+  for (const [id, levelCode, code] of classrooms) {
+    const levelId =
+      levelCode === '6E'
+        ? '00000000-0000-4000-8000-00000000c101'
+        : '00000000-0000-4000-8000-00000000c102';
+    sqlite
+      .prepare(
+        `
+          INSERT INTO classroom
+            (id, school_id, academic_year_id, class_level_id, code)
+          VALUES (?, ?, ?, ?, ?)
+        `
+      )
+      .run(id, firstSchoolId, '00000000-0000-4000-8000-00000000c001', levelId, code);
+  }
+}
 
 function seedPeopleFixture(sqlite: Database.Database) {
   sqlite
