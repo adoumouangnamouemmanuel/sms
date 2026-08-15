@@ -64,6 +64,20 @@
       "when": 1786811237840,
       "tag": "0008_noisy_mephisto",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1786814850811,
+      "tag": "0009_gifted_kronos",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1786815184679,
+      "tag": "0010_slippery_mother_askani",
+      "breakpoints": true
     }
   ]
 }
