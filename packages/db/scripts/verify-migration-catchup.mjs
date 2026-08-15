@@ -19,15 +19,11 @@ const CLASS_TABLES = [
 ];
 
 function runMigrate(dbPath) {
-  execFileSync(
-    process.execPath,
-    ['--import', 'tsx', migrateScript],
-    {
-      cwd: pkgRoot,
-      env: { ...process.env, EDUTRACK_SQLITE_PATH: dbPath },
-      stdio: 'pipe',
-    }
-  );
+  execFileSync(process.execPath, ['--import', 'tsx', migrateScript], {
+    cwd: pkgRoot,
+    env: { ...process.env, EDUTRACK_SQLITE_PATH: dbPath },
+    stdio: 'pipe',
+  });
 }
 
 function appliedCount(db) {
@@ -95,10 +91,14 @@ runMigrate(snapshotPath);
   const studentsAfter = after.prepare('SELECT COUNT(*) AS n FROM student').get().n;
   const tables = hasTables(after);
   const primaryIdx = after
-    .prepare("SELECT name FROM sqlite_master WHERE type='index' AND name='student_guardian_student_primary_unique' AND sql LIKE '%deleted_at%'")
+    .prepare(
+      "SELECT name FROM sqlite_master WHERE type='index' AND name='student_guardian_student_primary_unique' AND sql LIKE '%deleted_at%'"
+    )
     .all();
   const classLevelIdx = after
-    .prepare("SELECT name FROM sqlite_master WHERE type='index' AND name='class_level_school_id_id_unique'")
+    .prepare(
+      "SELECT name FROM sqlite_master WHERE type='index' AND name='class_level_school_id_id_unique'"
+    )
     .all();
   const ok =
     tables.length === CLASS_TABLES.length &&
