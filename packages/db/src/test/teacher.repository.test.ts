@@ -172,6 +172,57 @@ describe('teacher repository', () => {
     expect(repository.listActive()).toHaveLength(1);
   });
 
+  it('lists teachers by status and counts totals for pagination', () => {
+    const [school] = foundationSeed.schools;
+    const repository = createTeacherRepository(db, createTenantContext(school.id));
+
+    repository.create({
+      code: 'NDS-DEMO-2026-T00040',
+      firstName: 'Ibrahim',
+      lastName: 'Ousmane',
+    });
+    const archived = repository.create({
+      code: 'NDS-DEMO-2026-T00041',
+      firstName: 'Ali',
+      lastName: 'Ahmat',
+    });
+    repository.archive(archived.id, '2026-08-15T10:00:00.000Z');
+
+    expect(repository.list().map((teacherRecord) => teacherRecord.code)).toEqual([
+      'NDS-DEMO-2026-T00040',
+    ]);
+    expect(
+      repository.list({ status: 'archived' }).map((teacherRecord) => teacherRecord.code)
+    ).toEqual(['NDS-DEMO-2026-T00041']);
+    expect(repository.count()).toBe(1);
+    expect(repository.count({ status: 'archived' })).toBe(1);
+    expect(repository.list({ status: 'archived', search: 'Ousmane' })).toHaveLength(0);
+  });
+
+  it('finds a teacher by login user id and counts all rows for the code sequence', () => {
+    const [school] = foundationSeed.schools;
+    const tenant = createTenantContext(school.id);
+    const user = createUserRepository(db, tenant).createUser({
+      id: '66666666-6666-4666-8666-666666666669',
+      username: 'enseignant4',
+      passwordHash: 'stored-hash',
+      role: 'TEACHER',
+    });
+    const repository = createTeacherRepository(db, tenant);
+
+    repository.create({
+      code: 'NDS-DEMO-2026-T00050',
+      firstName: 'Ibrahim',
+      lastName: 'Ousmane',
+      userId: user.id,
+    });
+    repository.create({ code: 'NDS-DEMO-2026-T00051', firstName: 'Ali', lastName: 'Ahmat' });
+
+    expect(repository.findByUserId(user.id)?.code).toBe('NDS-DEMO-2026-T00050');
+    expect(repository.countAll()).toBe(2);
+    expect(repository.count()).toBe(2);
+  });
+
   it('isolates teachers between schools', () => {
     const [firstSchool, secondSchool] = foundationSeed.schools;
     const firstRepository = createTeacherRepository(db, createTenantContext(firstSchool.id));
