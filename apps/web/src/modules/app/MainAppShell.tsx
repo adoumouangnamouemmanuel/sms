@@ -4,10 +4,10 @@ import { useTranslation } from 'react-i18next';
 import type { DesktopDeploymentStatus } from '../../desktopStatus';
 import { clearAccessToken, useLogoutAction, type LogoutClient } from '../auth';
 import type { SetupStateResponse } from '@edutrack/shared';
+import { ClassesModule } from '../classes';
 import { DashboardModule } from '../dashboard';
 import { SettingsModule } from '../settings';
 import { StudentsModule } from '../students';
-import { StructureModule } from '../structure';
 import { TeachersModule } from '../teachers';
 
 // ---------------------------------------------------------------------------
@@ -134,6 +134,26 @@ function TeacherIcon() {
   );
 }
 
+function ClassesIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      viewBox="0 0 24 24"
+    >
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
 function SearchIcon() {
   return (
     <svg
@@ -206,6 +226,7 @@ const MODULE_NAV_CONFIG: Partial<Record<SchoolModuleName, Omit<NavItem, 'moduleN
   ACADEMIC_STRUCTURE: { labelKey: 'setup.modules.ACADEMIC_STRUCTURE', icon: <AcademicIcon /> },
   STUDENTS: { labelKey: 'setup.modules.STUDENTS', icon: <PeopleIcon /> },
   TEACHERS: { labelKey: 'setup.modules.TEACHERS', icon: <TeacherIcon /> },
+  CLASSES: { labelKey: 'setup.modules.CLASSES', icon: <ClassesIcon /> },
 };
 
 // ---------------------------------------------------------------------------
@@ -504,8 +525,8 @@ export function MainAppShell({
               setupState={setupState}
               user={user}
             />
-          ) : activeModule === 'ACADEMIC_STRUCTURE' ? (
-            <StructureModule
+          ) : activeModule === 'ACADEMIC_STRUCTURE' || activeModule === 'CLASSES' ? (
+            <ClassesModule
               apiBaseUrl={apiBaseUrl}
               {...(capabilityToken ? { capabilityToken } : {})}
               onSessionExpired={handleSessionExpired}
