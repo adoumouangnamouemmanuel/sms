@@ -1,26 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { formatISODate } from './dateFormat';
 
-const MONTHS = [
-  'Janvier',
-  'Février',
-  'Mars',
-  'Avril',
-  'Mai',
-  'Juin',
-  'Juillet',
-  'Août',
-  'Septembre',
-  'Octobre',
-  'Novembre',
-  'Décembre',
-];
-const DAYS = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'];
-
 export function DatePicker({ onChange, value }: { onChange: (v: string) => void; value: string }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [popPosition, setPopPosition] = useState<'top' | 'bottom'>('bottom');
   const popoverRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const parsedDate = value ? new Date(`${value}T12:00:00Z`) : new Date();
   const [currentMonth, setCurrentMonth] = useState(parsedDate.getMonth());
@@ -42,9 +29,19 @@ export function DatePicker({ onChange, value }: { onChange: (v: string) => void;
         setIsOpen(false);
       }
     };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen]);
 
@@ -87,6 +84,9 @@ export function DatePicker({ onChange, value }: { onChange: (v: string) => void;
   return (
     <div className="relative flex w-full flex-col" ref={popoverRef}>
       <button
+        ref={triggerRef}
+        aria-expanded={isOpen}
+        aria-haspopup="dialog"
         className="flex h-12 w-full cursor-pointer items-center justify-between rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-900 shadow-sm outline-none transition focus:border-teal-500 focus:ring-4 focus:ring-teal-600/10"
         onClick={() => {
           setIsOpen(!isOpen);
@@ -94,9 +94,12 @@ export function DatePicker({ onChange, value }: { onChange: (v: string) => void;
         type="button"
       >
         <span>
-          {displayValue || <span className="font-medium text-slate-400">JJ/MM/AAAA</span>}
+          {displayValue || (
+            <span className="font-medium text-slate-400">{t('common.date.placeholder')}</span>
+          )}
         </span>
         <svg
+          aria-hidden="true"
           className="h-5 w-5 text-slate-400"
           fill="none"
           stroke="currentColor"
@@ -119,11 +122,18 @@ export function DatePicker({ onChange, value }: { onChange: (v: string) => void;
         >
           <div className="mb-4 flex items-center justify-between">
             <button
+              aria-label={t('common.datePicker.previousMonth')}
               className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
               onClick={prevMonth}
               type="button"
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                aria-hidden="true"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
                   d="M15 19l-7-7 7-7"
                   strokeLinecap="round"
@@ -133,14 +143,21 @@ export function DatePicker({ onChange, value }: { onChange: (v: string) => void;
               </svg>
             </button>
             <span className="text-sm font-bold text-slate-900">
-              {MONTHS[currentMonth]} {currentYear}
+              {t(`common.date.months.${String(currentMonth)}`)} {currentYear}
             </span>
             <button
+              aria-label={t('common.datePicker.nextMonth')}
               className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
               onClick={nextMonth}
               type="button"
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                aria-hidden="true"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
                   d="M9 5l7 7-7 7"
                   strokeLinecap="round"
@@ -152,8 +169,8 @@ export function DatePicker({ onChange, value }: { onChange: (v: string) => void;
           </div>
 
           <div className="mb-2 grid grid-cols-7 text-center text-xs font-bold text-slate-400">
-            {DAYS.map((day) => (
-              <div key={day}>{day}</div>
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div key={i}>{t(`common.date.weekdaysShort.${String(i)}`)}</div>
             ))}
           </div>
 
