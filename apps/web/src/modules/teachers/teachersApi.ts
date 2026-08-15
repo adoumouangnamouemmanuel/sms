@@ -9,6 +9,7 @@ import {
   type TeacherResponse,
   type UpdateTeacherRequest,
 } from '@edutrack/shared';
+import { fetchWithTimeout } from '../../httpClient';
 import { createAuthHeaders } from '../auth';
 import { TeachersApiError } from './teachersErrors';
 
@@ -170,7 +171,7 @@ async function requestJson<T>(
   let response: Response;
 
   try {
-    response = await fetcher(`${apiBaseUrl}${path}`, {
+    response = await fetchWithTimeout(fetcher, `${apiBaseUrl}${path}`, {
       method: request.method,
       credentials: 'include',
       headers: {

@@ -5,6 +5,7 @@ import type {
   ResetPasswordRequest,
 } from '@edutrack/shared';
 import { SIDECAR_CAPABILITY_HEADER } from '@edutrack/shared';
+import { fetchWithTimeout } from '../../httpClient';
 import { AuthApiError } from './authErrors';
 import { clearAccessToken, createAuthHeaders, rememberAccessToken } from './authSession';
 
@@ -120,7 +121,7 @@ async function postJson<T = unknown>(
   let response: Response;
 
   try {
-    response = await fetcher(`${apiBaseUrl}${path}`, {
+    response = await fetchWithTimeout(fetcher, `${apiBaseUrl}${path}`, {
       method: 'POST',
       credentials: 'include',
       headers: {

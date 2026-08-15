@@ -18,6 +18,7 @@ import {
   type UpdateStudentGuardianLinkRequest,
   type UpdateStudentRequest,
 } from '@edutrack/shared';
+import { fetchWithTimeout } from '../../httpClient';
 import { createAuthHeaders } from '../auth';
 import { StudentsApiError } from './studentsErrors';
 
@@ -276,7 +277,7 @@ async function requestJson<T>(
   let response: Response;
 
   try {
-    response = await fetcher(`${apiBaseUrl}${path}`, {
+    response = await fetchWithTimeout(fetcher, `${apiBaseUrl}${path}`, {
       method: request.method,
       credentials: 'include',
       headers: {

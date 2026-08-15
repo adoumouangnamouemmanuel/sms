@@ -5,6 +5,7 @@ import {
   type ImportKind,
   type ImportPreviewResponse,
 } from '@edutrack/shared';
+import { fetchWithTimeout } from '../../httpClient';
 import { createAuthHeaders } from '../auth';
 import { ImportsApiError } from './importsErrors';
 
@@ -29,7 +30,7 @@ export async function previewImport(
   let response: Response;
 
   try {
-    response = await fetcher(`${apiBaseUrl}/imports/preview/${kind}`, {
+    response = await fetchWithTimeout(fetcher, `${apiBaseUrl}/imports/preview/${kind}`, {
       method: 'POST',
       credentials: 'include',
       // No Content-Type header: the browser sets the multipart boundary.
@@ -55,7 +56,7 @@ export async function confirmImport(
   let response: Response;
 
   try {
-    response = await fetcher(`${apiBaseUrl}/imports/confirm`, {
+    response = await fetchWithTimeout(fetcher, `${apiBaseUrl}/imports/confirm`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -99,7 +100,7 @@ async function downloadBlob(url: string, options: ImportsRequestOptions) {
   let response: Response;
 
   try {
-    response = await fetcher(url, {
+    response = await fetchWithTimeout(fetcher, url, {
       method: 'GET',
       credentials: 'include',
       headers: {

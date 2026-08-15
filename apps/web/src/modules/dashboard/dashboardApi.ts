@@ -3,6 +3,7 @@ import {
   type RecentAuditEvent,
   type RecentAuditEventsResponse,
 } from '@edutrack/shared';
+import { fetchWithTimeout } from '../../httpClient';
 import { createAuthHeaders } from '../auth';
 import { listClassrooms } from '../classes/classesApi';
 import { listGuardians, listStudents } from '../students/studentsApi';
@@ -114,7 +115,7 @@ export async function fetchRecentActivity(
   let response: Response;
 
   try {
-    response = await fetcher(`${apiBaseUrl}/audit/recent?limit=10`, {
+    response = await fetchWithTimeout(fetcher, `${apiBaseUrl}/audit/recent?limit=10`, {
       method: 'GET',
       credentials: 'include',
       headers: {
