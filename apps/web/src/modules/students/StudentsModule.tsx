@@ -33,9 +33,16 @@ export interface StudentsModuleProps {
   apiBaseUrl: string | null;
   capabilityToken?: string;
   client?: StudentsClient;
+  /** Session expiry (e.g. during an import) bubbles up so the app can reconnect. */
+  onSessionExpired?: () => void;
 }
 
-export function StudentsModule({ apiBaseUrl, capabilityToken, client }: StudentsModuleProps) {
+export function StudentsModule({
+  apiBaseUrl,
+  capabilityToken,
+  client,
+  onSessionExpired,
+}: StudentsModuleProps) {
   const { t } = useTranslation();
   const module = useStudentsModule({
     apiBaseUrl,
@@ -139,6 +146,7 @@ export function StudentsModule({ apiBaseUrl, capabilityToken, client }: Students
           apiBaseUrl={apiBaseUrl}
           {...(capabilityToken ? { capabilityToken } : {})}
           kind="STUDENTS"
+          {...(onSessionExpired ? { onSessionExpired } : {})}
           onClose={() => {
             setImportOpen(false);
           }}
