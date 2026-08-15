@@ -14,11 +14,14 @@ export function ModalShell({
   title,
   closeLabel,
   onClose,
+  size = 'md',
   children,
 }: {
   title: string;
   closeLabel: string;
   onClose: () => void;
+  /** 'lg' is for content-heavy steps (e.g. the import preview table). */
+  size?: 'md' | 'lg';
   children: React.ReactNode;
 }) {
   return (
@@ -27,7 +30,11 @@ export function ModalShell({
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
       role="dialog"
     >
-      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-white bg-white p-6 shadow-2xl">
+      <div
+        className={`max-h-[90vh] w-full overflow-y-auto rounded-3xl border border-white bg-white p-6 shadow-2xl ${
+          size === 'lg' ? 'max-w-3xl' : 'max-w-md'
+        }`}
+      >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-black tracking-tight text-slate-950">{title}</h2>
           <button
@@ -236,7 +243,7 @@ export function ListToolbar({
               <span className="ml-1 text-slate-400">{filtersOpen ? '▲' : '▼'}</span>
             </button>
             {filtersOpen ? (
-              <div className="absolute right-0 top-full z-20 mt-2 w-56 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg">
+              <div className="absolute right-0 top-full z-30 mt-3 w-56 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-900/10 ring-1 ring-black/5">
                 <label className="flex flex-col gap-2">
                   <span className="text-[13px] font-bold text-slate-800">{labels.status}</span>
                   <select
