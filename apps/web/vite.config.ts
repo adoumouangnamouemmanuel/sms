@@ -17,6 +17,24 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5173,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // Function form catches every subpath (react-dom/client, jsx-runtime, ...).
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            return 'react-vendor';
+          }
+
+          if (id.includes('node_modules/i18next') || id.includes('node_modules/react-i18next')) {
+            return 'i18n';
+          }
+
+          return undefined;
+        },
+      },
+    },
+  },
   test: {
     css: true,
     environment: 'jsdom',

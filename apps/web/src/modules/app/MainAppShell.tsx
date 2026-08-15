@@ -4,11 +4,26 @@ import { useTranslation } from 'react-i18next';
 import type { DesktopDeploymentStatus } from '../../desktopStatus';
 import { clearAccessToken, useLogoutAction, type LogoutClient } from '../auth';
 import type { SetupStateResponse } from '@edutrack/shared';
-import { ClassesModule } from '../classes';
-import { DashboardModule } from '../dashboard';
-import { SettingsModule } from '../settings';
-import { StudentsModule } from '../students';
-import { TeachersModule } from '../teachers';
+import { lazy, Suspense } from 'react';
+
+// Each school module is its own lazy chunk (audit F2): the initial load only
+// carries the shell + dashboard, and the heavier screens (students, classes,
+// imports) stream in when first opened.
+const DashboardModule = lazy(() =>
+  import('../dashboard/DashboardModule').then((m) => ({ default: m.DashboardModule }))
+);
+const SettingsModule = lazy(() =>
+  import('../settings/SettingsModule').then((m) => ({ default: m.SettingsModule }))
+);
+const ClassesModule = lazy(() =>
+  import('../classes/ClassesModule').then((m) => ({ default: m.ClassesModule }))
+);
+const StudentsModule = lazy(() =>
+  import('../students/StudentsModule').then((m) => ({ default: m.StudentsModule }))
+);
+const TeachersModule = lazy(() =>
+  import('../teachers/TeachersModule').then((m) => ({ default: m.TeachersModule }))
+);
 
 // ---------------------------------------------------------------------------
 // Types
@@ -58,7 +73,6 @@ function GearIcon() {
     </svg>
   );
 }
-
 
 function DashboardIcon() {
   return (
@@ -362,20 +376,20 @@ export function MainAppShell({
               .filter((moduleName) => enabledModuleNames.includes(moduleName))
               .map((moduleName) => {
                 const config = MODULE_NAV_CONFIG[moduleName];
-              if (!config) return null;
-              return (
-                <NavButton
-                  key={moduleName}
-                  icon={config.icon}
-                  isActive={activeModule === moduleName}
-                  isExpanded={isSidebarExpanded}
-                  label={t(config.labelKey)}
-                  onClick={() => {
-                    setActiveModule(moduleName);
-                  }}
-                />
-              );
-            })}
+                if (!config) return null;
+                return (
+                  <NavButton
+                    key={moduleName}
+                    icon={config.icon}
+                    isActive={activeModule === moduleName}
+                    isExpanded={isSidebarExpanded}
+                    label={t(config.labelKey)}
+                    onClick={() => {
+                      setActiveModule(moduleName);
+                    }}
+                  />
+                );
+              })}
 
             {/* ── "Bientôt disponible" section ──────────────────────────────────── */}
             {/* Previews the app's full scope so the nav doesn't look sparse       */}
@@ -490,47 +504,60 @@ export function MainAppShell({
 
         {/* Content area */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          {activeModule === null ? (
-            <DashboardModule
-              apiBaseUrl={apiBaseUrl}
-              {...(capabilityToken ? { capabilityToken } : {})}
-              onNavigate={setActiveModule}
-              onSessionExpired={handleSessionExpired}
-              setupState={setupState}
-              user={user}
-            />
-          ) : activeModule === 'SCHOOL_SETUP' ? (
-            <SettingsModule
-              apiBaseUrl={apiBaseUrl}
-              {...(capabilityToken ? { capabilityToken } : {})}
-              onSessionExpired={handleSessionExpired}
-              {...(onSetupStateChange ? { onSetupStateChange } : {})}
-              setupState={setupState}
-              user={user}
-            />
-          ) : activeModule === 'CLASSES' ? (
-            <ClassesModule
-              apiBaseUrl={apiBaseUrl}
-              {...(capabilityToken ? { capabilityToken } : {})}
-              onSessionExpired={handleSessionExpired}
-              {...(onSetupStateChange ? { onSetupStateChange } : {})}
-              setupState={setupState}
-            />
-          ) : activeModule === 'STUDENTS' ? (
-            <StudentsModule
-              apiBaseUrl={apiBaseUrl}
-              {...(capabilityToken ? { capabilityToken } : {})}
-              onSessionExpired={handleSessionExpired}
-              setupState={setupState}
-            />
-          ) : (
-            <TeachersModule
-              apiBaseUrl={apiBaseUrl}
-              {...(capabilityToken ? { capabilityToken } : {})}
-              onSessionExpired={handleSessionExpired}
-            />
-          )}
+          <Suspense fallback={<ModuleLoadingFallback />}>
+            {activeModule === null ? (
+              <DashboardModule
+                apiBaseUrl={apiBaseUrl}
+                {...(capabilityToken ? { capabilityToken } : {})}
+                onNavigate={setActiveModule}
+                onSessionExpired={handleSessionExpired}
+                setupState={setupState}
+                user={user}
+              />
+            ) : activeModule === 'SCHOOL_SETUP' ? (
+              <SettingsModule
+                apiBaseUrl={apiBaseUrl}
+                {...(capabilityToken ? { capabilityToken } : {})}
+                onSessionExpired={handleSessionExpired}
+                {...(onSetupStateChange ? { onSetupStateChange } : {})}
+                setupState={setupState}
+                user={user}
+              />
+            ) : activeModule === 'CLASSES' ? (
+              <ClassesModule
+                apiBaseUrl={apiBaseUrl}
+                {...(capabilityToken ? { capabilityToken } : {})}
+                onSessionExpired={handleSessionExpired}
+                {...(onSetupStateChange ? { onSetupStateChange } : {})}
+                setupState={setupState}
+              />
+            ) : activeModule === 'STUDENTS' ? (
+              <StudentsModule
+                apiBaseUrl={apiBaseUrl}
+                {...(capabilityToken ? { capabilityToken } : {})}
+                onSessionExpired={handleSessionExpired}
+                setupState={setupState}
+              />
+            ) : (
+              <TeachersModule
+                apiBaseUrl={apiBaseUrl}
+                {...(capabilityToken ? { capabilityToken } : {})}
+                onSessionExpired={handleSessionExpired}
+              />
+            )}
+          </Suspense>
         </main>
+      </div>
+    </div>
+  );
+}
+
+function ModuleLoadingFallback() {
+  return (
+    <div className="flex h-40 w-full items-center justify-center" role="status" aria-live="polite">
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-teal-200 border-t-teal-600" />
+        <p className="text-xs font-bold text-slate-400">Chargement…</p>
       </div>
     </div>
   );
