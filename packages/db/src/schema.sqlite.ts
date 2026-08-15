@@ -180,7 +180,7 @@ export const schoolModuleConfig = sqliteTable(
     ),
     moduleNameCheck: check(
       'school_module_config_module_name_check',
-      sql`${table.moduleName} in ('SCHOOL_SETUP', 'ACADEMIC_STRUCTURE')`
+      sql`${table.moduleName} in ('SCHOOL_SETUP', 'ACADEMIC_STRUCTURE', 'STUDENTS', 'TEACHERS', 'CLASSES')`
     ),
   })
 );
@@ -356,7 +356,7 @@ export const importBatch = sqliteTable(
     ),
     kindCheck: check(
       'import_batch_kind_check',
-      sql`${table.kind} in ('STUDENTS', 'TEACHERS', 'GUARDIANS')`
+      sql`${table.kind} in ('STUDENTS', 'TEACHERS', 'GUARDIANS', 'SUBJECTS', 'CLASSROOMS', 'CLASS_SUBJECTS')`
     ),
   })
 );
