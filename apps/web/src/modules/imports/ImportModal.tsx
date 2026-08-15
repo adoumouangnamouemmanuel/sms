@@ -42,6 +42,7 @@ export function ImportModal({
         module.reset();
         onClose();
       }}
+      resizable={module.step === 'preview'}
       size={module.step === 'preview' ? 'lg' : 'md'}
       title={t(module.step === 'report' ? 'imports.report.title' : 'imports.title', {
         kind: t(`imports.kind.${kind}`),
@@ -298,6 +299,13 @@ function PreviewStep({
         <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
           {t('imports.preview.total', { count: preview.totalRows })}
         </span>
+        {preview.rows.some((row) => row.possibleDuplicate) ? (
+          <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700">
+            {t('imports.preview.possibleDuplicates', {
+              count: preview.rows.filter((row) => row.possibleDuplicate).length,
+            })}
+          </span>
+        ) : null}
       </div>
 
       <div className="max-h-96 overflow-auto rounded-xl border border-slate-100">
@@ -323,7 +331,13 @@ function PreviewStep({
           <tbody>
             {preview.rows.map((row) => (
               <tr
-                className={`border-b border-slate-50 ${row.errors.length > 0 ? 'bg-red-50/50' : ''}`}
+                className={`border-b border-slate-50 ${
+                  row.errors.length > 0
+                    ? 'bg-red-50/50'
+                    : row.possibleDuplicate
+                      ? 'bg-amber-50/40'
+                      : ''
+                }`}
                 key={row.rowNumber}
               >
                 <td className="px-2.5 py-2 text-[11px] font-bold text-slate-400">
@@ -347,6 +361,10 @@ function PreviewStep({
                   {row.errors.length > 0 ? (
                     <span className="text-[11px] font-bold leading-snug text-red-600">
                       {row.errors.join(' · ')}
+                    </span>
+                  ) : row.possibleDuplicate ? (
+                    <span className="text-[11px] font-bold leading-snug text-amber-600">
+                      {t('imports.preview.possibleDuplicate')}
                     </span>
                   ) : (
                     <span className="text-[11px] font-bold text-teal-600">
