@@ -11,24 +11,23 @@ import { schemaMetadata, school, user, type UserRole } from './schema.sqlite.js'
  *
  * Synthetic demo data only — never use in a real school.
  */
-const seedPasswordHash = resolveSeedPasswordHash();
+const seedPasswordHash = resolveSeedPasswordHash(process.env.EDUTRACK_SEED_PASSWORD_HASH);
 
 /**
- * Resolves the demo password hash for the foundation schools. When
- * EDUTRACK_SEED_PASSWORD_HASH is set it must be a real bcrypt hash with a
- * cost factor of at least 12 (the app's BCRYPT_COST); anything else fails
- * seeding loudly instead of silently persisting a broken login. When unset,
- * an unusable placeholder keeps the accounts locked until an administrator
- * configures a real password.
+ * Resolves the demo password hash for the foundation schools. When a value is
+ * set it must be a real bcrypt hash with a cost factor of at least 12 (the
+ * app's BCRYPT_COST); anything else fails seeding loudly instead of silently
+ * persisting a broken login. An unset or empty value keeps the accounts
+ * locked with an unusable placeholder until an administrator configures a
+ * real password.
  */
-function resolveSeedPasswordHash(): string {
-  const configured = process.env.EDUTRACK_SEED_PASSWORD_HASH;
-
+export function resolveSeedPasswordHash(configured: string | undefined): string {
   if (!configured) {
     return '!UNUSABLE_PASSWORD_HASH!';
   }
 
-  const match = /^\$2[aby]\$(\d{2})\$/.exec(configured);
+  // Full bcrypt shape: $2a|2b|2y$ + 2-digit cost + 53-char salt/hash body.
+  const match = /^\$2[aby]\$(\d{2})\$[./A-Za-z0-9]{53}$/.exec(configured);
   const cost = match ? Number(match[1]) : NaN;
 
   if (!match || Number.isNaN(cost) || cost < 12) {
