@@ -92,7 +92,9 @@ describe('imports routes', () => {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     );
     const workbook = XLSX.read(response.rawPayload, { type: 'buffer' });
-    const dataSheet = workbook.Sheets[workbook.SheetNames[0] ?? ''];
+    const sheetName = workbook.SheetNames[0] ?? '';
+    const dataSheet = workbook.Sheets[sheetName];
+    if (!dataSheet) throw new Error(`Missing sheet ${sheetName}`);
     const rows = XLSX.utils.sheet_to_json<unknown[]>(dataSheet, { header: 1 });
 
     expect(rows[0]).toEqual([
@@ -685,10 +687,12 @@ describe('imports routes', () => {
     return row?.action;
   }
 
-  function countRows(table: string) {
-    const row = sqlite.prepare(`SELECT COUNT(*) AS value FROM ${table}`).get() as {
-      value: number;
-    };
+  function countRows(
+    table: 'student' | 'teacher' | 'guardian' | 'student_guardian' | 'import_batch'
+  ) {
+    const row = sqlite
+      .prepare(`SELECT COUNT(*) AS value FROM ${table} WHERE school_id = ?`)
+      .get(firstSchoolId) as { value: number };
 
     return row.value;
   }
