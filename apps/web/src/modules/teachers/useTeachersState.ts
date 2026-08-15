@@ -10,7 +10,7 @@ import type {
   TeacherResponse,
   UpdateTeacherRequest,
 } from '@edutrack/shared';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { resetPassword as resetTeacherPasswordRequest } from '../auth/authApi';
 import {
   archiveTeacher as archiveTeacherRequest,
@@ -92,6 +92,8 @@ export function useTeachersModule({
   const [profileErrorKey, setProfileErrorKey] = useState<string | null>(null);
   const [mutationErrorKey, setMutationErrorKey] = useState<string | null>(null);
   const [createdLogin, setCreatedLogin] = useState<TeacherLoginCreatedResponse | null>(null);
+  const latestListRequest = useRef(0);
+  const searchDebounceRef = useRef<number | null>(null);
 
   const requestOptions = useCallback(
     (extra?: TeachersRequestOptions): TeachersRequestOptions => ({
@@ -108,6 +110,7 @@ export function useTeachersModule({
       }
 
       setListState((previous) => ({ ...previous, isLoading: true, errorKey: null }));
+      const requestId = ++latestListRequest.current;
 
       try {
         const page = client
@@ -121,6 +124,8 @@ export function useTeachersModule({
               requestOptions()
             );
 
+        if (latestListRequest.current !== requestId) return;
+
         setListState({
           items: page.items,
           errorKey: null,
@@ -133,6 +138,8 @@ export function useTeachersModule({
           total: page.total,
         });
       } catch (error) {
+        if (latestListRequest.current !== requestId) return;
+
         setListState((previous) => ({
           ...previous,
           errorKey: resolveTeachersErrorMessageKey(error),
@@ -159,7 +166,12 @@ export function useTeachersModule({
 
   const search = useCallback(
     (query: string) => {
-      void loadList(query.trim(), 0, listState.status);
+      if (searchDebounceRef.current !== null) {
+        window.clearTimeout(searchDebounceRef.current);
+      }
+      searchDebounceRef.current = window.setTimeout(() => {
+        void loadList(query.trim(), 0, listState.status);
+      }, 300);
     },
     [listState.status, loadList]
   );
@@ -212,6 +224,10 @@ export function useTeachersModule({
   const closeProfile = useCallback(() => {
     setProfile(null);
     setProfileErrorKey(null);
+    setCreatedLogin(null);
+  }, []);
+
+  const dismissCreatedLogin = useCallback(() => {
     setCreatedLogin(null);
   }, []);
 
@@ -371,6 +387,7 @@ export function useTeachersModule({
     createTeacher,
     createdLogin,
     deactivateLogin,
+    dismissCreatedLogin,
     mutationErrorKey,
     nextPage,
     openProfile,
