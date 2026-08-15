@@ -54,6 +54,7 @@ export function AuthenticatedSetupApp({
         {...(desktopStatus !== undefined ? { desktopStatus } : {})}
         {...(logoutClient ? { logoutClient } : {})}
         onLoggedOut={onLoggedOut}
+        onSetupStateChange={setup.updateState}
         setupState={setup.state}
         user={user}
       />
