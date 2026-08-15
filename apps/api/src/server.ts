@@ -14,7 +14,12 @@ import {
 } from '@edutrack/shared';
 import Fastify, { type FastifyReply, type FastifyServerOptions } from 'fastify';
 import { AuthService, registerAuthRoutes, type AuthServiceOptions } from './modules/auth/index.js';
-import { GuardiansService, registerPeopleRoutes, StudentsService } from './modules/people/index.js';
+import {
+  GuardiansService,
+  registerPeopleRoutes,
+  StudentsService,
+  TeachersService,
+} from './modules/people/index.js';
 import { registerSetupRoutes, SetupService } from './modules/setup/index.js';
 export { CAPABILITY_HEADER } from './sidecar-contract.js';
 import { CAPABILITY_HEADER } from './sidecar-contract.js';
@@ -167,6 +172,9 @@ export function buildServer(options: BuildServerOptions = {}) {
         ...(options.auth?.now ? { now: options.auth.now } : {}),
       }),
       guardiansService: new GuardiansService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+      teachersService: new TeachersService(database, {
         ...(options.auth?.now ? { now: options.auth.now } : {}),
       }),
     });
