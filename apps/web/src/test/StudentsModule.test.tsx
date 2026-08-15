@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type {
   GuardianProfileResponse,
@@ -233,11 +233,12 @@ describe('StudentsModule', () => {
     await screen.findByText('Aucun élève trouvé.');
     await userSession.click(screen.getByRole('button', { name: 'Nouvel élève' }));
 
-    expect(screen.getByRole('textbox', { name: 'Code' })).toBeInTheDocument();
-    expect(screen.queryByText(/optionnel/i)).not.toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Sexe' })).toHaveTextContent('Sélectionner');
-    expect(screen.getByRole('combobox', { name: 'Nationalité' })).toHaveValue('Tchad');
-    expect(screen.getByLabelText('Date de naissance')).toBeInTheDocument();
+    const modal = screen.getByRole('dialog');
+    expect(within(modal).getByRole('textbox', { name: 'Code' })).toBeInTheDocument();
+    expect(within(modal).queryByText(/optionnel/i)).not.toBeInTheDocument();
+    expect(within(modal).getByRole('combobox', { name: 'Sexe' })).toHaveTextContent('Sélectionner');
+    expect(within(modal).getByRole('combobox', { name: 'Nationalité' })).toHaveValue('Tchad');
+    expect(within(modal).getByLabelText('Date de naissance')).toBeInTheDocument();
   });
 
   it('edits a student through the profile page', async () => {
@@ -366,7 +367,6 @@ describe('StudentsModule', () => {
     );
 
     await screen.findByText('Mahamat Aminata');
-    await userSession.click(screen.getByRole('button', { name: /Filtres/ }));
     await userSession.selectOptions(screen.getByRole('combobox', { name: 'Statut' }), 'archived');
 
     expect(await screen.findByText('Archivé')).toBeInTheDocument();

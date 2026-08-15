@@ -100,7 +100,9 @@ describe('SettingsModule', () => {
       />
     );
 
-    expect(screen.getAllByText('Configuration').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Configuration de l’établissement').length).toBeGreaterThanOrEqual(
+      1
+    );
     expect(screen.getAllByText('Ecole Demo').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('N Djamena').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('2026-2027')).toBeInTheDocument();
