@@ -21,7 +21,7 @@ import type {
 } from '@edutrack/shared';
 import type { AuthenticatedUser, RequestAuditContext } from '../auth/index.js';
 import { generatePeopleCode, normalizePeopleCode } from './people.codes.js';
-import { toLinkResponse, toStudentResponse } from './people.mappers.js';
+import { toGuardianResponse, toLinkResponse, toStudentResponse } from './people.mappers.js';
 import {
   guardianNotFound,
   peopleForbidden,
@@ -86,7 +86,9 @@ export class StudentsService {
       .flatMap((link) => {
         const guardian = createGuardianRepository(this.db, tenant).findById(link.guardianId);
 
-        return guardian ? [{ link, guardian }] : [];
+        return guardian
+          ? [{ link: toLinkResponse(link), guardian: toGuardianResponse(guardian) }]
+          : [];
       });
 
     return {
@@ -111,8 +113,12 @@ export class StudentsService {
         try {
           const code = input.code?.trim()
             ? normalizePeopleCode(input.code)
-            : generatePeopleCode(transaction, tenant, this.now, () =>
-                createStudentRepository(transaction, tenant).countAll()
+            : generatePeopleCode(
+                transaction,
+                tenant,
+                this.now,
+                () => createStudentRepository(transaction, tenant).countAll(),
+                attempt
               );
 
           const student = repository.create({
