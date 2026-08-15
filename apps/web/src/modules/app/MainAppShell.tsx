@@ -398,7 +398,7 @@ export function MainAppShell({
             {/* while modules are still shipping. Remove entries as they go live.  */}
             {isSidebarExpanded && (
               <p className="px-3 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-600/60 select-none">
-                Bientôt {/* TODO: i18n — app.shell.comingSoonLabel */}
+                {t('app.shell.comingSoonLabel')}
               </p>
             )}
             {COMING_SOON_NAV_ITEMS.map(({ label, icon }) => (
@@ -454,14 +454,13 @@ export function MainAppShell({
           {/* Center: search / command-bar placeholder */}
           {/* TODO: wire up real search / ⌘K command palette (future roadmap item) */}
           <button
-            aria-label="Rechercher" // TODO: i18n key — app.shell.header.search
+            aria-label={t('app.shell.header.search')}
             className="hidden md:flex flex-1 max-w-xs items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-[13px] text-slate-400 hover:border-slate-300 hover:bg-white transition-colors cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
             tabIndex={-1}
             type="button"
           >
             <SearchIcon />
-            <span className="flex-1 text-left">Rechercher…</span>
-            {/* TODO: i18n */}
+            <span className="flex-1 text-left">{t('app.shell.header.searchPlaceholder')}</span>
             <kbd className="hidden sm:inline-flex items-center rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-400 leading-none">
               ⌘K
             </kbd>
@@ -482,7 +481,7 @@ export function MainAppShell({
             {/* Notification bell — placeholder; wire up when notifications module lands */}
             {/* TODO: connect to notifications module (future roadmap item) */}
             <button
-              aria-label="Notifications" // TODO: i18n key — app.shell.header.notifications
+              aria-label={t('app.shell.header.notifications')}
               className="relative flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
               type="button"
             >
@@ -538,6 +537,7 @@ export function MainAppShell({
               apiBaseUrl={apiBaseUrl}
               {...(capabilityToken ? { capabilityToken } : {})}
               onSessionExpired={handleSessionExpired}
+              setupState={setupState}
             />
           ) : (
             <TeachersModule
@@ -812,6 +812,8 @@ function ComingSoonNavButton({
   isExpanded: boolean;
   label: string;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div
       aria-disabled="true"
@@ -824,7 +826,7 @@ function ComingSoonNavButton({
       {isExpanded && <span className="truncate flex-1">{label}</span>}
       {isExpanded && (
         <span className="text-[9px] font-bold uppercase tracking-wider text-slate-600/40 shrink-0">
-          bientôt
+          {t('app.shell.comingSoonLabel')}
         </span>
       )}
     </div>
