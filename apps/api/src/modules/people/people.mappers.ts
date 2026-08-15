@@ -1,8 +1,16 @@
-import type { GuardianRecord, StudentGuardianLinkRecord, StudentRecord } from '@edutrack/db';
+import type {
+  GuardianRecord,
+  StudentGuardianLinkRecord,
+  StudentRecord,
+  TeacherRecord,
+} from '@edutrack/db';
+import type { SafeUserRecord } from '@edutrack/db';
 import type {
   GuardianResponse,
   StudentGuardianLinkResponse,
   StudentResponse,
+  TeacherLoginView,
+  TeacherResponse,
 } from '@edutrack/shared';
 
 /** Drops repository-only columns (e.g. deletedAt) from the public student shape. */
@@ -50,5 +58,31 @@ export function toLinkResponse(link: StudentGuardianLinkRecord): StudentGuardian
     isEmergency: link.isEmergency,
     notes: link.notes,
     recordVersion: link.recordVersion,
+  };
+}
+
+export function toTeacherResponse(teacher: TeacherRecord): TeacherResponse {
+  return {
+    id: teacher.id,
+    schoolId: teacher.schoolId,
+    code: teacher.code,
+    firstName: teacher.firstName,
+    lastName: teacher.lastName,
+    specialization: teacher.specialization,
+    hireDate: teacher.hireDate,
+    phone: teacher.phone,
+    email: teacher.email,
+    address: teacher.address,
+    userId: teacher.userId,
+    isActive: teacher.isActive,
+    recordVersion: teacher.recordVersion,
+  };
+}
+
+export function toLoginView(account: SafeUserRecord): TeacherLoginView {
+  return {
+    userId: account.id,
+    username: account.username,
+    isActive: account.isActive,
   };
 }
