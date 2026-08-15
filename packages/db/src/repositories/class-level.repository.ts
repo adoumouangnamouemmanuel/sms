@@ -17,6 +17,14 @@ export interface ClassLevelRecord {
 
 /** Persists the tenant-local curriculum levels used by future classroom setup. */
 export class ClassLevelRepository extends TenantScopedRepository {
+  findById(id: string) {
+    return this.db
+      .select(classLevelColumns)
+      .from(classLevel)
+      .where(and(eq(classLevel.id, id), eq(classLevel.schoolId, this.schoolId)))
+      .get();
+  }
+
   listActive() {
     return this.db
       .select(classLevelColumns)
