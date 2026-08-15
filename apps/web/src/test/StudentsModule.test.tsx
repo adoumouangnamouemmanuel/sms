@@ -4,6 +4,7 @@ import type {
   GuardianProfileResponse,
   GuardianResponse,
   StudentGuardianLinkResponse,
+  StudentListQuery,
   StudentProfileResponse,
   StudentResponse,
 } from '@edutrack/shared';
@@ -91,12 +92,17 @@ describe('StudentsModule', () => {
     expect(screen.getByText('1 résultat(s)')).toBeInTheDocument();
   });
 
-  it('searches students by name', async () => {
+  it('searches students, keeps the query visible, and clears it explicitly', async () => {
     const userSession = userEvent.setup();
     const listStudents = vi
       .fn()
-      .mockResolvedValueOnce({ items: [student], total: 1, limit: 20, offset: 0 })
-      .mockResolvedValueOnce({ items: [], total: 0, limit: 20, offset: 0 });
+      .mockImplementation((query: StudentListQuery) =>
+        Promise.resolve(
+          query.search
+            ? { items: [], total: 0, limit: 20, offset: 0 }
+            : { items: [student], total: 1, limit: 20, offset: 0 }
+        )
+      );
     const client = createStudentsClient({
       listStudents,
       listGuardians: vi.fn().mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 }),
@@ -105,14 +111,22 @@ describe('StudentsModule', () => {
     render(<StudentsModule apiBaseUrl="http://127.0.0.1:49152" client={client} />);
 
     await screen.findByText('Mahamat Aminata');
-    await userSession.type(screen.getByRole('searchbox', { name: 'Rechercher' }), 'Ousmane');
+    const searchBox = screen.getByRole('textbox', { name: 'Rechercher' });
+    await userSession.type(searchBox, 'Ousmane');
+
+    expect(await screen.findByText('Aucun élève trouvé.')).toBeInTheDocument();
     await userSession.click(screen.getByRole('button', { name: 'Rechercher' }));
 
+    expect(searchBox).toHaveValue('Ousmane');
     expect(listStudents).toHaveBeenLastCalledWith(
       { search: 'Ousmane', limit: 20, offset: 0 },
       expect.any(Object)
     );
-    expect(await screen.findByText('Aucun élève trouvé.')).toBeInTheDocument();
+
+    await userSession.click(screen.getByRole('button', { name: 'Effacer la recherche' }));
+
+    expect(await screen.findByText('Mahamat Aminata')).toBeInTheDocument();
+    expect(searchBox).toHaveValue('');
   });
 
   it('creates a student through the form modal', async () => {
@@ -153,6 +167,7 @@ describe('StudentsModule', () => {
     expect(screen.getByRole('textbox', { name: 'Code' })).toBeInTheDocument();
     expect(screen.queryByText(/optionnel/i)).not.toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Sexe' })).toHaveTextContent('Sélectionner');
+    expect(screen.getByRole('combobox', { name: 'Nationalité' })).toHaveValue('Tchad');
     expect(screen.getByLabelText('Date de naissance')).toBeInTheDocument();
   });
 
