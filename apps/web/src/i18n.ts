@@ -218,6 +218,7 @@ const resources = {
         actions: {
           archive: 'Archiver',
           back: 'Retour',
+          edit: 'Modifier',
           reactivate: 'Réactiver',
         },
         archive: {
@@ -274,6 +275,8 @@ const resources = {
           close: 'Fermer',
           code: 'Code',
           dateOfBirth: 'Date de naissance',
+          editGuardianTitle: 'Modifier le responsable',
+          editStudentTitle: 'Modifier l’élève',
           email: 'Email',
           firstName: 'Prénom',
           guardianTitle: 'Nouveau responsable',
@@ -544,6 +547,7 @@ const resources = {
         actions: {
           archive: 'أرشفة',
           back: 'رجوع',
+          edit: 'تعديل',
           reactivate: 'إعادة تفعيل',
         },
         archive: {
@@ -600,6 +604,8 @@ const resources = {
           close: 'إغلاق',
           code: 'الرمز',
           dateOfBirth: 'تاريخ الميلاد',
+          editGuardianTitle: 'تعديل ولي الأمر',
+          editStudentTitle: 'تعديل الطالب',
           email: 'البريد الإلكتروني',
           firstName: 'الاسم الأول',
           guardianTitle: 'ولي أمر جديد',
@@ -871,6 +877,7 @@ const resources = {
         actions: {
           archive: 'Archive',
           back: 'Back',
+          edit: 'Edit',
           reactivate: 'Reactivate',
         },
         archive: {
@@ -927,6 +934,8 @@ const resources = {
           close: 'Close',
           code: 'Code',
           dateOfBirth: 'Date of birth',
+          editGuardianTitle: 'Edit guardian',
+          editStudentTitle: 'Edit student',
           email: 'Email',
           firstName: 'First name',
           guardianTitle: 'New guardian',
