@@ -13,6 +13,12 @@ export interface ParsedImportRow {
   values: Record<string, string | null>;
   /** French validation messages; non-empty means the row is rejected. */
   errors: string[];
+  /**
+   * Advisory only: the code (or exact full name for uncoded rows) already
+   * exists in the school. Set by the service at preview time — the parser
+   * itself never touches the database, so this always starts false.
+   */
+  possibleDuplicate: boolean;
 }
 
 export interface ParsedImportWorkbook {
@@ -79,7 +85,7 @@ export function parseImportWorkbook(kind: ImportKind, buffer: Buffer): ParsedImp
       continue;
     }
 
-    rows.push({ rowNumber, values, errors });
+    rows.push({ rowNumber, values, errors, possibleDuplicate: false });
   }
 
   markDuplicateCodes(rows);
