@@ -20,7 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Edit flows (Phase 3.2)**: Added Modifier actions on student and guardian profiles backed by the existing update endpoints.
 - **Search UX (Phase 3.2)**: List search boxes now stay bound to the active query with an explicit ✕ clear control instead of clearing on submit.
 - **Nationality (Phase 3.2)**: Nationality is a dropdown of African countries with Tchad as the default.
-- **UI conventions**: Documented the label and input conventions (bold normal-case for editable field labels, uppercase small-caps for display labels) in ADR-008.
+- **Teachers module (Phase 3.3)**: Added the `TEACHERS` school module (migration `0005`) — searchable paginated list, profile views, generated `{school}-{year}-{NNI}` codes, and login accounts created/deactivated independently of the record with credentials shown exactly once.
+- **Status filter (Phase 3.3)**: Students, guardians and teachers lists now expose a Filtres panel with an Actif/Archivé status filter, so archived records stay reachable for reactivation.
+- **Shared people UI (Phase 3.3)**: Extracted the list toolbar, pagination, badges, modal shell and archive dialog into `modules/people/ui.tsx` used by both the students and teachers modules.
+- **UI conventions**: Documented the label and input conventions (bold normal-case for editable field labels, uppercase small-caps for display labels) in ADR-008, and the teacher-login credential policy in ADR-009.
 
 ### Changed
 
