@@ -2,7 +2,7 @@ import { APP_NAME, type PublicAuthUser, type SchoolModuleName } from '@edutrack/
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DesktopDeploymentStatus } from '../../desktopStatus';
-import { useLogoutAction, type LogoutClient } from '../auth';
+import { clearAccessToken, useLogoutAction, type LogoutClient } from '../auth';
 import type { SetupStateResponse } from '@edutrack/shared';
 import { StudentsModule } from '../students';
 import { TeachersModule } from '../teachers';
@@ -241,6 +241,14 @@ export function MainAppShell({
     onLoggedOut,
   });
 
+  // A module (e.g. the import flow) hit an invalid access token: the local
+  // session is gone, so clear the in-memory token and return to the login
+  // screen instead of leaving stale actions enabled.
+  const handleSessionExpired = () => {
+    clearAccessToken();
+    onLoggedOut();
+  };
+
   const enabledModuleNames = setupState.enabledModules.map((m) => m.moduleName);
   const currentTerm = setupState.terms.find((term) => term.isCurrent);
   const serviceOnline = Boolean(apiBaseUrl && desktopStatus?.sidecarStatus !== 'failed');
@@ -476,11 +484,13 @@ export function MainAppShell({
             <StudentsModule
               apiBaseUrl={apiBaseUrl}
               {...(capabilityToken ? { capabilityToken } : {})}
+              onSessionExpired={handleSessionExpired}
             />
           ) : activeModule === 'TEACHERS' ? (
             <TeachersModule
               apiBaseUrl={apiBaseUrl}
               {...(capabilityToken ? { capabilityToken } : {})}
+              onSessionExpired={handleSessionExpired}
             />
           ) : (
             <WelcomePlaceholder />
