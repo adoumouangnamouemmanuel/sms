@@ -363,10 +363,12 @@ Do not freeze the grade schema until all of these are true:
 
 ### 9.1 Data model
 
-- [ ] Add `student`, `guardian`, `student_guardian` and `teacher` migrations.
-- [ ] Make student and employee codes unique within a school.
-- [ ] Separate record status from login-account status.
-- [ ] Preserve audit metadata and prevent destructive deletion of referenced records.
+- [x] Add `student`, `guardian`, `student_guardian` and `teacher` migrations.
+- [x] Make student and employee codes unique within a school.
+- [x] Separate record status from login-account status.
+- [x] Preserve audit metadata and prevent destructive deletion of referenced records.
+
+> Implementation note (9.1): the default student/teacher code is `{school.code}-{academicYear}-{NNI}` generated at the service layer; an explicitly imported code (e.g. from the Excel import) overrides the default. The exact pattern is pending confirmation before the create/import slices (9.2–9.4).
 
 ### 9.2 Student and guardian slice
 
