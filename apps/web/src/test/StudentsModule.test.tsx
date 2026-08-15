@@ -153,7 +153,38 @@ describe('StudentsModule', () => {
     expect(screen.getByRole('textbox', { name: 'Code' })).toBeInTheDocument();
     expect(screen.queryByText(/optionnel/i)).not.toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Sexe' })).toHaveTextContent('Sélectionner');
-    expect(screen.getByRole('button', { name: 'JJ/MM/AAAA' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Date de naissance')).toBeInTheDocument();
+  });
+
+  it('edits a student through the profile page', async () => {
+    const userSession = userEvent.setup();
+    const updateStudent = vi.fn().mockResolvedValue({ ...student, firstName: 'Aissata' });
+    const client = createStudentsClient({
+      getStudentProfile: vi.fn().mockResolvedValue(studentProfile),
+      listStudents: vi.fn().mockResolvedValue({ items: [student], total: 1, limit: 20, offset: 0 }),
+      listGuardians: vi.fn().mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 }),
+      updateStudent,
+    });
+
+    render(<StudentsModule apiBaseUrl="http://127.0.0.1:49152" client={client} />);
+
+    await screen.findByText('Mahamat Aminata');
+    await userSession.click(screen.getByRole('button', { name: 'Mahamat Aminata' }));
+    await userSession.click(await screen.findByRole('button', { name: 'Modifier' }));
+
+    expect(screen.getAllByText('NDS-DEMO-2026-001').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('textbox', { name: 'Code' })).not.toBeInTheDocument();
+
+    const firstNameInput = screen.getByRole('textbox', { name: 'Prénom *' });
+    await userSession.clear(firstNameInput);
+    await userSession.type(firstNameInput, 'Aissata');
+    await userSession.click(screen.getByRole('button', { name: 'Enregistrer' }));
+
+    expect(updateStudent).toHaveBeenCalledWith(
+      student.id,
+      expect.objectContaining({ firstName: 'Aissata', lastName: 'Mahamat' }),
+      expect.any(Object)
+    );
   });
 
   it('requires a reason before archiving a student', async () => {
