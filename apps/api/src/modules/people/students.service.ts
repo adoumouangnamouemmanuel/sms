@@ -1,15 +1,11 @@
 import {
-  createAcademicYearRepository,
   createAuditLogRepository,
   createGuardianRepository,
   createStudentGuardianRepository,
   createStudentRepository,
   createTenantContext,
-  createTenantSchoolRepository,
   withTransaction,
   type EduTrackDatabase,
-  type RepositoryExecutor,
-  type TenantContext,
   type UpdateStudentGuardianInput,
   type UpdateStudentInput,
 } from '@edutrack/db';
@@ -24,11 +20,11 @@ import type {
   UpdateStudentRequest,
 } from '@edutrack/shared';
 import type { AuthenticatedUser, RequestAuditContext } from '../auth/index.js';
+import { generatePeopleCode, normalizePeopleCode } from './people.codes.js';
 import { toLinkResponse, toStudentResponse } from './people.mappers.js';
 import {
   guardianNotFound,
   peopleForbidden,
-  schoolNotFound,
   studentCodeAlreadyExists,
   studentGuardianLinkAlreadyExists,
   studentGuardianLinkNotFound,
@@ -62,14 +58,15 @@ export class StudentsService {
     const repository = createStudentRepository(this.db, createTenantContext(actor.schoolId));
     const listOptions = {
       ...(query.search !== undefined ? { search: query.search } : {}),
+      ...(query.status !== undefined ? { status: query.status } : {}),
       limit: query.limit,
       offset: query.offset,
     };
-    const items = repository.listActive(listOptions);
+    const items = repository.list(listOptions);
 
     return {
       items: items.map(toStudentResponse),
-      total: repository.countActive(listOptions),
+      total: repository.count(listOptions),
       limit: query.limit,
       offset: query.offset,
     };
@@ -113,8 +110,10 @@ export class StudentsService {
       for (let attempt = 0; attempt < MAX_GENERATED_CODE_ATTEMPTS; attempt += 1) {
         try {
           const code = input.code?.trim()
-            ? normalizeCode(input.code)
-            : generateStudentCode(transaction, tenant, this.now);
+            ? normalizePeopleCode(input.code)
+            : generatePeopleCode(transaction, tenant, this.now, () =>
+                createStudentRepository(transaction, tenant).countAll()
+              );
 
           const student = repository.create({
             code,
@@ -382,30 +381,6 @@ export class StudentsService {
       throw peopleForbidden();
     }
   }
-}
-
-function generateStudentCode(executor: RepositoryExecutor, tenant: TenantContext, now: () => Date) {
-  const school = createTenantSchoolRepository(executor, tenant).findActive();
-
-  if (!school) {
-    throw schoolNotFound();
-  }
-
-  const academicYear = createAcademicYearRepository(executor, tenant).findCurrent();
-  const year = extractAcademicYearStart(academicYear?.label) ?? String(now().getFullYear());
-  // countAll includes archived students: their codes are never reused, so the
-  // full count keeps the generated sequence free of collisions.
-  const sequence = createStudentRepository(executor, tenant).countAll() + 1;
-
-  return `${school.code}-${year}-${String(sequence).padStart(3, '0')}`.toUpperCase();
-}
-
-function extractAcademicYearStart(label: string | null | undefined) {
-  return label?.match(/^(\d{4})/)?.[1];
-}
-
-function normalizeCode(code: string) {
-  return code.trim().toUpperCase();
 }
 
 function normalizeLinkUpdate(input: UpdateStudentGuardianLinkRequest): UpdateStudentGuardianInput {
