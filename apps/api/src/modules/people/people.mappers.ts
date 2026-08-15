@@ -14,7 +14,9 @@ import type {
 } from '@edutrack/shared';
 
 /** Drops repository-only columns (e.g. deletedAt) from the public student shape. */
-export function toStudentResponse(student: StudentRecord & { currentClassroom?: { id: string; name: string } | null }): StudentResponse {
+export function toStudentResponse(
+  student: StudentRecord & { currentClassroom?: { id: string; name: string } | null }
+): StudentResponse {
   return {
     id: student.id,
     schoolId: student.schoolId,
@@ -62,7 +64,9 @@ export function toLinkResponse(link: StudentGuardianLinkRecord): StudentGuardian
   };
 }
 
-export function toTeacherResponse(teacher: TeacherRecord & { assignedClassrooms?: { id: string; name: string }[] }): TeacherResponse {
+export function toTeacherResponse(
+  teacher: TeacherRecord & { assignedClassrooms?: { id: string; name: string }[] }
+): TeacherResponse {
   return {
     id: teacher.id,
     schoolId: teacher.schoolId,

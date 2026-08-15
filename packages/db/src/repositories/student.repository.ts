@@ -184,7 +184,10 @@ export class StudentRepository extends TenantScopedRepository {
       .select(studentColumns)
       .from(student)
       .where(
-        and(studentWhere(this.schoolId, search, options.status, options.sex), this.enrollmentFilter(options))
+        and(
+          studentWhere(this.schoolId, search, options.status, options.sex),
+          this.enrollmentFilter(options)
+        )
       )
       .orderBy(asc(student.lastName), asc(student.firstName), asc(student.code))
       .limit(limit)
@@ -230,7 +233,10 @@ export class StudentRepository extends TenantScopedRepository {
       )
       .leftJoin(classroom, eq(classroom.id, classEnrollment.classroomId))
       .where(
-        and(studentWhere(this.schoolId, search, options.status, options.sex), this.enrollmentFilter(options))
+        and(
+          studentWhere(this.schoolId, search, options.status, options.sex),
+          this.enrollmentFilter(options)
+        )
       )
       .orderBy(asc(student.lastName), asc(student.firstName), asc(student.code))
       .limit(limit)
@@ -251,7 +257,10 @@ export class StudentRepository extends TenantScopedRepository {
       .select({ value: count() })
       .from(student)
       .where(
-        and(studentWhere(this.schoolId, search, options.status, options.sex), this.enrollmentFilter(options))
+        and(
+          studentWhere(this.schoolId, search, options.status, options.sex),
+          this.enrollmentFilter(options)
+        )
       )
       .get();
 

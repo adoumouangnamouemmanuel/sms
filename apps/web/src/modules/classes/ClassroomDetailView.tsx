@@ -89,7 +89,15 @@ export interface DetailApi {
   }>;
   subjects(options?: ClassesRequestOptions): Promise<SubjectResponse[]>;
   classrooms(options?: ClassesRequestOptions): Promise<ClassroomView[]>;
-  teachers(options?: ClassesRequestOptions): Promise<{ id: string; code: string; firstName: string; lastName: string; specialization?: string | null }[]>;
+  teachers(options?: ClassesRequestOptions): Promise<
+    {
+      id: string;
+      code: string;
+      firstName: string;
+      lastName: string;
+      specialization?: string | null;
+    }[]
+  >;
   archive(
     classroomId: string,
     input: { reason: string },
@@ -706,7 +714,9 @@ function useDetailApi(apiBaseUrl: string | null, client?: ClassesClient): Detail
       },
       teachers: async (options) => {
         const { listTeachers } = await import('../teachers/teachersApi');
-        return (await listTeachers(apiBaseUrl ?? '', { limit: 100, offset: 0, status: 'active' }, options)).items;
+        return (
+          await listTeachers(apiBaseUrl ?? '', { limit: 100, offset: 0, status: 'active' }, options)
+        ).items;
       },
       archive: (classroomId, input, options) =>
         client
@@ -872,7 +882,15 @@ function AssignSubjectModal({
 }) {
   const { t } = useTranslation();
   const [subjects, setSubjects] = useState<SubjectResponse[]>([]);
-  const [teachers, setTeachers] = useState<{ id: string; code: string; firstName: string; lastName: string; specialization?: string | null }[]>([]);
+  const [teachers, setTeachers] = useState<
+    {
+      id: string;
+      code: string;
+      firstName: string;
+      lastName: string;
+      specialization?: string | null;
+    }[]
+  >([]);
   const [subjectId, setSubjectId] = useState('');
   const [coefficient, setCoefficient] = useState('1');
   const [isRequired, setIsRequired] = useState(true);
@@ -989,7 +1007,8 @@ function AssignSubjectModal({
             <option value="">{t('classes.curriculum.teacherPlaceholder')}</option>
             {teachers.map((teacher) => (
               <option key={teacher.id} value={teacher.id}>
-                {teacher.lastName} {teacher.firstName} {teacher.specialization ? `- ${teacher.specialization}` : ''}
+                {teacher.lastName} {teacher.firstName}{' '}
+                {teacher.specialization ? `- ${teacher.specialization}` : ''}
               </option>
             ))}
           </select>

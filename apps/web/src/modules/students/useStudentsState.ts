@@ -327,7 +327,14 @@ export function useStudentsModule({
   const setStudentsClassLevel = useCallback(
     (classLevelId: string | null) => {
       // Changing the level invalidates any classroom selection from another level.
-      void loadStudents(studentsList.search, 0, studentsList.status, classLevelId, null, studentsList.sex);
+      void loadStudents(
+        studentsList.search,
+        0,
+        studentsList.status,
+        classLevelId,
+        null,
+        studentsList.sex
+      );
     },
     [loadStudents, studentsList]
   );

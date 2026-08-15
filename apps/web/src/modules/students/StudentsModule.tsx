@@ -649,7 +649,9 @@ function StudentTable({
             </td>
             <td className="px-3 py-3 text-[13px] font-semibold text-slate-500">
               {student.currentClassroom?.name ?? (
-                <span className="italic text-slate-400">{t('students.status.notEnrolled', 'Non inscrit(e)')}</span>
+                <span className="italic text-slate-400">
+                  {t('students.status.notEnrolled', 'Non inscrit(e)')}
+                </span>
               )}
             </td>
             <td className="px-3 py-3 text-[13px] font-semibold text-slate-500">
@@ -856,7 +858,10 @@ function StudentDetail({
       <dl className="mb-6 grid grid-cols-2 gap-x-6 gap-y-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-3">
         <DetailField
           label={t('students.list.classroom', 'Classe')}
-          value={profile.student.currentClassroom?.name ?? t('students.status.notEnrolled', 'Non inscrit(e)')}
+          value={
+            profile.student.currentClassroom?.name ??
+            t('students.status.notEnrolled', 'Non inscrit(e)')
+          }
         />
         <DetailField
           label={t('students.columns.sex')}
