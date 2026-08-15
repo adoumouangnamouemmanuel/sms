@@ -19,6 +19,9 @@ const CLASSES_API_ERROR_MESSAGE_KEYS = {
   CLASS_SUBJECT_REQUIRED_LINK: 'classes.errors.classSubjectRequiredLink',
   ENROLLMENT_NOT_FOUND: 'classes.errors.enrollmentNotFound',
   FORBIDDEN: 'classes.errors.forbidden',
+  // The running sidecar predates the classes routes (stale binary/process):
+  // actionable message instead of a scary generic error.
+  ROUTE_NOT_FOUND: 'classes.errors.serviceUpdate',
   STUDENT_ALREADY_ENROLLED: 'classes.errors.studentAlreadyEnrolled',
   STUDENT_NOT_FOUND: 'classes.errors.studentNotFound',
   SUBJECT_CODE_EXISTS: 'classes.errors.subjectCodeExists',
@@ -27,6 +30,7 @@ const CLASSES_API_ERROR_MESSAGE_KEYS = {
   VERSION_CONFLICT: 'classes.errors.versionConflict',
   INVALID_ACCESS_TOKEN: 'classes.errors.sessionExpired',
   LOCAL_SERVICE_UNAVAILABLE: 'classes.errors.localService',
+  UNKNOWN_ERROR: 'classes.errors.generic',
   VALIDATION_ERROR: 'classes.errors.validation',
 } as const;
 
