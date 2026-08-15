@@ -110,7 +110,10 @@ export class TeacherRepository extends TenantScopedRepository {
 
     const uniqueClassroomsMap = new Map<string, { id: string; name: string }>();
     for (const row of classroomsRows) {
-      uniqueClassroomsMap.set(row.classroomId, { id: row.classroomId, name: row.classroomName ?? row.classroomCode });
+      uniqueClassroomsMap.set(row.classroomId, {
+        id: row.classroomId,
+        name: row.classroomName ?? row.classroomCode,
+      });
     }
 
     return {
@@ -197,22 +200,33 @@ export class TeacherRepository extends TenantScopedRepository {
       )
       .all();
 
-    const classroomsByTeacher = classroomsRows.reduce((acc, row) => {
-      if (!row.teacherId) return acc;
-      if (!acc[row.teacherId]) {
-        acc[row.teacherId] = new Map();
-      }
-      // Deduplicate classrooms since a teacher can teach multiple subjects in the same class
-      acc[row.teacherId]!.set(row.classroomId, { id: row.classroomId, name: row.classroomName ?? row.classroomCode });
-      return acc;
-    }, {} as Record<string, Map<string, { id: string; name: string }>>);
+    const classroomsByTeacher = classroomsRows.reduce<
+      Record<string, Map<string, { id: string; name: string }>>
+    >((acc, row) => {
+      const teacherId = row.teacherId;
 
-    return teachers.map((teacher) => ({
-      ...teacher,
-      assignedClassrooms: classroomsByTeacher[teacher.id]
-        ? Array.from(classroomsByTeacher[teacher.id]!.values())
-        : [],
-    }));
+      if (!teacherId) {
+        return acc;
+      }
+
+      const classrooms = acc[teacherId] ?? new Map<string, { id: string; name: string }>();
+      // Deduplicate classrooms since a teacher can teach multiple subjects in the same class
+      classrooms.set(row.classroomId, {
+        id: row.classroomId,
+        name: row.classroomName ?? row.classroomCode,
+      });
+      acc[teacherId] = classrooms;
+      return acc;
+    }, {});
+
+    return teachers.map((teacher) => {
+      const classrooms = classroomsByTeacher[teacher.id];
+
+      return {
+        ...teacher,
+        assignedClassrooms: classrooms ? Array.from(classrooms.values()) : [],
+      };
+    });
   }
 
   /** Total teachers matching the list filters, used for stable pagination totals. */
