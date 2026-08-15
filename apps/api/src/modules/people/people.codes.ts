@@ -17,7 +17,8 @@ export function generatePeopleCode(
   executor: RepositoryExecutor,
   tenant: TenantContext,
   now: () => Date,
-  countAll: () => number
+  countAll: () => number,
+  attempt = 0
 ) {
   const school = createTenantSchoolRepository(executor, tenant).findActive();
 
@@ -29,7 +30,7 @@ export function generatePeopleCode(
   const year = extractAcademicYearStart(academicYear?.label) ?? String(now().getFullYear());
   // countAll includes archived records: their codes are never reused, so the
   // full count keeps the generated sequence free of collisions.
-  const sequence = countAll() + 1;
+  const sequence = countAll() + 1 + attempt;
 
   return `${school.code}-${year}-${String(sequence).padStart(3, '0')}`.toUpperCase();
 }
