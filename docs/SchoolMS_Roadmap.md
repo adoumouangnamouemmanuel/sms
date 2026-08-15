@@ -368,15 +368,15 @@ Do not freeze the grade schema until all of these are true:
 - [x] Separate record status from login-account status.
 - [x] Preserve audit metadata and prevent destructive deletion of referenced records.
 
-> Implementation note (9.1): the default student/teacher code is `{school.code}-{academicYear}-{NNI}` generated at the service layer; an explicitly imported code (e.g. from the Excel import) overrides the default. The exact pattern is pending confirmation before the create/import slices (9.2–9.4).
+> Implementation note (9.1/9.2): the default student/teacher code is `{school.code}-{academicYearStart}-{NNI}` generated at the service layer (`POST /students` without a `code`); an explicitly provided code — including from the Excel import (9.4) — overrides the default. Until a real NNI is available, the NNI segment falls back to a zero-padded per-school sequence (`NDS-DEMO-2026-001`, `002`, …) counting archived rows so codes are never reused. The exact NNI handling stays pending confirmation before the import slice.
 
 ### 9.2 Student and guardian slice
 
-- [ ] Create searchable, paginated student list and profile views.
-- [ ] Support name, date of birth, gender, contact, nationality, photo, code and status.
-- [ ] Link several guardians to a student and siblings to the same guardian.
-- [ ] Mark emergency and primary contacts.
-- [ ] Archive and reactivate records with an audit reason.
+- [x] Create searchable, paginated student list and profile views.
+- [x] Support name, date of birth, gender, contact, nationality, photo, code and status.
+- [x] Link several guardians to a student and siblings to the same guardian.
+- [x] Mark emergency and primary contacts.
+- [x] Archive and reactivate records with an audit reason.
 
 ### 9.3 Teacher slice
 
