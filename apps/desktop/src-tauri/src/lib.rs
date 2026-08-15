@@ -391,6 +391,14 @@ fn resolve_access_token_secret(app_data_dir: &Path) -> Result<String, String> {
     fs::write(&secret_path, &secret)
         .map_err(|error| format!("Failed to persist the access token secret: {error}"))?;
 
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+
+        fs::set_permissions(&secret_path, fs::Permissions::from_mode(0o600))
+            .map_err(|error| format!("Failed to protect the access token secret: {error}"))?;
+    }
+
     Ok(secret)
 }
 
