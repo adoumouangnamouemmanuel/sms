@@ -59,6 +59,8 @@ export class StudentsService {
     const listOptions = {
       ...(query.search !== undefined ? { search: query.search } : {}),
       ...(query.status !== undefined ? { status: query.status } : {}),
+      ...(query.classLevelId !== undefined ? { classLevelId: query.classLevelId } : {}),
+      ...(query.classroomId !== undefined ? { classroomId: query.classroomId } : {}),
       limit: query.limit,
       offset: query.offset,
     };
