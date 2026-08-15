@@ -2,9 +2,11 @@ import {
   AUTH_USER_ROLES,
   GUARDIAN_RELATIONSHIP_TYPES,
   IMPLEMENTED_SCHOOL_MODULES,
+  IMPORT_KINDS,
   PERSON_SEX_VALUES,
   SCHOOL_SETUP_STATUSES,
   type AuthUserRole,
+  type ImportKind,
   type SchoolModuleName,
   type SchoolSetupStatus,
 } from '@edutrack/shared';
@@ -28,6 +30,9 @@ export const schoolSetupStatuses = SCHOOL_SETUP_STATUSES;
 export const schoolModuleNames = IMPLEMENTED_SCHOOL_MODULES;
 export const personSexValues = PERSON_SEX_VALUES;
 export type PersonSex = (typeof personSexValues)[number];
+export const importKinds = IMPORT_KINDS;
+// Re-exported directly (not redefined) so the shared type stays canonical.
+export type { ImportKind };
 export const guardianRelationshipTypes = GUARDIAN_RELATIONSHIP_TYPES;
 export type GuardianRelationshipType = (typeof guardianRelationshipTypes)[number];
 
@@ -318,6 +323,30 @@ export const studentGuardian = sqliteTable(
       'student_guardian_relationship_type_check',
       sql`${table.relationshipType} in ('PERE', 'MERE', 'TUTEUR', 'AUTRE')`
     ),
+  })
+);
+
+export const importBatch = sqliteTable(
+  'import_batch',
+  {
+    id: uuidPrimaryKey(),
+    ...tenantColumns(),
+    kind: text('kind').$type<ImportKind>().notNull(),
+    importIdentifier: text('import_identifier').notNull(),
+    filename: text('filename').notNull(),
+    totalRows: integer('total_rows').notNull(),
+    validRows: integer('valid_rows').notNull(),
+    errorRows: integer('error_rows').notNull(),
+    ...recordLifecycleColumns(),
+  },
+  (table) => ({
+    schoolIdIdx: index('import_batch_school_id_idx').on(table.schoolId),
+    // Re-importing the same identifier is a no-op (idempotent confirmed imports).
+    schoolIdentifierUnique: uniqueIndex('import_batch_school_identifier_unique').on(
+      table.schoolId,
+      table.importIdentifier
+    ),
+    kindCheck: check('import_batch_kind_check', sql`${table.kind} in ('STUDENTS', 'TEACHERS')`),
   })
 );
 
