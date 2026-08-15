@@ -298,6 +298,7 @@ const resources = {
           title: 'Lier un responsable',
         },
         list: {
+          clearSearch: 'Effacer la recherche',
           empty: 'Aucun élève trouvé.',
           emptyGuardians: 'Aucun responsable trouvé.',
           new: 'Nouvel élève',
@@ -627,6 +628,7 @@ const resources = {
           title: 'ربط ولي أمر',
         },
         list: {
+          clearSearch: 'مسح البحث',
           empty: 'لم يتم العثور على طلاب.',
           emptyGuardians: 'لم يتم العثور على أوصياء.',
           new: 'طالب جديد',
@@ -957,6 +959,7 @@ const resources = {
           title: 'Link a guardian',
         },
         list: {
+          clearSearch: 'Clear search',
           empty: 'No student found.',
           emptyGuardians: 'No guardian found.',
           new: 'New student',
