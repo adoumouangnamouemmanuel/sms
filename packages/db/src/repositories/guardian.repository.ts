@@ -68,6 +68,25 @@ export class GuardianRepository extends TenantScopedRepository {
       .get();
   }
 
+  /**
+   * Case- and whitespace-insensitive exact full-name lookup, used by the import
+   * preview to warn about possible duplicates. Names are never identity — this
+   * only flags rows for the admin to double-check.
+   */
+  findByName(firstName: string, lastName: string) {
+    return this.db
+      .select(guardianColumns)
+      .from(guardian)
+      .where(
+        and(
+          eq(guardian.schoolId, this.schoolId),
+          sql`lower(${guardian.firstName}) = lower(${firstName.trim()})`,
+          sql`lower(${guardian.lastName}) = lower(${lastName.trim()})`
+        )
+      )
+      .get();
+  }
+
   list(options: ListGuardiansOptions = {}) {
     const search = options.search?.trim();
     const limit = options.limit ?? 50;
