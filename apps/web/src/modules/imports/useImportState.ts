@@ -127,6 +127,7 @@ export function useImportState({ apiBaseUrl, capabilityToken, client }: UseImpor
           : await downloadTemplateRequest(apiBaseUrl ?? '', kind, requestOptions());
       } catch (error) {
         setErrorKey(resolveImportsErrorMessageKey(error));
+        setIsSessionExpired(isSessionExpiredError(error));
         return null;
       }
     },
@@ -144,6 +145,7 @@ export function useImportState({ apiBaseUrl, capabilityToken, client }: UseImpor
         : await downloadErrorsCsvRequest(apiBaseUrl ?? '', preview.importId, requestOptions());
     } catch (error) {
       setErrorKey(resolveImportsErrorMessageKey(error));
+      setIsSessionExpired(isSessionExpiredError(error));
       return null;
     }
   }, [apiBaseUrl, client, preview, requestOptions]);
