@@ -3,6 +3,7 @@ import type {
   CreateTeacherRequest,
   PaginatedTeachersResponse,
   RecordStatus,
+  ResetPasswordRequest,
   TeacherListQuery,
   TeacherLoginCreatedResponse,
   TeacherProfileResponse,
@@ -10,6 +11,7 @@ import type {
   UpdateTeacherRequest,
 } from '@edutrack/shared';
 import { useCallback, useEffect, useState } from 'react';
+import { resetPassword as resetTeacherPasswordRequest } from '../auth/authApi';
 import {
   archiveTeacher as archiveTeacherRequest,
   createTeacher as createTeacherRequest,
@@ -60,6 +62,11 @@ export interface TeachersClient {
     teacherId: string,
     options?: TeachersRequestOptions
   ): Promise<TeacherProfileResponse>;
+  resetTeacherPassword(
+    userId: string,
+    input: ResetPasswordRequest,
+    options?: TeachersRequestOptions
+  ): Promise<unknown>;
   updateTeacher(
     teacherId: string,
     input: UpdateTeacherRequest,
@@ -340,6 +347,23 @@ export function useTeachersModule({
     [apiBaseUrl, client, refreshProfile, requestOptions, runMutation]
   );
 
+  const resetTeacherPassword = useCallback(
+    async (userId: string, newPassword: string) =>
+      runMutation(
+        () =>
+          client
+            ? client.resetTeacherPassword(userId, { newPassword }, requestOptions())
+            : resetTeacherPasswordRequest(
+                apiBaseUrl ?? '',
+                userId,
+                { newPassword },
+                requestOptions()
+              ),
+        refreshProfile
+      ),
+    [apiBaseUrl, client, refreshProfile, requestOptions, runMutation]
+  );
+
   return {
     archiveTeacher,
     closeProfile,
@@ -355,6 +379,7 @@ export function useTeachersModule({
     profileErrorKey,
     reactivateLogin,
     reactivateTeacher,
+    resetTeacherPassword,
     search,
     setStatus,
     teachers: listState,
