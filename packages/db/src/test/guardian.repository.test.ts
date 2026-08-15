@@ -71,6 +71,8 @@ describe('guardian repository', () => {
     const matches = repository.listActive({ search: 'Abakar' });
     expect(matches).toHaveLength(1);
     expect(matches[0]?.firstName).toBe('Fatime');
+    expect(repository.countActive({ search: 'Abakar' })).toBe(1);
+    expect(repository.countActive()).toBe(2);
   });
 
   it('archives and reactivates a guardian', () => {

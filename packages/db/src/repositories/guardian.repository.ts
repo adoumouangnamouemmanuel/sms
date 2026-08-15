@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull, like, or, sql } from 'drizzle-orm';
+import { and, asc, count, eq, isNull, like, or, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { RepositoryExecutor, TenantContext } from './base.js';
 import { TenantScopedRepository } from './base.js';
@@ -69,20 +69,23 @@ export class GuardianRepository extends TenantScopedRepository {
     return this.db
       .select(guardianColumns)
       .from(guardian)
-      .where(
-        and(
-          eq(guardian.schoolId, this.schoolId),
-          eq(guardian.isActive, true),
-          isNull(guardian.deletedAt),
-          search
-            ? or(like(guardian.firstName, `%${search}%`), like(guardian.lastName, `%${search}%`))
-            : undefined
-        )
-      )
+      .where(activeGuardianWhere(this.schoolId, search))
       .orderBy(asc(guardian.lastName), asc(guardian.firstName))
       .limit(limit)
       .offset(offset)
       .all();
+  }
+
+  /** Total number of active guardians, used for stable pagination totals. */
+  countActive(options: { search?: string } = {}) {
+    const search = options.search?.trim();
+    const row = this.db
+      .select({ value: count() })
+      .from(guardian)
+      .where(activeGuardianWhere(this.schoolId, search))
+      .get();
+
+    return row?.value ?? 0;
   }
 
   update(id: string, input: UpdateGuardianInput, updatedAt: string) {
@@ -129,6 +132,17 @@ export class GuardianRepository extends TenantScopedRepository {
 
 export function createGuardianRepository(db: RepositoryExecutor, tenant: TenantContext) {
   return new GuardianRepository(db, tenant);
+}
+
+function activeGuardianWhere(schoolId: string, search: string | undefined) {
+  return and(
+    eq(guardian.schoolId, schoolId),
+    eq(guardian.isActive, true),
+    isNull(guardian.deletedAt),
+    search
+      ? or(like(guardian.firstName, `%${search}%`), like(guardian.lastName, `%${search}%`))
+      : undefined
+  );
 }
 
 function normalizeGuardianCreate(input: CreateGuardianInput) {
