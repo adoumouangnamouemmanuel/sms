@@ -457,6 +457,94 @@ describe('imports routes', () => {
     });
   });
 
+  it('previews and confirms a guardian import without codes', async () => {
+    const accessToken = await loginAndReadAccessToken('directeur');
+    const { payload, contentType } = buildMultipart(
+      guardianWorkbook([
+        ['Fatime', 'Abakar', '+23566000020', 'fatime.abakar@exemple.td', 'N Djamena'],
+        ['Mahamat', 'Ousmane', '+23566000021', null, null],
+      ]),
+      'responsables.xlsx'
+    );
+
+    const previewData = await preview(accessToken, payload, contentType, 'GUARDIANS');
+    expect(previewData).toMatchObject({
+      kind: 'GUARDIANS',
+      totalRows: 2,
+      validRows: 2,
+      errorRows: 0,
+    });
+    expect(previewData.rows[0]).toMatchObject({
+      firstName: 'Fatime',
+      lastName: 'Abakar',
+      errors: [],
+      possibleDuplicate: false,
+    });
+
+    const confirmResponse = await server.inject({
+      method: 'POST',
+      url: '/imports/confirm',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { importId: previewData.importId, importIdentifier: 'responsables-2026' },
+    });
+
+    expect(readJson(confirmResponse) as ApiSuccess<ConfirmImportResponse>).toMatchObject({
+      success: true,
+      data: { alreadyConfirmed: false, imported: 2, skippedExisting: 0, errorRows: 0 },
+    });
+    expect(countRows('guardian')).toBe(2);
+  });
+
+  it('flags possible guardian duplicates by name without blocking', async () => {
+    const accessToken = await loginAndReadAccessToken('directeur');
+    const { payload, contentType } = buildMultipart(
+      guardianWorkbook([['Fatime', 'Abakar', '+23566000020', null, null]]),
+      'responsables.xlsx'
+    );
+
+    const firstPreview = await preview(accessToken, payload, contentType, 'GUARDIANS');
+    await server.inject({
+      method: 'POST',
+      url: '/imports/confirm',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { importId: firstPreview.importId, importIdentifier: 'responsables-a' },
+    });
+
+    // Same name under a new identifier: warned, but never blocked (names are
+    // not identity — two real people can share an exact name).
+    const secondPreview = await preview(accessToken, payload, contentType, 'GUARDIANS');
+    expect(secondPreview.rows[0]?.possibleDuplicate).toBe(true);
+    expect(secondPreview.rows[0]?.errors).toEqual([]);
+
+    const secondConfirm = await server.inject({
+      method: 'POST',
+      url: '/imports/confirm',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { importId: secondPreview.importId, importIdentifier: 'responsables-b' },
+    });
+    expect((readJson(secondConfirm) as ApiSuccess<ConfirmImportResponse>).data.imported).toBe(1);
+    expect(countRows('guardian')).toBe(2);
+  });
+
+  it('downloads a guardian template with the right columns', async () => {
+    const accessToken = await loginAndReadAccessToken('directeur');
+    const response = await server.inject({
+      method: 'GET',
+      url: '/imports/templates/GUARDIANS',
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['content-type']).toContain('spreadsheet');
+
+    const workbook = XLSX.read(response.rawPayload, { type: 'buffer' });
+    const dataSheet = workbook.Sheets.Donnees;
+    const headers = dataSheet
+      ? (XLSX.utils.sheet_to_json<unknown[]>(dataSheet, { header: 1 })[0] ?? [])
+      : [];
+    expect(headers).toEqual(['Prénom', 'Nom', 'Téléphone', 'Email', 'Adresse']);
+  });
+
   it('downloads rejected rows as a formula-injection-safe CSV', async () => {
     const accessToken = await loginAndReadAccessToken('directeur');
     const { payload, contentType } = buildMultipart(
@@ -605,6 +693,11 @@ function teacherWorkbook(rows: (string | null)[][]) {
     'Email',
     'Adresse',
   ];
+  return workbookBuffer(columns, rows);
+}
+
+function guardianWorkbook(rows: (string | null)[][]) {
+  const columns = ['Prénom', 'Nom', 'Téléphone', 'Email', 'Adresse'];
   return workbookBuffer(columns, rows);
 }
 
