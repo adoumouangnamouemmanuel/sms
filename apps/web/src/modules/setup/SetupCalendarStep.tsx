@@ -57,11 +57,17 @@ export function SetupCalendarStep({
     });
   }
 
+  const hasEmptyDate =
+    !draft.academicYear.startDate ||
+    !draft.academicYear.endDate ||
+    draft.terms.some((term) => !term.startDate || !term.endDate);
+
   return (
     <form
       className="space-y-4"
       onSubmit={(event) => {
         event.preventDefault();
+        if (hasEmptyDate) return;
         onSubmit();
       }}
     >
@@ -185,7 +191,11 @@ export function SetupCalendarStep({
 
       <div className="flex gap-4 pt-1">
         <WizardSecondaryButton label={t('setup.actions.back')} onClick={onBack} />
-        <WizardPrimaryButton isSaving={isSaving} label={t('setup.actions.saveAndContinue')} />
+        <WizardPrimaryButton
+          disabled={hasEmptyDate}
+          isSaving={isSaving}
+          label={t('setup.actions.saveAndContinue')}
+        />
       </div>
     </form>
   );
