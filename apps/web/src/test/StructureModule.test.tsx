@@ -110,7 +110,7 @@ describe('StructureModule', () => {
     );
 
     await userSession.click(screen.getByRole('button', { name: 'Modifier' }));
-    await userSession.click(screen.getByRole('button', { name: '+ Ajouter un niveau' }));
+    await userSession.click(screen.getByRole('button', { name: 'Ajouter un niveau' }));
 
     const levelNameInput = screen.getByLabelText('Nom du niveau 3');
     await userSession.type(levelNameInput, 'Terminale');
