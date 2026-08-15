@@ -190,7 +190,7 @@ export function TeachersModule({
       ) : null}
 
       {module.createdLogin ? (
-        <CredentialsModal credentials={module.createdLogin} onClose={module.closeProfile} />
+        <CredentialsModal credentials={module.createdLogin} onClose={module.dismissCreatedLogin} />
       ) : null}
 
       {archiveTarget ? (
