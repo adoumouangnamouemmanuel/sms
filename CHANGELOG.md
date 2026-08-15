@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Enrolment slice (Phase 4.3)**: Added bulk enrolment (students without an active class enrol into any class, with per-row skipped results), at-most-one active class per student/year enforced end-to-end, transfers with effective date and reason (history preserved), explicit optional-subject enrolment per student, and a roster view per class with capacity fill indicator.
 - **Classes imports (Phase 4.2)**: Added `SUBJECTS`, `CLASSROOMS` and `CLASS_SUBJECTS` import kinds (migration `0011`) with French .xlsx templates, row-level validation (known year/level/subject/teacher codes, active year), advisory duplicate warnings, and sample files in `docs/import-templates/`.
 - **Navigation (Phase 4.2)**: The Structure académique nav entry now opens the real Classes & programmes module (levels, subjects, classes, enrolment tabs); the simulated structure screen and its mock data were removed.
+- **Dashboard real data (Phase 4)**: The Tableau de bord now shows real data everywhere — the class distribution chart is computed from live enrolment, and the recent-activity feed is backed by a new `GET /audit/recent` endpoint (`AuditLogRepository.listRecent`), so the simulated widgets and `dashboardMock.ts` were removed.
+- **Students class filter (Phase 4.3)**: The students list Filtres panel now filters by Niveau and Classe through the ACTIVE class-enrollment relationship of the current academic year — not a field on the student record (queried via `class_enrollment`).
 
 ### Changed
 
@@ -50,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Seed hardening (Phase 3)**: `EDUTRACK_SEED_PASSWORD_HASH` is validated when set (must be a bcrypt hash with cost ≥ 12); seeding fails loudly on a malformed value instead of persisting a broken login.
 - **Import robustness (Phase 3.4)**: The workbook header-row scan tolerates sparse rows produced by blank Excel lines (previously a 500 instead of a French validation message), and the import-identifier suggestion test is now time-deterministic.
 - **Setup wizard (Phase 3)**: Added regression coverage proving an empty academic-year or term date disables the save action and prevents submission.
+- **Shell i18n (Phase 4)**: The sidebar "Bientôt" heading, the per-item "bientôt" badge, and the header search/notification aria-labels and search placeholder now use translated keys instead of hardcoded French.
 
 - **Web app**: Replaced the generated Next.js scaffold with the Version 1 Vite React shell and French-first i18n.
 - **API app**: Replaced the generated hello-world route with a local sidecar foundation, loopback defaults, and redacted logging.
