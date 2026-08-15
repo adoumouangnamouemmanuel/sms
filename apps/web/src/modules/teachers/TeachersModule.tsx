@@ -177,7 +177,10 @@ export function TeachersModule({
           }}
           onSubmit={async (input) => {
             if (editingTeacher) {
-              await module.updateTeacher(editingTeacher.id, input);
+              await module.updateTeacher(editingTeacher.id, {
+                ...input,
+                recordVersion: editingTeacher.recordVersion,
+              });
             } else {
               await module.createTeacher(input);
             }
