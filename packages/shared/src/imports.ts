@@ -49,6 +49,13 @@ export const GUARDIAN_IMPORT_COLUMNS: ImportColumnDefinition[] = [
   { key: 'phone', label: 'Téléphone', required: false, description: 'Optionnel.' },
   { key: 'email', label: 'Email', required: false, description: 'Optionnel.' },
   { key: 'address', label: 'Adresse', required: false, description: 'Optionnel.' },
+  {
+    key: 'studentCode',
+    label: 'Code élève',
+    required: false,
+    description:
+      "Optionnel. Lie automatiquement le responsable à l'élève portant ce code (importé avant ou déjà présent dans l'école).",
+  },
 ];
 
 export const TEACHER_IMPORT_COLUMNS: ImportColumnDefinition[] = [
