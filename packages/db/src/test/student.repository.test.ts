@@ -88,6 +88,24 @@ describe('student repository', () => {
     expect(secondSchoolStudent.code).toBe(code);
   });
 
+  it('finds an exact full-name match case-insensitively, including archived rows', () => {
+    const [school] = foundationSeed.schools;
+    const repository = createStudentRepository(db, createTenantContext(school.id));
+
+    const created = repository.create({
+      code: 'NDS-DEMO-2026-0001',
+      firstName: 'Aminata',
+      lastName: 'Mahamat',
+    });
+    expect(repository.findByName('aminata', 'MAHAMAT')?.id).toBe(created.id);
+    expect(repository.findByName('Aminata ', 'Mahamat')?.id).toBe(created.id);
+    expect(repository.findByName('Ibrahim', 'Mahamat')).toBeUndefined();
+
+    // Archived rows still count as present: re-importing must not duplicate.
+    repository.archive(created.id, '2026-08-15T10:00:00.000Z');
+    expect(repository.findByName('Aminata', 'Mahamat')?.id).toBe(created.id);
+  });
+
   it('allows duplicate names with distinct codes', () => {
     const [school] = foundationSeed.schools;
     const repository = createStudentRepository(db, createTenantContext(school.id));
