@@ -171,7 +171,7 @@ describe('imports routes', () => {
         [null, 'Aminata', 'Mahamat', 'F'],
         [null, '', 'Ousmane'], // missing first name
         ['NDS-DEMO-2026-X002', 'Ali', 'Ahmat', 'XX'], // invalid sex
-        ['NDS-DEMO-2026-X002', 'Fatime', 'Ousmane'], // duplicate code (kept after invalid sex row? no: first occurrence wins)
+        ['NDS-DEMO-2026-X002', 'Fatime', 'Ousmane'], // duplicate code (first occurrence wins)
       ]),
       'eleves.xlsx'
     );
