@@ -28,6 +28,32 @@ describe('SetupCalendarStep', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  it('disables the primary action while a term date is empty', async () => {
+    const userSession = userEvent.setup();
+    const onSubmit = vi.fn();
+    const incompleteDraft = completeDraft();
+    incompleteDraft.terms = incompleteDraft.terms.map((term, index) =>
+      index === 0 ? { ...term, endDate: '' } : term
+    );
+
+    render(
+      <SetupCalendarStep
+        draft={incompleteDraft}
+        isSaving={false}
+        onBack={vi.fn()}
+        onChange={vi.fn()}
+        onSubmit={onSubmit}
+      />
+    );
+
+    const submitButton = screen.getByRole('button', { name: 'Enregistrer et continuer' });
+    expect(submitButton).toBeDisabled();
+
+    await userSession.click(submitButton);
+
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   it('runs onSubmit once all required dates are filled', async () => {
     const userSession = userEvent.setup();
     const onSubmit = vi.fn();
