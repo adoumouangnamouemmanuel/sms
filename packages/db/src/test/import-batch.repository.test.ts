@@ -95,6 +95,8 @@ describe('import batch repository', () => {
     const found = firstRepository.findBySchoolAndIdentifier('import-professeurs');
     expect(found?.validRows).toBe(3);
 
+    expect(secondRepository.findBySchoolAndIdentifier('import-professeurs')).toBeUndefined();
+
     // The same identifier is allowed in another school.
     const secondSchoolBatch = secondRepository.create({
       kind: 'TEACHERS',
