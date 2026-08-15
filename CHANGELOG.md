@@ -39,6 +39,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Import deduplication (Phase 3.4)**: Names are never treated as identity — rows matching an existing name or code are flagged as possible duplicates in the preview but always import; codes remain the only hard identity.
 - **Settings labels**: The school motto field is now labelled "Devise scolaire" to avoid colliding with the currency label "Devise", and genuinely empty optional fields render a muted "Non renseigné".
 
+### Fixed
+
+- **Teacher optimistic concurrency (Phase 3.3)**: Teacher updates now accept an optional `recordVersion` — a stale update is rejected with a `409 TEACHER_VERSION_CONFLICT` (French message in the UI) instead of silently overwriting a newer record.
+- **Seed hardening (Phase 3)**: `EDUTRACK_SEED_PASSWORD_HASH` is validated when set (must be a bcrypt hash with cost ≥ 12); seeding fails loudly on a malformed value instead of persisting a broken login.
+- **Import robustness (Phase 3.4)**: The workbook header-row scan tolerates sparse rows produced by blank Excel lines (previously a 500 instead of a French validation message), and the import-identifier suggestion test is now time-deterministic.
+- **Setup wizard (Phase 3)**: Added regression coverage proving an empty academic-year or term date disables the save action and prevents submission.
+
 - **Web app**: Replaced the generated Next.js scaffold with the Version 1 Vite React shell and French-first i18n.
 - **API app**: Replaced the generated hello-world route with a local sidecar foundation, loopback defaults, and redacted logging.
 - **Database package**: Limited the active Version 1 database surface to SQLite.
