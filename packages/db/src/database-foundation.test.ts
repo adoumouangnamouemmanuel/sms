@@ -157,6 +157,162 @@ describe('database foundation migrations', () => {
   });
 });
 
+describe('Phase 3 people migration', () => {
+  let sqlite: Database.Database;
+
+  afterEach(() => {
+    sqlite.close();
+  });
+
+  it('applies the people migration to a database with existing school and user rows', () => {
+    sqlite = new Database(':memory:');
+    sqlite.pragma('foreign_keys = ON');
+    applyMigration(sqlite, '0000_public_mongu.sql');
+
+    sqlite
+      .prepare(
+        `
+          INSERT INTO school (id, name, short_name, created_at)
+          VALUES (?, ?, ?, ?)
+        `
+      )
+      .run(legacySchoolId, 'Legacy School', 'Legacy', '2026-01-01 00:00:00');
+    sqlite
+      .prepare(
+        `
+          INSERT INTO user (id, school_id, username, password_hash, role, is_active)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `
+      )
+      .run(legacyUserId, legacySchoolId, 'directeur', 'legacy-hash', 'school_master', 1);
+
+    applyMigration(sqlite, '0001_aspiring_fixer.sql');
+    applyMigration(sqlite, '0002_glorious_lizard.sql');
+    applyMigration(sqlite, '0003_old_sumo.sql');
+
+    const studentId = '77777777-7777-4777-8777-777777777777';
+    const studentCode = 'LEGACY-2026-000000001';
+    sqlite
+      .prepare(
+        `
+          INSERT INTO student (id, school_id, code, first_name, last_name, sex)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `
+      )
+      .run(studentId, legacySchoolId, studentCode, 'Aminata', 'Mahamat', 'F');
+
+    // Strict code uniqueness: the same code in the same school is rejected, even after archive.
+    sqlite
+      .prepare(
+        `
+          UPDATE student
+          SET is_active = 0, deleted_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `
+      )
+      .run(studentId);
+    expect(() =>
+      sqlite
+        .prepare(
+          `
+            INSERT INTO student (id, school_id, code, first_name, last_name)
+            VALUES (?, ?, ?, ?, ?)
+          `
+        )
+        .run(
+          '88888888-8888-4888-8888-888888888888',
+          legacySchoolId,
+          studentCode,
+          'Other',
+          'Student'
+        )
+    ).toThrow();
+
+    // The sex CHECK constraint rejects unmapped values at the database level.
+    expect(() =>
+      sqlite
+        .prepare(
+          `
+            INSERT INTO student (id, school_id, code, first_name, last_name, sex)
+            VALUES (?, ?, ?, ?, ?, ?)
+          `
+        )
+        .run(
+          '99999999-9999-4999-8999-999999999999',
+          legacySchoolId,
+          'LEGACY-2026-999999999',
+          'X',
+          'Y',
+          'INCONNU'
+        )
+    ).toThrow();
+
+    // The teacher login link works with the pre-existing user of the same school.
+    sqlite
+      .prepare(
+        `
+          INSERT INTO teacher (id, school_id, code, first_name, last_name, user_id)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `
+      )
+      .run(
+        'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        legacySchoolId,
+        'LEGACY-2026-T00001',
+        'Ibrahim',
+        'Ousmane',
+        legacyUserId
+      );
+
+    // A teacher may not link to a user of another school (composite tenant FK).
+    sqlite
+      .prepare(
+        `
+          INSERT INTO school (id, code, name, created_at)
+          VALUES (?, ?, ?, ?)
+        `
+      )
+      .run(
+        'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        'OTHER-SCHOOL',
+        'Other School',
+        '2026-01-01 00:00:00'
+      );
+    sqlite
+      .prepare(
+        `
+          INSERT INTO user (id, school_id, username, password_hash, role, is_active)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `
+      )
+      .run(
+        'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+        'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        'autre',
+        'hash',
+        'TEACHER',
+        1
+      );
+    expect(() =>
+      sqlite
+        .prepare(
+          `
+            INSERT INTO teacher (id, school_id, code, first_name, last_name, user_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+          `
+        )
+        .run(
+          'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+          legacySchoolId,
+          'LEGACY-2026-T00002',
+          'Ali',
+          'Ahmat',
+          'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
+        )
+    ).toThrow();
+  });
+});
+
 describe('application migration helper', () => {
   let sqlite: Database.Database | undefined;
 
