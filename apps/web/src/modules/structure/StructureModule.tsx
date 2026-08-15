@@ -158,8 +158,18 @@ export function StructureModule({
 
       {errorKey ? (
         <div className="flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700 shadow-sm">
-          <svg className="h-5 w-5 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          <svg
+            className="h-5 w-5 shrink-0 text-red-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
           </svg>
           {t(errorKey)}
         </div>
@@ -225,7 +235,13 @@ export function StructureModule({
                   }}
                   type="button"
                 >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -239,7 +255,13 @@ export function StructureModule({
                 onClick={addLevel}
                 type="button"
               >
-                <svg className="h-5 w-5 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg
+                  className="h-5 w-5 transition-transform group-hover:scale-110"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
                 {t('structure.levels.add')}
@@ -294,11 +316,23 @@ export function StructureModule({
                 >
                   {level.displayOrder}
                 </div>
-                <span className="flex-1 text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors">{level.name}</span>
+                <span className="flex-1 text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors">
+                  {level.name}
+                </span>
                 {level.isExamYear ? (
                   <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-teal-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-teal-600 ring-1 ring-inset ring-teal-200/60">
-                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      className="h-3 w-3"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                     {t('structure.levels.examBadge')}
                   </span>
@@ -333,7 +367,9 @@ export function StructureModule({
               key={mockClass.id}
             >
               <div className="absolute inset-0 bg-gradient-to-br from-slate-50/80 to-white opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              <p className="relative text-[15px] font-black tracking-tight text-slate-900">{mockClass.label}</p>
+              <p className="relative text-[15px] font-black tracking-tight text-slate-900">
+                {mockClass.label}
+              </p>
               <p className="relative mt-2 text-[12px] font-bold text-slate-400">
                 {t('structure.classes.effectif', { count: mockClass.students })}
               </p>
@@ -344,8 +380,18 @@ export function StructureModule({
 
       {saved && (
         <div className="flex items-center gap-3 rounded-2xl border border-teal-200 bg-teal-50 p-4 text-sm font-bold text-teal-700 shadow-sm">
-          <svg className="h-5 w-5 shrink-0 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            className="h-5 w-5 shrink-0 text-teal-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
           {t('structure.saved')}
         </div>
@@ -391,20 +437,26 @@ function SummaryCard({
   const palette = SUMMARY_TONES[tone];
 
   return (
-    <div className={`group relative flex flex-col justify-between overflow-hidden rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] ${palette.wrapper}`}>
-      <div className={`absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-10 ${palette.glow}`} />
+    <div
+      className={`group relative flex flex-col justify-between overflow-hidden rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] ${palette.wrapper}`}
+    >
+      <div
+        className={`absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-10 ${palette.glow}`}
+      />
 
       <p className="relative flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-400">
         {label}
         {simulated ? (
           <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold text-amber-600">
-             <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-             {t('structure.simulation')}
+            <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+            {t('structure.simulation')}
           </span>
         ) : null}
       </p>
-      
-      <p className={`relative mt-8 text-[40px] font-black tabular-nums leading-none tracking-tighter ${palette.number}`}>
+
+      <p
+        className={`relative mt-8 text-[40px] font-black tabular-nums leading-none tracking-tighter ${palette.number}`}
+      >
         {value}
       </p>
     </div>

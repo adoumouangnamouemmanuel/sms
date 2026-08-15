@@ -59,7 +59,7 @@ export function DashboardModule({
           aria-hidden="true"
           className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-indigo-500/20 blur-[80px]"
         />
-        
+
         <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-teal-200 backdrop-blur-md">
@@ -80,7 +80,9 @@ export function DashboardModule({
           <div className="flex shrink-0 items-center gap-3">
             <button
               className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-teal-500 px-6 py-3.5 text-sm font-bold text-white shadow-[0_0_40px_-10px_rgba(20,184,166,0.5)] transition-all hover:scale-105 hover:bg-teal-400 hover:shadow-[0_0_60px_-15px_rgba(20,184,166,0.7)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
-              onClick={() => onNavigate('STUDENTS')}
+              onClick={() => {
+                onNavigate('STUDENTS');
+              }}
               type="button"
             >
               <span className="relative z-10">{t('dashboard.actions.students')}</span>
@@ -88,7 +90,9 @@ export function DashboardModule({
             </button>
             <button
               className="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-slate-700 bg-slate-800/50 px-6 py-3.5 text-sm font-bold text-white backdrop-blur-md transition-all hover:bg-slate-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-              onClick={() => onNavigate('TEACHERS')}
+              onClick={() => {
+                onNavigate('TEACHERS');
+              }}
               type="button"
             >
               {t('dashboard.actions.teachers')}
@@ -99,8 +103,18 @@ export function DashboardModule({
 
       {dashboard.errorKey ? (
         <div className="flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700 shadow-sm">
-          <svg className="h-5 w-5 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          <svg
+            className="h-5 w-5 shrink-0 text-red-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
           </svg>
           {t(dashboard.errorKey)}
         </div>
@@ -167,9 +181,7 @@ export function DashboardModule({
 
           {distribution.length === 0 ? (
             <div className="flex flex-1 items-center justify-center rounded-3xl border-2 border-dashed border-slate-100 bg-slate-50/50 p-8">
-              <p className="text-sm font-bold text-slate-400">
-                {t('dashboard.structure.empty')}
-              </p>
+              <p className="text-sm font-bold text-slate-400">{t('dashboard.structure.empty')}</p>
             </div>
           ) : (
             <ul className="space-y-6">
@@ -229,14 +241,18 @@ export function DashboardModule({
               const tone = ACTIVITY_TONES[index % ACTIVITY_TONES.length] ?? ACTIVITY_TONES[0];
               return (
                 <li className="group relative flex gap-4" key={event.id}>
-                  <div className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-4 ring-white transition-transform duration-300 group-hover:scale-110 ${tone}`}>
+                  <div
+                    className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-4 ring-white transition-transform duration-300 group-hover:scale-110 ${tone}`}
+                  >
                     <ActivityDot />
                   </div>
                   <div className="flex-1 pt-1">
                     <p className="text-[13px] font-bold leading-relaxed text-slate-700 transition-colors group-hover:text-slate-900">
                       {t(event.labelKey)}
                     </p>
-                    <p className="mt-0.5 text-xs font-semibold text-slate-400">{t(event.timeKey)}</p>
+                    <p className="mt-0.5 text-xs font-semibold text-slate-400">
+                      {t(event.timeKey)}
+                    </p>
                   </div>
                 </li>
               );
@@ -267,7 +283,8 @@ const KPI_TONES = {
   indigo: {
     wrapper: 'hover:border-indigo-200',
     glow: 'bg-indigo-400',
-    iconWrapper: 'bg-gradient-to-br from-indigo-50 to-indigo-100/50 text-indigo-600 ring-indigo-200/50',
+    iconWrapper:
+      'bg-gradient-to-br from-indigo-50 to-indigo-100/50 text-indigo-600 ring-indigo-200/50',
     trend: 'text-indigo-700 bg-indigo-50',
   },
   sky: {
@@ -302,8 +319,12 @@ function KpiCard({
   const palette = KPI_TONES[tone];
 
   return (
-    <div className={`group relative flex flex-col justify-between overflow-hidden rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] ${palette.wrapper}`}>
-      <div className={`absolute -right-12 -top-12 h-32 w-32 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-15 ${palette.glow}`} />
+    <div
+      className={`group relative flex flex-col justify-between overflow-hidden rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] ${palette.wrapper}`}
+    >
+      <div
+        className={`absolute -right-12 -top-12 h-32 w-32 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-15 ${palette.glow}`}
+      />
 
       <div className="relative flex items-center justify-between gap-4">
         <div
@@ -311,7 +332,9 @@ function KpiCard({
         >
           {icon}
         </div>
-        <p className="text-right text-[11px] font-black uppercase tracking-widest text-slate-400">{label}</p>
+        <p className="text-right text-[11px] font-black uppercase tracking-widest text-slate-400">
+          {label}
+        </p>
       </div>
 
       <div className="relative mt-8">
@@ -321,7 +344,9 @@ function KpiCard({
           </p>
         </div>
         <div className="mt-4 flex items-center gap-2">
-          <span className={`inline-flex items-center rounded-lg px-2.5 py-1.5 text-[11px] font-bold ${palette.trend}`}>
+          <span
+            className={`inline-flex items-center rounded-lg px-2.5 py-1.5 text-[11px] font-bold ${palette.trend}`}
+          >
             {footer}
           </span>
         </div>
@@ -371,7 +396,16 @@ function SimulationBadge() {
 
 function UsersIcon() {
   return (
-    <svg aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+    <svg
+      aria-hidden="true"
+      className="h-6 w-6"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      viewBox="0 0 24 24"
+    >
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
       <circle cx="9" cy="7" r="4" />
       <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -382,7 +416,16 @@ function UsersIcon() {
 
 function TeacherIcon() {
   return (
-    <svg aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+    <svg
+      aria-hidden="true"
+      className="h-6 w-6"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      viewBox="0 0 24 24"
+    >
       <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
       <path d="M6 12v5c3 3 9 3 12 0v-5" />
     </svg>
@@ -391,7 +434,16 @@ function TeacherIcon() {
 
 function GuardianIcon() {
   return (
-    <svg aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+    <svg
+      aria-hidden="true"
+      className="h-6 w-6"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      viewBox="0 0 24 24"
+    >
       <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
       <circle cx="9" cy="7" r="4" />
       <path d="M19 8v6M22 11h-6" />
@@ -401,7 +453,16 @@ function GuardianIcon() {
 
 function ArchiveIcon() {
   return (
-    <svg aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+    <svg
+      aria-hidden="true"
+      className="h-6 w-6"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      viewBox="0 0 24 24"
+    >
       <polyline points="21 8 21 21 3 21 3 8" />
       <rect height="5" width="22" x="1" y="3" rx="1" />
       <line x1="10" x2="14" y1="12" y2="12" />
@@ -411,7 +472,16 @@ function ArchiveIcon() {
 
 function SchoolIcon() {
   return (
-    <svg aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+    <svg
+      aria-hidden="true"
+      className="h-6 w-6"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      viewBox="0 0 24 24"
+    >
       <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
       <path d="M6 12v5c3 3 9 3 12 0v-5" />
     </svg>
@@ -420,7 +490,16 @@ function SchoolIcon() {
 
 function ActivityIcon() {
   return (
-    <svg aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+    <svg
+      aria-hidden="true"
+      className="h-6 w-6"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      viewBox="0 0 24 24"
+    >
       <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
     </svg>
   );

@@ -125,8 +125,18 @@ export function SettingsModule({
 
       {saved && (
         <div className="flex items-center gap-3 rounded-2xl border border-teal-200 bg-teal-50 p-4 text-sm font-bold text-teal-700 shadow-sm">
-          <svg className="h-5 w-5 shrink-0 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            className="h-5 w-5 shrink-0 text-teal-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
           {t('settings.saved')}
         </div>
@@ -213,8 +223,18 @@ export function SettingsModule({
 
             {errorKey ? (
               <div className="flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700 shadow-sm">
-                <svg className="h-5 w-5 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                <svg
+                  className="h-5 w-5 shrink-0 text-red-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
                 </svg>
                 {t(errorKey)}
               </div>
@@ -420,9 +440,7 @@ function SectionTitle({ icon, title }: { icon: React.ReactNode; title: string })
       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-teal-600 ring-1 ring-inset ring-teal-100/50">
         {icon}
       </div>
-      <h2 className="text-base font-black tracking-tight text-slate-900">
-        {title}
-      </h2>
+      <h2 className="text-base font-black tracking-tight text-slate-900">{title}</h2>
     </div>
   );
 }
@@ -438,7 +456,9 @@ function ProfileField({
 }) {
   return (
     <label className="flex flex-col gap-2">
-      <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">{label}</span>
+      <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+        {label}
+      </span>
       <input
         className={`${formInputClassName} h-12 rounded-2xl border-slate-200/80 bg-white text-sm font-bold shadow-sm placeholder:text-slate-400 focus:border-teal-500 focus:ring-teal-500 transition-colors hover:bg-slate-50 focus:hover:bg-white`}
         onChange={(event) => {
@@ -468,13 +488,15 @@ function DetailRow({
         {icon}
       </span>
       <div className="min-w-0">
-        <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-500 transition-colors">{label}</p>
+        <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-500 transition-colors">
+          {label}
+        </p>
         {isEmpty ? (
-          <p className="text-[14px] font-bold italic text-slate-300">
-            {t('settings.emptyValue')}
-          </p>
+          <p className="text-[14px] font-bold italic text-slate-300">{t('settings.emptyValue')}</p>
         ) : (
-          <p className="truncate text-[14px] font-black text-slate-800 group-hover:text-slate-950 transition-colors">{value}</p>
+          <p className="truncate text-[14px] font-black text-slate-800 group-hover:text-slate-950 transition-colors">
+            {value}
+          </p>
         )}
       </div>
     </div>
