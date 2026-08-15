@@ -43,14 +43,15 @@ export class GuardiansService {
     const repository = createGuardianRepository(this.db, createTenantContext(actor.schoolId));
     const listOptions = {
       ...(query.search !== undefined ? { search: query.search } : {}),
+      ...(query.status !== undefined ? { status: query.status } : {}),
       limit: query.limit,
       offset: query.offset,
     };
-    const items = repository.listActive(listOptions);
+    const items = repository.list(listOptions);
 
     return {
       items: items.map(toGuardianResponse),
-      total: repository.countActive(listOptions),
+      total: repository.count(listOptions),
       limit: query.limit,
       offset: query.offset,
     };
