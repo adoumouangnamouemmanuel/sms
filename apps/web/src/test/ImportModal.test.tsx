@@ -32,6 +32,7 @@ const preview: ImportPreviewResponse = {
         address: null,
       },
       errors: [],
+      possibleDuplicate: true,
     },
     {
       rowNumber: 3,
@@ -50,6 +51,7 @@ const preview: ImportPreviewResponse = {
         address: null,
       },
       errors: [],
+      possibleDuplicate: false,
     },
     {
       rowNumber: 4,
@@ -68,6 +70,7 @@ const preview: ImportPreviewResponse = {
         address: null,
       },
       errors: ['Prénom requis.'],
+      possibleDuplicate: false,
     },
   ],
 };
@@ -172,6 +175,29 @@ describe('ImportModal', () => {
     expect(screen.getByText('1 en erreur')).toBeInTheDocument();
     expect(screen.getByText('Prénom requis.')).toBeInTheDocument();
     expect(screen.getByText('Aminata')).toBeInTheDocument();
+  });
+
+  it('warns about possible duplicates without blocking', async () => {
+    const userSession = userEvent.setup();
+    const previewImport = vi.fn().mockResolvedValue(preview);
+    const client = createImportsClient({ previewImport });
+
+    const view = render(
+      <ImportModal
+        apiBaseUrl="http://127.0.0.1:49152"
+        client={client}
+        kind="STUDENTS"
+        onClose={vi.fn()}
+      />
+    );
+
+    await uploadFile(userSession, view.container, 'eleves.xlsx');
+    await userSession.click(screen.getByRole('button', { name: 'Analyser le fichier' }));
+
+    expect(await screen.findByText('1 doublon(s) possible(s)')).toBeInTheDocument();
+    expect(screen.getByText('Possible doublon')).toBeInTheDocument();
+    // The warning never disables the confirm action.
+    expect(screen.getByRole('button', { name: 'Confirmer l’import' })).toBeEnabled();
   });
 
   it('prefills the import identifier from the file name and lets the user edit it', async () => {
