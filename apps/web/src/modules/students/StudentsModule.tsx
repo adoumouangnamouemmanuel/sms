@@ -69,12 +69,12 @@ export function StudentsModule({
     <section aria-label={t('students.title')} className="mx-auto max-w-5xl">
       <style>{`@keyframes sms-fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-teal-700">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1.5">
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-teal-600">
             {t('students.eyebrow')}
           </p>
-          <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+          <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
             {t('students.title')}
           </h1>
         </div>
@@ -83,7 +83,7 @@ export function StudentsModule({
       {/* Tab switcher */}
       <div
         aria-label={t('students.tabs.label')}
-        className="mb-5 inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm"
+        className="mb-8 inline-flex rounded-[20px] border border-slate-200/60 bg-slate-50/50 p-1.5 shadow-sm backdrop-blur-md"
         role="tablist"
       >
         <TabButton
@@ -275,14 +275,16 @@ function TabButton({
   return (
     <button
       aria-selected={active}
-      className={`cursor-pointer rounded-lg px-4 py-2 text-[13px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
-        active ? 'bg-teal-500 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+      className={`relative cursor-pointer overflow-hidden rounded-[14px] px-6 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
+        active
+          ? 'bg-teal-500 text-white shadow-[0_0_20px_-5px_rgba(20,184,166,0.5)]'
+          : 'text-slate-500 hover:bg-white hover:text-slate-700 hover:shadow-sm'
       }`}
       onClick={onClick}
       role="tab"
       type="button"
     >
-      {label}
+      <span className="relative z-10">{label}</span>
     </button>
   );
 }
@@ -320,7 +322,7 @@ function StudentsTab({
 
   return (
     <div
-      className="rounded-3xl border border-white bg-white p-6 shadow-sm"
+      className="flex flex-col rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] lg:p-8"
       style={{ animation: 'sms-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both' }}
     >
       <ListToolbar
@@ -408,7 +410,7 @@ function GuardiansTab({
 
   return (
     <div
-      className="rounded-3xl border border-white bg-white p-6 shadow-sm"
+      className="flex flex-col rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] lg:p-8"
       style={{ animation: 'sms-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both' }}
     >
       <ListToolbar
@@ -692,42 +694,45 @@ function StudentDetail({
 
   return (
     <div
-      className="rounded-3xl border border-white bg-white p-6 shadow-sm"
+      className="flex flex-col rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] lg:p-8"
       style={{ animation: 'sms-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both' }}
     >
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <button
-            className="mb-3 cursor-pointer text-[12px] font-bold text-slate-400 hover:text-teal-700"
+            className="mb-4 inline-flex cursor-pointer items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-slate-400 transition-colors hover:text-teal-600"
             onClick={onBack}
             type="button"
           >
-            ← {t('students.actions.back')}
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            {t('students.actions.back')}
           </button>
-          <h2 className="text-xl font-black tracking-tight text-slate-950">
+          <h2 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
             {profile.student.lastName} {profile.student.firstName}
           </h2>
-          <p className="mt-1 font-mono text-[12px] font-bold text-slate-400">
+          <p className="mt-2 font-mono text-[13px] font-bold text-slate-500">
             {profile.student.code}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <StatusBadge
             active={profile.student.isActive}
             activeLabel={t('students.status.active')}
             archivedLabel={t('students.status.archived')}
           />
           <button
-            className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700"
+            className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-slate-200/80 bg-white px-5 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-teal-300 hover:text-teal-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
             onClick={() => {
               onEdit(profile.student);
             }}
             type="button"
           >
-            {t('students.actions.edit')}
+            <span className="relative z-10">{t('students.actions.edit')}</span>
           </button>
           <button
-            className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-red-300 hover:text-red-600"
+            className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-slate-200/80 bg-white px-5 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-red-300 hover:text-red-600 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
             onClick={() => {
               onSetArchiveTarget({
                 kind: 'student',
@@ -738,9 +743,11 @@ function StudentDetail({
             }}
             type="button"
           >
-            {profile.student.isActive
-              ? t('students.actions.archive')
-              : t('students.actions.reactivate')}
+            <span className="relative z-10">
+              {profile.student.isActive
+                ? t('students.actions.archive')
+                : t('students.actions.reactivate')}
+            </span>
           </button>
         </div>
       </div>
@@ -763,16 +770,16 @@ function StudentDetail({
         <DetailField label={t('students.detail.address')} value={profile.student.address ?? '—'} />
       </dl>
 
-      <div className="flex items-center justify-between">
-        <h3 className="text-[13px] font-black uppercase tracking-wide text-slate-500">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h3 className="text-[13px] font-black uppercase tracking-widest text-slate-500">
           {t('students.detail.guardians')}
         </h3>
         <button
-          className="cursor-pointer rounded-lg bg-teal-500 px-3 py-1.5 text-[12px] font-bold text-white hover:bg-teal-400"
+          className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-teal-500 px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_20px_-5px_rgba(20,184,166,0.5)] transition-all hover:scale-105 hover:bg-teal-400 hover:shadow-[0_0_30px_-5px_rgba(20,184,166,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
           onClick={onLinkOpen}
           type="button"
         >
-          {t('students.detail.linkGuardian')}
+          <span className="relative z-10">{t('students.detail.linkGuardian')}</span>
         </button>
       </div>
 
@@ -860,39 +867,42 @@ function GuardianDetail({
 
   return (
     <div
-      className="rounded-3xl border border-white bg-white p-6 shadow-sm"
+      className="flex flex-col rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] lg:p-8"
       style={{ animation: 'sms-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both' }}
     >
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <button
-            className="mb-3 cursor-pointer text-[12px] font-bold text-slate-400 hover:text-teal-700"
+            className="mb-4 inline-flex cursor-pointer items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-slate-400 transition-colors hover:text-teal-600"
             onClick={onBack}
             type="button"
           >
-            ← {t('students.actions.back')}
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            {t('students.actions.back')}
           </button>
-          <h2 className="text-xl font-black tracking-tight text-slate-950">
+          <h2 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
             {profile.guardian.lastName} {profile.guardian.firstName}
           </h2>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <StatusBadge
             active={profile.guardian.isActive}
             activeLabel={t('students.status.active')}
             archivedLabel={t('students.status.archived')}
           />
           <button
-            className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700"
+            className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-slate-200/80 bg-white px-5 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-teal-300 hover:text-teal-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
             onClick={() => {
               onEdit(profile.guardian);
             }}
             type="button"
           >
-            {t('students.actions.edit')}
+            <span className="relative z-10">{t('students.actions.edit')}</span>
           </button>
           <button
-            className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-red-300 hover:text-red-600"
+            className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-slate-200/80 bg-white px-5 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-red-300 hover:text-red-600 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
             onClick={() => {
               onSetArchiveTarget({
                 kind: 'guardian',
@@ -903,9 +913,11 @@ function GuardianDetail({
             }}
             type="button"
           >
-            {profile.guardian.isActive
-              ? t('students.actions.archive')
-              : t('students.actions.reactivate')}
+            <span className="relative z-10">
+              {profile.guardian.isActive
+                ? t('students.actions.archive')
+                : t('students.actions.reactivate')}
+            </span>
           </button>
         </div>
       </div>

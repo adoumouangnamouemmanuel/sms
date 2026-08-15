@@ -47,45 +47,48 @@ export function DashboardModule({
   const mockStudentsTotal = distribution.reduce((sum, level) => sum + level.students, 0);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-[#0f172a] via-[#0a1628] to-[#061020] p-7 text-white shadow-2xl">
+      <section className="relative overflow-hidden rounded-[32px] bg-slate-950 p-8 text-white shadow-2xl lg:p-10">
+        {/* Abstract shapes for premium feel */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -top-28 -right-20 h-72 w-72 rounded-full bg-teal-500/20 blur-3xl"
+          className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-teal-500/20 blur-[80px]"
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -bottom-36 -left-20 h-80 w-80 rounded-full bg-indigo-500/10 blur-3xl"
+          className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-indigo-500/20 blur-[80px]"
         />
-        <div className="relative flex flex-wrap items-end justify-between gap-5">
-          <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-teal-300">
+        
+        <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-2xl">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-teal-200 backdrop-blur-md">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-400 opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-teal-500"></span>
+              </span>
               {setupState.academicYear?.label ?? ''}
               {currentTerm ? ` · ${currentTerm.label}` : ''}
-            </p>
-            <h1 className="mt-2 text-3xl font-black tracking-tight">
+            </div>
+            <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
               {t('dashboard.greeting', { name: firstNameOf(user.username) })}
             </h1>
-            <p className="mt-1 text-[13px] font-bold text-slate-300">
+            <p className="mt-3 text-sm font-medium leading-relaxed text-slate-400 sm:text-base sm:leading-relaxed">
               {t('dashboard.subtitle', { school: setupState.school.name })}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-3">
             <button
-              className="cursor-pointer rounded-xl bg-teal-500 px-4 py-2 text-[12px] font-black text-white shadow-lg shadow-teal-950/40 transition hover:bg-teal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
-              onClick={() => {
-                onNavigate('STUDENTS');
-              }}
+              className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-teal-500 px-6 py-3.5 text-sm font-bold text-white shadow-[0_0_40px_-10px_rgba(20,184,166,0.5)] transition-all hover:scale-105 hover:bg-teal-400 hover:shadow-[0_0_60px_-15px_rgba(20,184,166,0.7)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
+              onClick={() => onNavigate('STUDENTS')}
               type="button"
             >
-              {t('dashboard.actions.students')}
+              <span className="relative z-10">{t('dashboard.actions.students')}</span>
+              <div className="absolute inset-0 -z-10 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%,transparent_100%)] bg-[length:250%_250%,100%_100%] bg-[position:-100%_0,0_0] bg-no-repeat transition-[background-position_0s_ease] group-hover:bg-[position:200%_0,0_0] group-hover:duration-[1500ms]" />
             </button>
             <button
-              className="cursor-pointer rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-[12px] font-black text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
-              onClick={() => {
-                onNavigate('TEACHERS');
-              }}
+              className="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-slate-700 bg-slate-800/50 px-6 py-3.5 text-sm font-bold text-white backdrop-blur-md transition-all hover:bg-slate-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+              onClick={() => onNavigate('TEACHERS')}
               type="button"
             >
               {t('dashboard.actions.teachers')}
@@ -95,13 +98,16 @@ export function DashboardModule({
       </section>
 
       {dashboard.errorKey ? (
-        <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-[12px] font-bold text-red-700 shadow-sm">
+        <div className="flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700 shadow-sm">
+          <svg className="h-5 w-5 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
           {t(dashboard.errorKey)}
-        </p>
+        </div>
       ) : null}
 
       {/* ── KPI cards — real headcounts ──────────────────────────────────── */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
           icon={<UsersIcon />}
           label={t('dashboard.kpis.students')}
@@ -136,21 +142,23 @@ export function DashboardModule({
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* ── Structure académique — real levels, simulated effectifs ────── */}
-        <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm lg:col-span-2">
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="flex items-center gap-2.5 text-[13px] font-black uppercase tracking-wide text-slate-800">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-50 text-teal-600 ring-1 ring-teal-100">
+        <section className="flex flex-col rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] lg:col-span-2 lg:p-8">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal-600 ring-1 ring-teal-100/50">
                 <SchoolIcon />
-              </span>
-              {t('dashboard.structure.title')}
-            </h2>
+              </div>
+              <h2 className="text-base font-black tracking-tight text-slate-900">
+                {t('dashboard.structure.title')}
+              </h2>
+            </div>
             <div className="flex items-center gap-2">
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-slate-500">
+              <span className="inline-flex items-center rounded-xl bg-slate-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-600 ring-1 ring-inset ring-slate-200">
                 {t('dashboard.structure.levelsCount', { count: distribution.length })}
               </span>
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-slate-500">
+              <span className="inline-flex items-center rounded-xl bg-slate-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-600 ring-1 ring-inset ring-slate-200">
                 {t('dashboard.structure.classesCount', { count: mockClassesTotal })}
               </span>
               <SimulationBadge />
@@ -158,74 +166,77 @@ export function DashboardModule({
           </div>
 
           {distribution.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-slate-200 px-4 py-8 text-center text-[13px] font-bold text-slate-400">
-              {t('dashboard.structure.empty')}
-            </p>
+            <div className="flex flex-1 items-center justify-center rounded-3xl border-2 border-dashed border-slate-100 bg-slate-50/50 p-8">
+              <p className="text-sm font-bold text-slate-400">
+                {t('dashboard.structure.empty')}
+              </p>
+            </div>
           ) : (
-            <ul className="space-y-4">
+            <ul className="space-y-6">
               {distribution.map((level) => {
                 const max = Math.max(...distribution.map((item) => item.students), 1);
                 return (
-                  <li key={level.levelId}>
-                    <div className="mb-1.5 flex items-baseline justify-between gap-3">
-                      <p className="text-[12px] font-bold text-slate-700">{level.levelName}</p>
-                      <p className="rounded-md bg-slate-50 px-2 py-0.5 text-[11px] font-black tabular-nums text-slate-500 ring-1 ring-slate-100">
-                        {level.students}
-                      </p>
+                  <li key={level.levelId} className="group">
+                    <div className="mb-2 flex items-end justify-between gap-4">
+                      <p className="text-[13px] font-bold text-slate-700">{level.levelName}</p>
+                      <div className="text-right">
+                        <p className="text-lg font-black tabular-nums leading-none text-slate-900">
+                          {level.students}
+                        </p>
+                        <p className="mt-1 text-[10px] font-bold text-slate-400">
+                          {t('dashboard.structure.classesShort', { count: level.classes })}
+                        </p>
+                      </div>
                     </div>
-                    <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-2.5 overflow-hidden rounded-full bg-slate-100/80">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-teal-500 via-teal-400 to-teal-300 transition-all"
+                        className="h-full rounded-full bg-teal-500 transition-all duration-1000 ease-out group-hover:bg-teal-400"
                         style={{ width: `${String(Math.round((level.students / max) * 100))}%` }}
                       />
                     </div>
-                    <p className="mt-1 text-[10px] font-bold text-slate-300">
-                      {t('dashboard.structure.classesShort', { count: level.classes })}
-                    </p>
                   </li>
                 );
               })}
             </ul>
           )}
 
-          <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-4 text-[11px] font-semibold text-slate-400">
-            <span className="inline-flex items-center gap-1.5">
-              <span aria-hidden="true" className="h-2 w-2 rounded-full bg-teal-400" />
+          <div className="mt-auto pt-6">
+            <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-4 py-3 text-xs font-bold text-slate-500">
+              <div className="h-1.5 w-1.5 rounded-full bg-teal-500" />
               {t('dashboard.structure.studentsSim', { count: mockStudentsTotal })}
-            </span>
+            </div>
             {/* TODO(roadmap §Classes): replace simulated effectifs with real
                 enrollment counts once the Classes module ships. */}
           </div>
         </section>
 
         {/* ── Activité récente — simulated timeline ──────────────────────── */}
-        <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <h2 className="flex items-center gap-2.5 text-[13px] font-black uppercase tracking-wide text-slate-800">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100">
+        <section className="flex flex-col rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] lg:p-8">
+          <div className="mb-8 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100/50">
                 <ActivityIcon />
-              </span>
-              {t('dashboard.activity.title')}
-            </h2>
+              </div>
+              <h2 className="text-base font-black tracking-tight text-slate-900">
+                {t('dashboard.activity.title')}
+              </h2>
+            </div>
             <SimulationBadge />
           </div>
 
-          <ol className="relative space-y-4 before:absolute before:left-[13px] before:top-1 before:bottom-1 before:w-px before:bg-slate-100">
+          <ol className="relative space-y-6 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
             {MOCK_RECENT_ACTIVITY.map((event, index) => {
               const tone = ACTIVITY_TONES[index % ACTIVITY_TONES.length] ?? ACTIVITY_TONES[0];
               return (
-                <li className="relative flex gap-3" key={event.id}>
-                  <span
-                    aria-hidden="true"
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ring-4 ring-white ${tone}`}
-                  >
+                <li className="group relative flex gap-4" key={event.id}>
+                  <div className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-4 ring-white transition-transform duration-300 group-hover:scale-110 ${tone}`}>
                     <ActivityDot />
-                  </span>
-                  <div className="min-w-0 pt-0.5">
-                    <p className="text-[12px] font-bold leading-snug text-slate-700">
+                  </div>
+                  <div className="flex-1 pt-1">
+                    <p className="text-[13px] font-bold leading-relaxed text-slate-700 transition-colors group-hover:text-slate-900">
                       {t(event.labelKey)}
                     </p>
-                    <p className="text-[11px] font-semibold text-slate-400">{t(event.timeKey)}</p>
+                    <p className="mt-0.5 text-xs font-semibold text-slate-400">{t(event.timeKey)}</p>
                   </div>
                 </li>
               );
@@ -248,24 +259,28 @@ function firstNameOf(username: string): string {
 
 const KPI_TONES = {
   teal: {
-    bar: 'from-teal-500 to-teal-300',
-    icon: 'from-teal-500 to-teal-600 shadow-teal-500/30',
-    text: 'text-teal-700',
+    wrapper: 'hover:border-teal-200',
+    glow: 'bg-teal-400',
+    iconWrapper: 'bg-gradient-to-br from-teal-50 to-teal-100/50 text-teal-600 ring-teal-200/50',
+    trend: 'text-teal-700 bg-teal-50',
   },
   indigo: {
-    bar: 'from-indigo-500 to-indigo-300',
-    icon: 'from-indigo-500 to-indigo-600 shadow-indigo-500/30',
-    text: 'text-indigo-700',
+    wrapper: 'hover:border-indigo-200',
+    glow: 'bg-indigo-400',
+    iconWrapper: 'bg-gradient-to-br from-indigo-50 to-indigo-100/50 text-indigo-600 ring-indigo-200/50',
+    trend: 'text-indigo-700 bg-indigo-50',
   },
   sky: {
-    bar: 'from-sky-500 to-sky-300',
-    icon: 'from-sky-500 to-sky-600 shadow-sky-500/30',
-    text: 'text-sky-700',
+    wrapper: 'hover:border-sky-200',
+    glow: 'bg-sky-400',
+    iconWrapper: 'bg-gradient-to-br from-sky-50 to-sky-100/50 text-sky-600 ring-sky-200/50',
+    trend: 'text-sky-700 bg-sky-50',
   },
   slate: {
-    bar: 'from-slate-500 to-slate-300',
-    icon: 'from-slate-600 to-slate-700 shadow-slate-500/30',
-    text: 'text-slate-700',
+    wrapper: 'hover:border-slate-300',
+    glow: 'bg-slate-400',
+    iconWrapper: 'bg-gradient-to-br from-slate-50 to-slate-100/50 text-slate-600 ring-slate-200/50',
+    trend: 'text-slate-700 bg-slate-100',
   },
 } as const;
 
@@ -287,23 +302,28 @@ function KpiCard({
   const palette = KPI_TONES[tone];
 
   return (
-    <div className="group relative overflow-hidden rounded-3xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg">
-      <div
-        aria-hidden="true"
-        className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${palette.bar}`}
-      />
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</p>
-          <p className="mt-2 text-4xl font-black tabular-nums tracking-tight text-slate-950">
-            {loading ? '…' : (value ?? 0)}
-          </p>
-          <p className="mt-2 text-[10px] font-bold text-slate-300">{footer}</p>
-        </div>
+    <div className={`group relative flex flex-col justify-between overflow-hidden rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] ${palette.wrapper}`}>
+      <div className={`absolute -right-12 -top-12 h-32 w-32 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-15 ${palette.glow}`} />
+
+      <div className="relative flex items-center justify-between gap-4">
         <div
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg transition-transform group-hover:scale-105 ${palette.icon}`}
+          className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ring-1 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3 ${palette.iconWrapper}`}
         >
           {icon}
+        </div>
+        <p className="text-right text-[11px] font-black uppercase tracking-widest text-slate-400">{label}</p>
+      </div>
+
+      <div className="relative mt-8">
+        <div className="flex items-baseline gap-2">
+          <p className="text-[40px] font-black tabular-nums leading-none tracking-tighter text-slate-900">
+            {loading ? '…' : (value ?? 0)}
+          </p>
+        </div>
+        <div className="mt-4 flex items-center gap-2">
+          <span className={`inline-flex items-center rounded-lg px-2.5 py-1.5 text-[11px] font-bold ${palette.trend}`}>
+            {footer}
+          </span>
         </div>
       </div>
     </div>
@@ -311,17 +331,17 @@ function KpiCard({
 }
 
 const ACTIVITY_TONES = [
-  'bg-teal-100 text-teal-600',
-  'bg-indigo-100 text-indigo-600',
-  'bg-amber-100 text-amber-600',
-  'bg-rose-100 text-rose-600',
+  'bg-teal-50 text-teal-600',
+  'bg-indigo-50 text-indigo-600',
+  'bg-amber-50 text-amber-600',
+  'bg-rose-50 text-rose-600',
 ] as const;
 
 function ActivityDot() {
   return (
     <svg
       aria-hidden="true"
-      className="h-3.5 w-3.5"
+      className="h-4 w-4"
       fill="none"
       stroke="currentColor"
       strokeLinecap="round"
@@ -337,8 +357,11 @@ function ActivityDot() {
 function SimulationBadge() {
   const { t } = useTranslation();
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-amber-700">
-      <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/50 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700">
+      <span className="relative flex h-1.5 w-1.5">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75"></span>
+        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+      </span>
       {t('dashboard.simulation')}
     </span>
   );
@@ -346,20 +369,9 @@ function SimulationBadge() {
 
 // Icons — 24×24, 2px stroke
 
-const iconProps = {
-  'aria-hidden': true,
-  className: 'h-5 w-5',
-  fill: 'none',
-  stroke: 'currentColor',
-  strokeLinecap: 'round',
-  strokeLinejoin: 'round',
-  strokeWidth: 2,
-  viewBox: '0 0 24 24',
-} as const;
-
 function UsersIcon() {
   return (
-    <svg {...iconProps}>
+    <svg aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
       <circle cx="9" cy="7" r="4" />
       <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -370,7 +382,7 @@ function UsersIcon() {
 
 function TeacherIcon() {
   return (
-    <svg {...iconProps}>
+    <svg aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
       <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
       <path d="M6 12v5c3 3 9 3 12 0v-5" />
     </svg>
@@ -379,7 +391,7 @@ function TeacherIcon() {
 
 function GuardianIcon() {
   return (
-    <svg {...iconProps}>
+    <svg aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
       <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
       <circle cx="9" cy="7" r="4" />
       <path d="M19 8v6M22 11h-6" />
@@ -389,7 +401,7 @@ function GuardianIcon() {
 
 function ArchiveIcon() {
   return (
-    <svg {...iconProps}>
+    <svg aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
       <polyline points="21 8 21 21 3 21 3 8" />
       <rect height="5" width="22" x="1" y="3" rx="1" />
       <line x1="10" x2="14" y1="12" y2="12" />
@@ -399,7 +411,7 @@ function ArchiveIcon() {
 
 function SchoolIcon() {
   return (
-    <svg {...iconProps} className="h-4 w-4">
+    <svg aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
       <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
       <path d="M6 12v5c3 3 9 3 12 0v-5" />
     </svg>
@@ -408,7 +420,7 @@ function SchoolIcon() {
 
 function ActivityIcon() {
   return (
-    <svg {...iconProps} className="h-4 w-4">
+    <svg aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
       <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
     </svg>
   );

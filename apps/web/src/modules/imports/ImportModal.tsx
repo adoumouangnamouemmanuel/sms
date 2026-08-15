@@ -155,19 +155,19 @@ function ChooseStep({
       </p>
 
       <button
-        className="cursor-pointer rounded-xl border border-teal-200 bg-teal-50 px-3 py-2 text-[12px] font-bold text-teal-700 hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-50"
+        className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-teal-200/80 bg-teal-50 px-4 py-2 text-xs font-bold uppercase tracking-wider text-teal-700 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-teal-100 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 disabled:cursor-not-allowed disabled:opacity-50"
         disabled={isBusy || isSessionExpired}
         onClick={onDownloadTemplate}
         type="button"
       >
-        {t('imports.choose.downloadTemplate')}
+        <span className="relative z-10">{t('imports.choose.downloadTemplate')}</span>
       </button>
 
       <label
-        className={`flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed px-4 py-6 text-center transition-colors focus-within:ring-2 focus-within:ring-teal-400 ${
+        className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[32px] border-2 border-dashed px-4 py-10 text-center transition-all duration-300 focus-within:ring-2 focus-within:ring-teal-400 ${
           isDraggingOver
-            ? 'border-teal-400 bg-teal-50/60'
-            : 'border-slate-300 bg-slate-50 hover:border-teal-300 hover:bg-slate-100/50'
+            ? 'border-teal-400 bg-teal-50/60 shadow-[0_0_30px_-5px_rgba(20,184,166,0.3)]'
+            : 'border-slate-200 bg-slate-50 hover:border-teal-300 hover:bg-white hover:shadow-[0_4px_20px_-5px_rgba(0,0,0,0.05)]'
         }`}
         onDragEnter={(event) => {
           event.preventDefault();
@@ -231,9 +231,9 @@ function ChooseStep({
         onSessionExpired={onSessionExpired}
       />
 
-      <div className="flex justify-end">
+      <div className="flex justify-end pt-2">
         <button
-          className="cursor-pointer rounded-xl bg-teal-500 px-4 py-2 text-[13px] font-bold text-white hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-50"
+          className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-teal-500 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_20px_-5px_rgba(20,184,166,0.5)] transition-all hover:scale-105 hover:bg-teal-400 hover:shadow-[0_0_30px_-5px_rgba(20,184,166,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none"
           disabled={isBusy || !selectedFile || isSessionExpired}
           onClick={() => {
             if (!selectedFile) {
@@ -251,7 +251,9 @@ function ChooseStep({
           }}
           type="button"
         >
-          {isBusy ? t('imports.choose.analyzing') : t('imports.choose.analyze')}
+          <span className="relative z-10">
+            {isBusy ? t('imports.choose.analyzing') : t('imports.choose.analyze')}
+          </span>
         </button>
       </div>
     </div>
@@ -308,7 +310,7 @@ function PreviewStep({
         ) : null}
       </div>
 
-      <div className="max-h-96 overflow-auto rounded-xl border border-slate-100">
+      <div className="max-h-[26rem] overflow-auto rounded-3xl border border-slate-100 shadow-sm">
         <table className="w-full min-w-[640px] border-collapse whitespace-nowrap">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/70 text-left">
@@ -380,11 +382,11 @@ function PreviewStep({
 
       {preview.errorRows > 0 ? (
         <button
-          className="cursor-pointer rounded-xl border border-slate-200 bg-white px-3 py-2 text-[12px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700"
+          className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-slate-200/80 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-teal-300 hover:text-teal-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
           onClick={onDownloadErrors}
           type="button"
         >
-          {t('imports.preview.downloadErrors')}
+          <span className="relative z-10">{t('imports.preview.downloadErrors')}</span>
         </button>
       ) : null}
 
@@ -412,16 +414,18 @@ function PreviewStep({
         onSessionExpired={onSessionExpired}
       />
 
-      <div className="flex justify-end">
+      <div className="flex justify-end pt-2">
         <button
-          className="cursor-pointer rounded-xl bg-teal-500 px-4 py-2 text-[13px] font-bold text-white hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-50"
+          className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-teal-500 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_20px_-5px_rgba(20,184,166,0.5)] transition-all hover:scale-105 hover:bg-teal-400 hover:shadow-[0_0_30px_-5px_rgba(20,184,166,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none"
           disabled={isBusy || !identifier.trim() || isSessionExpired}
           onClick={() => {
             onConfirm(identifier);
           }}
           type="button"
         >
-          {isBusy ? t('imports.confirm.confirming') : t('imports.confirm.submit')}
+          <span className="relative z-10">
+            {isBusy ? t('imports.confirm.confirming') : t('imports.confirm.submit')}
+          </span>
         </button>
       </div>
     </div>
@@ -463,13 +467,13 @@ function ReportStep({
         {t('imports.report.identifier', { identifier: report.importIdentifier })}
       </p>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end pt-2">
         <button
-          className="cursor-pointer rounded-xl bg-teal-500 px-4 py-2 text-[13px] font-bold text-white hover:bg-teal-400"
+          className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-teal-500 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_20px_-5px_rgba(20,184,166,0.5)] transition-all hover:scale-105 hover:bg-teal-400 hover:shadow-[0_0_30px_-5px_rgba(20,184,166,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
           onClick={onClose}
           type="button"
         >
-          {t('imports.close')}
+          <span className="relative z-10">{t('imports.close')}</span>
         </button>
       </div>
     </div>
@@ -493,9 +497,9 @@ function ReportCount({
         : 'border-slate-200 bg-slate-50 text-slate-600';
 
   return (
-    <div className={`rounded-xl border px-3 py-2 text-center ${toneClasses}`}>
-      <p className="text-lg font-black leading-tight">{value}</p>
-      <p className="text-[10px] font-bold uppercase tracking-wide">{label}</p>
+    <div className={`rounded-3xl border px-3 py-4 text-center shadow-sm ${toneClasses}`}>
+      <p className="text-3xl font-black leading-tight tracking-tight">{value}</p>
+      <p className="mt-1 text-[10px] font-bold uppercase tracking-wide opacity-80">{label}</p>
     </div>
   );
 }

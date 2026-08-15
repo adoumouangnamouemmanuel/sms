@@ -79,61 +79,73 @@ export function SettingsModule({
   };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="mx-auto max-w-5xl space-y-6">
       {/* ── School identity hero ─────────────────────────────────────────── */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-[#0f172a] via-[#0a1628] to-[#061020] p-7 text-white shadow-2xl">
+      <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 p-8 text-white shadow-2xl lg:p-10">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-teal-500/20 blur-3xl"
+          className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-teal-500/20 blur-[80px]"
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -bottom-32 -left-16 h-72 w-72 rounded-full bg-indigo-500/10 blur-3xl"
+          className="pointer-events-none absolute -bottom-32 -left-16 h-72 w-72 rounded-full bg-indigo-500/20 blur-[80px]"
         />
-        <div className="relative flex flex-wrap items-center gap-5">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-400 to-teal-600 text-xl font-black text-white shadow-lg shadow-teal-950/40 ring-1 ring-white/20">
+        <div className="relative flex flex-wrap items-center gap-6">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[24px] bg-gradient-to-br from-teal-400 to-teal-600 text-3xl font-black text-white shadow-[0_0_40px_-10px_rgba(45,212,191,0.5)] ring-1 ring-white/20">
             {(school.shortName ?? school.name).slice(0, 2).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-teal-300">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-teal-300/80">
               {t('settings.hero.eyebrow')}
             </p>
-            <h1 className="mt-1 text-2xl font-black tracking-tight">{school.name}</h1>
-            <p className="mt-0.5 text-[12px] font-bold text-slate-300">
-              {school.city ?? school.shortName ?? ''}
-              {school.ministryCode ? ` · ${school.ministryCode}` : ''}
-            </p>
+            <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">{school.name}</h1>
+            <div className="mt-2 flex items-center gap-2 text-sm font-bold text-slate-300">
+              <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 backdrop-blur-md">
+                {school.city ?? school.shortName ?? ''}
+              </span>
+              {school.ministryCode ? (
+                <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 backdrop-blur-md">
+                  {school.ministryCode}
+                </span>
+              ) : null}
+            </div>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-400/30 bg-teal-500/15 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-teal-200">
-              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-teal-300" />
+          <div className="flex flex-col items-end gap-3">
+            <span className="inline-flex items-center gap-2 rounded-full border border-teal-400/30 bg-teal-500/15 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-teal-200 backdrop-blur-md shadow-[0_0_20px_-5px_rgba(45,212,191,0.3)]">
+              <span aria-hidden="true" className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-400 opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-teal-300"></span>
+              </span>
               {t('settings.hero.status')}
             </span>
-            <p className="font-mono text-[11px] font-bold text-slate-400">{school.code}</p>
+            <p className="font-mono text-xs font-bold text-slate-400/80">{school.code}</p>
           </div>
         </div>
       </section>
 
       {saved && (
-        <p className="rounded-2xl border border-teal-200 bg-teal-50 px-4 py-3 text-[13px] font-bold text-teal-700 shadow-sm">
+        <div className="flex items-center gap-3 rounded-2xl border border-teal-200 bg-teal-50 p-4 text-sm font-bold text-teal-700 shadow-sm">
+          <svg className="h-5 w-5 shrink-0 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
           {t('settings.saved')}
-        </p>
+        </div>
       )}
 
       {/* ── School profile ───────────────────────────────────────────────── */}
-      <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-        <div className="mb-5 flex items-center justify-between gap-3">
+      <section className="flex flex-col rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] lg:p-8">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <SectionTitle icon={<BuildingIcon />} title={t('settings.profile.title')} />
           {!isEditing && (
             <button
-              className="cursor-pointer rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-[12px] font-bold text-slate-600 transition hover:border-teal-300 hover:text-teal-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+              className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-slate-200/80 bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-teal-300 hover:text-teal-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
               onClick={() => {
                 setErrorKey(null);
                 setIsEditing(true);
               }}
               type="button"
             >
-              {t('settings.profile.edit')}
+              <span className="relative z-10">{t('settings.profile.edit')}</span>
             </button>
           )}
         </div>
@@ -200,14 +212,17 @@ export function SettingsModule({
             />
 
             {errorKey ? (
-              <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[12px] font-bold text-red-700">
+              <div className="flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700 shadow-sm">
+                <svg className="h-5 w-5 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
                 {t(errorKey)}
-              </p>
+              </div>
             ) : null}
 
-            <div className="flex justify-end gap-2">
+            <div className="mt-6 flex items-center justify-end gap-3 border-t border-slate-100 pt-6">
               <button
-                className="cursor-pointer rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-bold text-slate-500 hover:bg-slate-50"
+                className="cursor-pointer rounded-2xl border border-slate-200/80 bg-white px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50"
                 disabled={isSaving}
                 onClick={() => {
                   setIsEditing(false);
@@ -219,7 +234,7 @@ export function SettingsModule({
                 {t('settings.cancel')}
               </button>
               <button
-                className="cursor-pointer rounded-xl bg-teal-500 px-4 py-2 text-[13px] font-bold text-white transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-50"
+                className="cursor-pointer rounded-2xl bg-teal-500 px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_20px_-5px_rgba(20,184,166,0.5)] transition-all hover:scale-105 hover:bg-teal-400 hover:shadow-[0_0_30px_-5px_rgba(20,184,166,0.6)] disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={isSaving}
                 onClick={() => {
                   void handleSave();
@@ -231,7 +246,7 @@ export function SettingsModule({
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-x-10 gap-y-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-x-12 gap-y-2 sm:grid-cols-2">
             <DetailRow icon={<PinIcon />} label={t('settings.profile.city')} value={school.city} />
             <DetailRow
               icon={<MapIcon />}
@@ -272,11 +287,11 @@ export function SettingsModule({
         )}
       </section>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* ── Calendar ────────────────────────────────────────────────────── */}
-        <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+        <section className="flex flex-col rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] lg:p-8">
           <SectionTitle icon={<CalendarIcon />} title={t('settings.calendar.title')} />
-          <div className="mt-4 space-y-4">
+          <div className="space-y-2">
             <DetailRow
               icon={<YearIcon />}
               label={t('settings.calendar.academicYear')}
@@ -295,16 +310,18 @@ export function SettingsModule({
                 value={`${formatDate(term.startDate)} → ${formatDate(term.endDate)}`}
               />
             ))}
-            <p className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-[11px] font-semibold text-slate-400">
-              {t('settings.calendar.hint')}
-            </p>
+            <div className="mt-6 rounded-2xl border border-slate-200/60 bg-slate-50/50 p-4">
+              <p className="text-xs font-semibold leading-relaxed text-slate-500">
+                {t('settings.calendar.hint')}
+              </p>
+            </div>
           </div>
         </section>
 
         {/* ── System ──────────────────────────────────────────────────────── */}
-        <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+        <section className="flex flex-col rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] lg:p-8">
           <SectionTitle icon={<ChipIcon />} title={t('settings.system.title')} />
-          <div className="mt-4 space-y-4">
+          <div className="space-y-2">
             <DetailRow
               icon={<GlobeIcon />}
               label={t('settings.system.locale')}
@@ -329,14 +346,14 @@ export function SettingsModule({
         </section>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* ── Modules ─────────────────────────────────────────────────────── */}
-        <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+        <section className="flex flex-col rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] lg:p-8">
           <SectionTitle icon={<ModulesIcon />} title={t('settings.modules.title')} />
-          <ul className="mt-4 space-y-2.5">
+          <ul className="space-y-3">
             {enabledModules.map((module) => (
               <li
-                className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3"
+                className="group flex items-center gap-4 rounded-3xl border border-slate-200/60 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
                 key={module.id}
               >
                 <span
@@ -355,7 +372,7 @@ export function SettingsModule({
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 </span>
-                <span className="text-[13px] font-bold text-slate-700">
+                <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors">
                   {t(`setup.modules.${module.moduleName}`)}
                 </span>
               </li>
@@ -364,16 +381,16 @@ export function SettingsModule({
         </section>
 
         {/* ── Session & access ────────────────────────────────────────────── */}
-        <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+        <section className="flex flex-col rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] lg:p-8">
           <SectionTitle icon={<LockIcon />} title={t('settings.session.title')} />
-          <div className="mt-4 space-y-4">
-            <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-500 text-[12px] font-black text-white">
+          <div className="space-y-6">
+            <div className="group flex items-center gap-4 rounded-3xl border border-slate-200/60 bg-white p-4 shadow-sm transition-all hover:border-teal-200/60 hover:shadow-md">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[20px] bg-gradient-to-br from-teal-400 to-teal-600 text-sm font-black text-white shadow-sm ring-1 ring-white/20">
                 {getInitials(user.username)}
               </div>
               <div className="min-w-0">
-                <p className="text-[13px] font-black text-slate-800">{user.username}</p>
-                <p className="text-[11px] font-bold text-teal-600">
+                <p className="text-[15px] font-black text-slate-900">{user.username}</p>
+                <p className="mt-0.5 text-[12px] font-bold uppercase tracking-wider text-teal-600">
                   {t(`auth.roles.${user.role}`)}
                 </p>
               </div>
@@ -381,9 +398,11 @@ export function SettingsModule({
             {/* TODO(roadmap §Users & permissions): real account management
                 (invite, deactivate, reset password for other users) ships with
                 the dedicated module. */}
-            <p className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-[11px] font-semibold text-slate-400">
-              {t('settings.session.hint')}
-            </p>
+            <div className="rounded-2xl border border-slate-200/60 bg-slate-50/50 p-4">
+              <p className="text-xs font-semibold leading-relaxed text-slate-500">
+                {t('settings.session.hint')}
+              </p>
+            </div>
           </div>
         </section>
       </div>
@@ -397,12 +416,14 @@ export function SettingsModule({
 
 function SectionTitle({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
-    <h2 className="flex items-center gap-2.5 text-[13px] font-black uppercase tracking-wide text-slate-800">
-      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-50 text-teal-600 ring-1 ring-teal-100">
+    <div className="mb-8 flex items-center gap-4">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-teal-600 ring-1 ring-inset ring-teal-100/50">
         {icon}
-      </span>
-      {title}
-    </h2>
+      </div>
+      <h2 className="text-base font-black tracking-tight text-slate-900">
+        {title}
+      </h2>
+    </div>
   );
 }
 
@@ -416,10 +437,10 @@ function ProfileField({
   value: string;
 }) {
   return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-[13px] font-bold text-slate-800">{label}</span>
+    <label className="flex flex-col gap-2">
+      <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">{label}</span>
       <input
-        className={formInputClassName}
+        className={`${formInputClassName} h-12 rounded-2xl border-slate-200/80 bg-white text-sm font-bold shadow-sm placeholder:text-slate-400 focus:border-teal-500 focus:ring-teal-500 transition-colors hover:bg-slate-50 focus:hover:bg-white`}
         onChange={(event) => {
           onChange(event.target.value);
         }}
@@ -442,18 +463,18 @@ function DetailRow({
   const isEmpty = !value || value.trim().length === 0;
 
   return (
-    <div className="flex items-center gap-3">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400 ring-1 ring-slate-100">
+    <div className="group flex items-center gap-4 rounded-3xl border border-transparent p-2 transition-all hover:border-slate-200/60 hover:bg-slate-50/50">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-50 text-slate-400 ring-1 ring-slate-200/80 transition-colors group-hover:bg-white group-hover:text-teal-600 group-hover:ring-teal-200/80">
         {icon}
       </span>
       <div className="min-w-0">
-        <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{label}</p>
+        <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-500 transition-colors">{label}</p>
         {isEmpty ? (
-          <p className="text-[13px] font-semibold italic text-slate-300">
+          <p className="text-[14px] font-bold italic text-slate-300">
             {t('settings.emptyValue')}
           </p>
         ) : (
-          <p className="truncate text-[13px] font-bold text-slate-800">{value}</p>
+          <p className="truncate text-[14px] font-black text-slate-800 group-hover:text-slate-950 transition-colors">{value}</p>
         )}
       </div>
     </div>

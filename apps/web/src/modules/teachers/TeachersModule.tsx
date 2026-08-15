@@ -60,12 +60,12 @@ export function TeachersModule({
     <section aria-label={t('teachers.title')} className="mx-auto max-w-5xl">
       <style>{`@keyframes sms-fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-teal-700">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1.5">
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-teal-600">
             {t('teachers.eyebrow')}
           </p>
-          <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+          <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
             {t('teachers.title')}
           </h1>
         </div>
@@ -98,7 +98,7 @@ export function TeachersModule({
         />
       ) : (
         <div
-          className="rounded-3xl border border-white bg-white p-6 shadow-sm"
+          className="flex flex-col rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] lg:p-8"
           style={{ animation: 'sms-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both' }}
         >
           <ListToolbar
@@ -379,40 +379,43 @@ function TeacherDetail({
 
   return (
     <div
-      className="rounded-3xl border border-white bg-white p-6 shadow-sm"
+      className="flex flex-col rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] lg:p-8"
       style={{ animation: 'sms-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both' }}
     >
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <button
-            className="mb-3 cursor-pointer text-[12px] font-bold text-slate-400 hover:text-teal-700"
+            className="mb-4 inline-flex cursor-pointer items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-slate-400 transition-colors hover:text-teal-600"
             onClick={onBack}
             type="button"
           >
-            ← {t('teachers.actions.back')}
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            {t('teachers.actions.back')}
           </button>
-          <h2 className="text-xl font-black tracking-tight text-slate-950">
+          <h2 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
             {teacher.lastName} {teacher.firstName}
           </h2>
-          <p className="mt-1 font-mono text-[12px] font-bold text-slate-400">{teacher.code}</p>
+          <p className="mt-2 font-mono text-[13px] font-bold text-slate-500">{teacher.code}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <StatusBadge
             active={teacher.isActive}
             activeLabel={t('teachers.status.active')}
             archivedLabel={t('teachers.status.archived')}
           />
           <button
-            className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700"
+            className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-slate-200/80 bg-white px-5 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-teal-300 hover:text-teal-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
             onClick={() => {
               onEdit(teacher);
             }}
             type="button"
           >
-            {t('teachers.actions.edit')}
+            <span className="relative z-10">{t('teachers.actions.edit')}</span>
           </button>
           <button
-            className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-red-300 hover:text-red-600"
+            className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-slate-200/80 bg-white px-5 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-red-300 hover:text-red-600 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
             onClick={() => {
               onSetArchiveTarget({
                 id: teacher.id,
@@ -422,7 +425,9 @@ function TeacherDetail({
             }}
             type="button"
           >
-            {teacher.isActive ? t('teachers.actions.archive') : t('teachers.actions.reactivate')}
+            <span className="relative z-10">
+              {teacher.isActive ? t('teachers.actions.archive') : t('teachers.actions.reactivate')}
+            </span>
           </button>
         </div>
       </div>
@@ -482,48 +487,48 @@ function LoginSection({
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h3 className="text-[13px] font-black uppercase tracking-wide text-slate-500">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h3 className="text-[13px] font-black uppercase tracking-widest text-slate-500">
           {t('teachers.login.title')}
         </h3>
         {login ? (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             {login.isActive ? (
               <>
                 <button
-                  className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700"
+                  className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-slate-200/80 bg-white px-5 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-teal-300 hover:text-teal-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
                   onClick={() => {
                     onReset(login.username);
                   }}
                   type="button"
                 >
-                  {t('teachers.login.reset')}
+                  <span className="relative z-10">{t('teachers.login.reset')}</span>
                 </button>
                 <button
-                  className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-red-300 hover:text-red-600"
+                  className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-slate-200/80 bg-white px-5 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:text-amber-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
                   onClick={onDeactivate}
                   type="button"
                 >
-                  {t('teachers.login.deactivate')}
+                  <span className="relative z-10">{t('teachers.login.deactivate')}</span>
                 </button>
               </>
             ) : (
               <button
-                className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700"
+                className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-slate-200/80 bg-white px-5 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-teal-300 hover:text-teal-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
                 onClick={onReactivate}
                 type="button"
               >
-                {t('teachers.login.reactivate')}
+                <span className="relative z-10">{t('teachers.login.reactivate')}</span>
               </button>
             )}
           </div>
         ) : recordActive ? (
           <button
-            className="cursor-pointer rounded-lg bg-teal-500 px-3 py-1.5 text-[12px] font-bold text-white hover:bg-teal-400"
+            className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-teal-500 px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_20px_-5px_rgba(20,184,166,0.5)] transition-all hover:scale-105 hover:bg-teal-400 hover:shadow-[0_0_30px_-5px_rgba(20,184,166,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
             onClick={onCreate}
             type="button"
           >
-            {t('teachers.login.create')}
+            <span className="relative z-10">{t('teachers.login.create')}</span>
           </button>
         ) : null}
       </div>
