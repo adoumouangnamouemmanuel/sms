@@ -91,6 +91,23 @@ describe('guardian repository', () => {
     expect(repository.listActive()).toHaveLength(1);
   });
 
+  it('lists archived guardians separately from active ones', () => {
+    const [school] = foundationSeed.schools;
+    const repository = createGuardianRepository(db, createTenantContext(school.id));
+
+    repository.create({ firstName: 'Fatime', lastName: 'Abakar' });
+    const archived = repository.create({ firstName: 'Mahamat', lastName: 'Ousmane' });
+    repository.archive(archived.id, '2026-08-15T10:00:00.000Z');
+
+    expect(repository.list().map((guardianRecord) => guardianRecord.lastName)).toEqual(['Abakar']);
+    expect(
+      repository.list({ status: 'archived' }).map((guardianRecord) => guardianRecord.lastName)
+    ).toEqual(['Ousmane']);
+    expect(repository.count()).toBe(1);
+    expect(repository.count({ status: 'archived' })).toBe(1);
+    expect(repository.list({ status: 'archived', search: 'Abakar' })).toHaveLength(0);
+  });
+
   it('updates only the explicitly provided fields', () => {
     const [school] = foundationSeed.schools;
     const repository = createGuardianRepository(db, createTenantContext(school.id));
