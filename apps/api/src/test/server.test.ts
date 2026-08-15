@@ -298,11 +298,11 @@ describe('api sidecar foundation', () => {
       process.env.NODE_ENV = 'production';
       delete process.env.AUTH_ACCESS_TOKEN_SECRET;
       connection = openEduTrackDatabase(':memory:');
-      const database: EduTrackDatabase = connection.db;
+      const databaseWithoutSecret: EduTrackDatabase = connection.db;
 
       expect(() =>
         buildServer({
-          database,
+          database: databaseWithoutSecret,
           databaseStatus,
           logger: false,
           security: {
@@ -317,10 +317,11 @@ describe('api sidecar foundation', () => {
 
       process.env.AUTH_ACCESS_TOKEN_SECRET = 'phase-2-server-test-secret';
       connection = openEduTrackDatabase(':memory:');
+      const databaseWithSecret: EduTrackDatabase = connection.db;
 
       expect(() =>
         buildServer({
-          database: connection.db,
+          database: databaseWithSecret,
           databaseStatus,
           logger: false,
           security: {
