@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Workspace packages**: Added `@edutrack/domain`, `@edutrack/shared`, and `@edutrack/ui` package boundaries.
 - **Setup wizard**: Added the authenticated Phase 2 school setup flow for school profile, academic year, terms, class levels, and implemented-module navigation.
 - **Phase 3 data model**: Added `student`, `guardian`, `student_guardian` and `teacher` tables with strict tenant-local code uniqueness, composite tenant foreign keys, soft-archive lifecycle columns, and tenant-scoped repositories for each.
+- **Students module (Phase 3.2)**: Added the `STUDENTS` school module and a students/guardians slice — searchable paginated lists, profile views, generated `{school}-{year}-{NNI}` codes with strict uniqueness, multi-guardian links with at-most-one primary, archive/reactivate with audit reasons, and a French-first web UI in the app shell.
 
 ### Changed
 
