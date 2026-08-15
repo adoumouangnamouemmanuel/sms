@@ -298,10 +298,12 @@ describe('Phase 3 §9.5 gate', () => {
     return (readJson(response) as ApiSuccess<AuthTokenResponse>).data.accessToken;
   }
 
-  function countRows(table: string) {
-    const row = sqlite.prepare(`SELECT COUNT(*) AS value FROM ${table}`).get() as {
-      value: number;
-    };
+  function countRows(
+    table: 'student' | 'teacher' | 'guardian' | 'student_guardian' | 'import_batch'
+  ) {
+    const row = sqlite
+      .prepare(`SELECT COUNT(*) AS value FROM ${table} WHERE school_id = ?`)
+      .get(firstSchoolId) as { value: number };
     return row.value;
   }
 
