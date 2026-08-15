@@ -127,6 +127,37 @@ export function buildServer(options: BuildServerOptions = {}) {
   const authEnabled =
     options.auth?.enabled ?? (Boolean(options.database) || process.env.NODE_ENV !== 'test');
 
+  server.setNotFoundHandler((_request, reply) => {
+    return reply.code(404).send({
+      success: false,
+      error: {
+        code: 'ROUTE_NOT_FOUND',
+        message: 'La route demandee est introuvable.',
+      },
+    });
+  });
+
+  server.setErrorHandler((error, request, reply) => {
+    // Requests that already sent a response must not be answered twice.
+    if (reply.sent) {
+      request.log.error({ err: error }, 'Unhandled error after response started');
+      return;
+    }
+
+    request.log.error(
+      { err: error, method: request.method, url: request.url },
+      'Unhandled error during request handling'
+    );
+
+    return reply.code(500).send({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Une erreur interne est survenue. Réessayez.',
+      },
+    });
+  });
+
   server.addHook('onRequest', async (request, reply) => {
     const origin = readSingleHeader(request.headers.origin);
 
