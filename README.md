@@ -235,16 +235,29 @@ Builds individual workspace packages.
 ```text
 apps/
   api/       Fastify local sidecar API
+    src/modules/   Feature modules (auth, setup, ...)
+    src/test/      API integration tests
   desktop/   Tauri desktop shell
   web/       Vite React product UI
+    src/modules/   Feature modules (auth, setup, app, ...)
+    src/test/      Component and unit tests
 packages/
   db/        Drizzle SQLite schema and database tooling
+    src/repositories/  Tenant-scoped repositories
+    src/test/          Database integration tests
+    migrations/sqlite/ Committed SQLite migrations
   domain/    Pure domain rules and calculations
   shared/    Shared constants, transport types, and validation
   ui/        Reusable UI components
 docs/
   decisions/ Architecture Decision Records
+  database/  Schema documentation
+scripts/     Repeatable development, seed, build, and release scripts
+tests/
+  e2e/       Playwright end-to-end tests
 ```
+
+Each package and app groups its tests under a `src/test/` directory so unit, integration and component tests sit together next to the code they verify. Shared Playwright end-to-end tests live in `tests/e2e`, and committed SQLite migrations live in `packages/db/migrations/sqlite`.
 
 ## Version 1 Scope Notes
 
