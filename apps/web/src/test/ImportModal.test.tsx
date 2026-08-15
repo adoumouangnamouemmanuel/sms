@@ -1,3 +1,4 @@
+import { act } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ConfirmImportResponse, ImportPreviewResponse } from '@edutrack/shared';
@@ -201,27 +202,51 @@ describe('ImportModal', () => {
   });
 
   it('prefills the import identifier from the file name and lets the user edit it', async () => {
-    const userSession = userEvent.setup();
-    const client = createImportsClient({ previewImport: vi.fn().mockResolvedValue(preview) });
+    // Freeze the clock so the suggested identifier is deterministic (no
+    // midnight-UTC rollover flake) and the assertion is stable.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-15T10:00:00.000Z'));
 
-    const view = render(
-      <ImportModal
-        apiBaseUrl="http://127.0.0.1:49152"
-        client={client}
-        kind="STUDENTS"
-        onClose={vi.fn()}
-      />
-    );
+    try {
+      const client = createImportsClient({ previewImport: vi.fn().mockResolvedValue(preview) });
 
-    await uploadFile(userSession, view.container, 'eleves.xlsx');
-    await userSession.click(screen.getByRole('button', { name: 'Analyser le fichier' }));
-    await screen.findByText('2 valides');
+      const view = render(
+        <ImportModal
+          apiBaseUrl="http://127.0.0.1:49152"
+          client={client}
+          kind="STUDENTS"
+          onClose={vi.fn()}
+        />
+      );
 
-    const expected = `eleves-${new Date().toISOString().slice(0, 10)}`;
-    expect(screen.getByPlaceholderText('Ex. rentree-2026-09-01')).toHaveValue(expected);
+      const fileInput = view.container.querySelector('input[type="file"]');
+      if (!(fileInput instanceof HTMLInputElement)) {
+        throw new Error('file input not found');
+      }
+      fireEvent.change(fileInput, {
+        target: {
+          files: [
+            new File(['fake'], 'eleves.xlsx', {
+              type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            }),
+          ],
+        },
+      });
+      await flushMicrotasks();
+      fireEvent.click(screen.getByRole('button', { name: 'Analyser le fichier' }));
+      await flushMicrotasks();
 
-    await userSession.clear(screen.getByPlaceholderText('Ex. rentree-2026-09-01'));
-    await userSession.type(screen.getByPlaceholderText('Ex. rentree-2026-09-01'), 'rentree-2026');
+      expect(screen.getByPlaceholderText('Ex. rentree-2026-09-01')).toHaveValue(
+        'eleves-2026-08-15'
+      );
+
+      fireEvent.change(screen.getByPlaceholderText('Ex. rentree-2026-09-01'), {
+        target: { value: 'rentree-2026' },
+      });
+      expect(screen.getByPlaceholderText('Ex. rentree-2026-09-01')).toHaveValue('rentree-2026');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('confirms the import and shows the report', async () => {
@@ -364,6 +389,14 @@ describe('ImportModal', () => {
     expect(downloadErrorsCsv).toHaveBeenCalledWith('preview-1', expect.any(Object));
   });
 });
+
+async function flushMicrotasks() {
+  // Flushes the resolved preview promise and the resulting re-render under
+  // fake timers (which never fire real setTimeout callbacks).
+  await act(async () => {
+    await Promise.resolve();
+  });
+}
 
 async function uploadFile(
   userSession: ReturnType<typeof userEvent.setup>,
