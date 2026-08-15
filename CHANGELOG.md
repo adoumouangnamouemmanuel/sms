@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Guardian import (Phase 3.4)**: Added the `GUARDIANS` import kind (own template, no code column), guardian preview/confirm, and sample files in `docs/import-templates/`.
 - **Guardian import linking (Phase 3.4)**: Added an optional `Code élève` column to the guardian template — when filled, the imported guardian is automatically linked to the matching student at confirm (relationship `AUTRE`); an unknown student code rejects the row at preview with a clear French message.
 - **Phase 3.9.5 gate**: Added `apps/api/src/test/imports.gate.test.ts` — a 1,000-row import load test covering duplicate-free integrity, reimport idempotency, and duplicate names distinguishable by code (ADR-011).
+- **Phase 4.1 data model (classes and curriculum)**: Added the `subject`, `classroom`, `class_subject`, `class_enrollment` and `student_subject_enrollment` tables (migrations 0009–0010) with composite tenant foreign keys, partial unique indexes (year-local classroom codes, one ACTIVE class enrollment per student/year, optional-subject links), and domain CHECK constraints (subject category, coefficient ≥ 1, enrollment status, capacity). Five tenant-scoped repositories with two-school isolation, constraint and soft-delete re-link coverage, plus a migration test on a non-empty Phase 3 database. Shared constants `SUBJECT_CATEGORIES`, `ENROLLMENT_STATUSES` and `MAX_GRADE_HUNDREDTHS` (20.00 policy) live in `@edutrack/shared` for later slices.
 
 ### Changed
 
