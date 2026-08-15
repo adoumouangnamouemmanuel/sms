@@ -78,6 +78,29 @@ export class ImportsService {
       throw emptyImportFile();
     }
 
+    // Advisory duplicate warnings (never blocking): a row whose code — or, for
+    // uncoded rows, whose exact full name — already exists in the school. Names
+    // are deliberately NOT treated as identity: two real people can share an
+    // exact name, so this only flags the row for the admin to double-check.
+    const tenant = createTenantContext(actor.schoolId);
+    const repository =
+      kind === 'STUDENTS'
+        ? createStudentRepository(this.db, tenant)
+        : createTeacherRepository(this.db, tenant);
+
+    for (const row of parsed.rows) {
+      if (row.errors.length > 0) {
+        continue;
+      }
+
+      const explicitCode = row.values.code?.trim();
+      row.possibleDuplicate = explicitCode
+        ? Boolean(repository.findByCode(normalizePeopleCode(explicitCode)))
+        : Boolean(
+            repository.findByName(row.values.firstName ?? '', row.values.lastName ?? '')
+          );
+    }
+
     const stored = importPreviewStore.create({
       kind,
       schoolId: actor.schoolId,
@@ -138,16 +161,14 @@ export class ImportsService {
 
         for (const row of validRows) {
           const explicitCode = row.values.code?.trim();
-          const firstName = row.values.firstName ?? '';
-          const lastName = row.values.lastName ?? '';
 
-          // Codes are the strong identity: a code already present in the school
-          // (including archived rows) is skipped. Rows without a code fall back
-          // to an exact full-name check so re-importing the same file under a
-          // new identifier cannot create duplicate people.
+          // Codes are the ONLY identity: a code already present in the school
+          // (including archived rows) is skipped. Uncoded rows are always
+          // imported — the preview already warned the admin about possible
+          // name matches, because two real people can share an exact name.
           const alreadyPresent = explicitCode
             ? Boolean(repository.findByCode(normalizePeopleCode(explicitCode)))
-            : Boolean(repository.findByName(firstName, lastName));
+            : false;
 
           if (alreadyPresent) {
             skippedExisting += 1;
@@ -369,6 +390,7 @@ function toPreviewRow(row: ParsedImportRow): ImportPreviewRow {
     lastName: row.values.lastName ?? '',
     values: row.values,
     errors: row.errors,
+    possibleDuplicate: row.possibleDuplicate,
   };
 }
 
