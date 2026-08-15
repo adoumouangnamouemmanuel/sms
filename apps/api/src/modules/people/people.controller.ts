@@ -2,14 +2,20 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import {
   archiveGuardianRequestSchema,
   archiveStudentRequestSchema,
+  archiveTeacherRequestSchema,
   createGuardianRequestSchema,
   createStudentRequestSchema,
+  createTeacherLoginRequestSchema,
+  createTeacherRequestSchema,
+  deactivateTeacherLoginRequestSchema,
   guardianListQuerySchema,
   linkStudentGuardianRequestSchema,
   studentListQuerySchema,
+  teacherListQuerySchema,
   updateGuardianRequestSchema,
   updateStudentGuardianLinkRequestSchema,
   updateStudentRequestSchema,
+  updateTeacherRequestSchema,
 } from '@edutrack/shared';
 import { AuthServiceError, parseAuthorizationHeader, type AuthService } from '../auth/index.js';
 import { readHeader } from '../auth/auth.cookies.js';
@@ -17,13 +23,15 @@ import type { RequestAuditContext } from '../auth/auth.types.js';
 import type { GuardiansService } from './guardians.service.js';
 import { PeopleServiceError } from './people.errors.js';
 import type { StudentsService } from './students.service.js';
+import type { TeachersService } from './teachers.service.js';
 
 /** Handles people HTTP validation, auth, and response envelopes. */
 export class PeopleController {
   constructor(
     private readonly authService: AuthService,
     private readonly studentsService: StudentsService,
-    private readonly guardiansService: GuardiansService
+    private readonly guardiansService: GuardiansService,
+    private readonly teachersService: TeachersService
   ) {}
 
   readonly listStudents = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -348,6 +356,203 @@ export class PeopleController {
           getRequestAuditContext(request)
         ),
         message: 'Responsable reactive.',
+      });
+    } catch (error) {
+      return sendPeopleError(reply, error);
+    }
+  };
+
+  readonly listTeachers = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedQuery = teacherListQuerySchema.safeParse(request.query);
+
+    if (!parsedQuery.success) {
+      return sendValidationError(reply, parsedQuery.error);
+    }
+
+    try {
+      const actor = await this.authenticateRequest(request);
+
+      return await reply.send({
+        success: true,
+        data: this.teachersService.list(actor, parsedQuery.data),
+        message: 'Liste des professeurs chargee.',
+      });
+    } catch (error) {
+      return sendPeopleError(reply, error);
+    }
+  };
+
+  readonly getTeacherProfile = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const actor = await this.authenticateRequest(request);
+      const teacherId = readParam(request, 'teacherId');
+
+      return await reply.send({
+        success: true,
+        data: this.teachersService.getProfile(actor, teacherId),
+        message: 'Profil du professeur charge.',
+      });
+    } catch (error) {
+      return sendPeopleError(reply, error);
+    }
+  };
+
+  readonly createTeacher = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedBody = createTeacherRequestSchema.safeParse(request.body);
+
+    if (!parsedBody.success) {
+      return sendValidationError(reply, parsedBody.error);
+    }
+
+    try {
+      const actor = await this.authenticateRequest(request);
+
+      return await reply.send({
+        success: true,
+        data: this.teachersService.create(actor, parsedBody.data, getRequestAuditContext(request)),
+        message: 'Professeur enregistre.',
+      });
+    } catch (error) {
+      return sendPeopleError(reply, error);
+    }
+  };
+
+  readonly updateTeacher = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedBody = updateTeacherRequestSchema.safeParse(request.body);
+
+    if (!parsedBody.success) {
+      return sendValidationError(reply, parsedBody.error);
+    }
+
+    try {
+      const actor = await this.authenticateRequest(request);
+
+      return await reply.send({
+        success: true,
+        data: this.teachersService.update(
+          actor,
+          readParam(request, 'teacherId'),
+          parsedBody.data,
+          getRequestAuditContext(request)
+        ),
+        message: 'Professeur mis a jour.',
+      });
+    } catch (error) {
+      return sendPeopleError(reply, error);
+    }
+  };
+
+  readonly archiveTeacher = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedBody = archiveTeacherRequestSchema.safeParse(request.body);
+
+    if (!parsedBody.success) {
+      return sendValidationError(reply, parsedBody.error);
+    }
+
+    try {
+      const actor = await this.authenticateRequest(request);
+
+      return await reply.send({
+        success: true,
+        data: this.teachersService.archive(
+          actor,
+          readParam(request, 'teacherId'),
+          parsedBody.data,
+          getRequestAuditContext(request)
+        ),
+        message: 'Professeur archive.',
+      });
+    } catch (error) {
+      return sendPeopleError(reply, error);
+    }
+  };
+
+  readonly reactivateTeacher = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedBody = archiveTeacherRequestSchema.safeParse(request.body);
+
+    if (!parsedBody.success) {
+      return sendValidationError(reply, parsedBody.error);
+    }
+
+    try {
+      const actor = await this.authenticateRequest(request);
+
+      return await reply.send({
+        success: true,
+        data: this.teachersService.reactivate(
+          actor,
+          readParam(request, 'teacherId'),
+          parsedBody.data,
+          getRequestAuditContext(request)
+        ),
+        message: 'Professeur reactive.',
+      });
+    } catch (error) {
+      return sendPeopleError(reply, error);
+    }
+  };
+
+  readonly createTeacherLogin = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedBody = createTeacherLoginRequestSchema.safeParse(request.body);
+
+    if (!parsedBody.success) {
+      return sendValidationError(reply, parsedBody.error);
+    }
+
+    try {
+      const actor = await this.authenticateRequest(request);
+
+      return await reply.send({
+        success: true,
+        data: await this.teachersService.createLogin(
+          actor,
+          readParam(request, 'teacherId'),
+          getRequestAuditContext(request)
+        ),
+        message: 'Compte de connexion cree.',
+      });
+    } catch (error) {
+      return sendPeopleError(reply, error);
+    }
+  };
+
+  readonly deactivateTeacherLogin = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedBody = deactivateTeacherLoginRequestSchema.safeParse(request.body);
+
+    if (!parsedBody.success) {
+      return sendValidationError(reply, parsedBody.error);
+    }
+
+    try {
+      const actor = await this.authenticateRequest(request);
+
+      return await reply.send({
+        success: true,
+        data: this.teachersService.deactivateLogin(
+          actor,
+          readParam(request, 'teacherId'),
+          parsedBody.data,
+          getRequestAuditContext(request)
+        ),
+        message: 'Compte de connexion desactive.',
+      });
+    } catch (error) {
+      return sendPeopleError(reply, error);
+    }
+  };
+
+  readonly reactivateTeacherLogin = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const actor = await this.authenticateRequest(request);
+
+      return await reply.send({
+        success: true,
+        data: this.teachersService.reactivateLogin(
+          actor,
+          readParam(request, 'teacherId'),
+          getRequestAuditContext(request)
+        ),
+        message: 'Compte de connexion reactive.',
       });
     } catch (error) {
       return sendPeopleError(reply, error);
