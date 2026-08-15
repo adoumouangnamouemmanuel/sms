@@ -542,7 +542,71 @@ describe('imports routes', () => {
     const headers = dataSheet
       ? (XLSX.utils.sheet_to_json<unknown[]>(dataSheet, { header: 1 })[0] ?? [])
       : [];
-    expect(headers).toEqual(['Prénom', 'Nom', 'Téléphone', 'Email', 'Adresse']);
+    expect(headers).toEqual(['Prénom', 'Nom', 'Téléphone', 'Email', 'Adresse', 'Code élève']);
+  });
+
+  it('links imported guardians to students via the optional student code', async () => {
+    sqlite
+      .prepare(
+        `
+          INSERT INTO student (id, school_id, code, first_name, last_name)
+          VALUES (?, ?, ?, ?, ?)
+        `
+      )
+      .run(
+        '00000000-0000-4000-8000-000000000901',
+        firstSchoolId,
+        'NDS-DEMO-2026-X00001',
+        'Ali',
+        'Ahmat'
+      );
+    const accessToken = await loginAndReadAccessToken('directeur');
+    const { payload, contentType } = buildMultipart(
+      guardianWorkbook([
+        ['Fatime', 'Abakar', '+23566000020', null, null, 'NDS-DEMO-2026-X00001'],
+        ['Hawa', 'Djar', null, null, null, 'CODE-INCONNU-99'],
+      ]),
+      'responsables.xlsx'
+    );
+
+    const previewData = await preview(accessToken, payload, contentType, 'GUARDIANS');
+    expect(previewData).toMatchObject({
+      kind: 'GUARDIANS',
+      totalRows: 2,
+      validRows: 1,
+      errorRows: 1,
+    });
+    expect(previewData.rows[1]?.errors).toEqual(['Code élève inconnu dans cette école.']);
+
+    const confirmResponse = await server.inject({
+      method: 'POST',
+      url: '/imports/confirm',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { importId: previewData.importId, importIdentifier: 'responsables-liens' },
+    });
+    // Rows rejected at preview are simply not imported at confirm (the report
+    // only counts rows the confirm pass actually processed).
+    expect((readJson(confirmResponse) as ApiSuccess<ConfirmImportResponse>).data).toMatchObject({
+      alreadyConfirmed: false,
+      imported: 1,
+      skippedExisting: 0,
+      errorRows: 0,
+    });
+
+    // Only the valid guardian was created, and it is linked to the student.
+    expect(countRows('guardian')).toBe(1);
+    const link = sqlite
+      .prepare(
+        `
+          SELECT sg.student_id AS studentId, sg.guardian_id AS guardianId, sg.relationship_type AS relationshipType
+          FROM student_guardian sg
+          WHERE sg.school_id = ? AND sg.deleted_at IS NULL
+        `
+      )
+      .get(firstSchoolId) as
+      { studentId: string; guardianId: string; relationshipType: string } | undefined;
+    expect(link?.studentId).toBe('00000000-0000-4000-8000-000000000901');
+    expect(link?.relationshipType).toBe('AUTRE');
   });
 
   it('downloads rejected rows as a formula-injection-safe CSV', async () => {
@@ -697,7 +761,7 @@ function teacherWorkbook(rows: (string | null)[][]) {
 }
 
 function guardianWorkbook(rows: (string | null)[][]) {
-  const columns = ['Prénom', 'Nom', 'Téléphone', 'Email', 'Adresse'];
+  const columns = ['Prénom', 'Nom', 'Téléphone', 'Email', 'Adresse', 'Code élève'];
   return workbookBuffer(columns, rows);
 }
 
