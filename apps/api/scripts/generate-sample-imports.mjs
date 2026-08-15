@@ -59,8 +59,15 @@ const TEACHER_DESCRIPTIONS = [
   'Optionnel.',
   'Optionnel.',
 ];
-const GUARDIAN_COLUMNS = ['Prénom', 'Nom', 'Téléphone', 'Email', 'Adresse'];
-const GUARDIAN_DESCRIPTIONS = ['Requis.', 'Requis.', 'Optionnel.', 'Optionnel.', 'Optionnel.'];
+const GUARDIAN_COLUMNS = ['Prénom', 'Nom', 'Téléphone', 'Email', 'Adresse', 'Code élève'];
+const GUARDIAN_DESCRIPTIONS = [
+  'Requis.',
+  'Requis.',
+  'Optionnel.',
+  'Optionnel.',
+  'Optionnel.',
+  "Optionnel. Lie automatiquement le responsable à l'élève portant ce code (importé avant ou déjà présent dans l'école).",
+];
 
 mkdirSync(outputDir, { recursive: true });
 
@@ -133,8 +140,15 @@ function writeModeles() {
   );
 
   const guardianExampleRows = [
-    ['Fatime', 'Abakar', '+23566000020', 'fatime.abakar@exemple.td', 'N Djamena'],
-    ['Mahamat', 'Ousmane', '+23566000021', null, null],
+    [
+      'Fatime',
+      'Abakar',
+      '+23566000020',
+      'fatime.abakar@exemple.td',
+      'N Djamena',
+      'NDS-DEMO-2026-X00001',
+    ],
+    ['Mahamat', 'Ousmane', '+23566000021', null, null, null],
   ];
   writeWorkbook(
     'responsables_modele.xlsx',
@@ -235,9 +249,16 @@ function writeExemples() {
     'responsables_exemple.xlsx',
     GUARDIAN_COLUMNS,
     [
-      ['Aminata', 'Mahamat', '+23566000030', 'aminata.mahamat@exemple.td', 'N Djamena'],
-      ['Ibrahim', 'Ousmane', '+23566000031', null, null],
-      ['Fatime', 'Abakar', '+23566000032', null, null],
+      [
+        'Aminata',
+        'Mahamat',
+        '+23566000030',
+        'aminata.mahamat@exemple.td',
+        'N Djamena',
+        'NDS-DEMO-2026-X00001',
+      ],
+      ['Ibrahim', 'Ousmane', '+23566000031', null, null, null],
+      ['Fatime', 'Abakar', '+23566000032', null, null, null],
     ],
     [],
     GUARDIAN_DESCRIPTIONS
