@@ -121,7 +121,6 @@ export function ClassroomsView({
           searchValue={searchValue}
           status={module.classrooms.status}
         />
-
         {/* Level filter row */}
         <div className="mb-5 flex flex-wrap items-center gap-2">
           <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
@@ -158,16 +157,17 @@ export function ClassroomsView({
               </button>
             ))}
           </div>
-        </div>
-
-        {module.classrooms.isLoading ? (
-          <p className="py-10 text-center text-sm font-bold text-slate-400">
-            {t('classes.loading')}
-          </p>
-        ) : module.classrooms.items.length === 0 ? (
-          <div className="rounded-3xl border-2 border-dashed border-slate-200 py-14 text-center">
-            <p className="text-sm font-bold text-slate-400">{t('classes.classrooms.empty')}</p>
-          </div>
+        </div>{' '}
+        {module.classrooms.items.length === 0 ? (
+          module.classrooms.isLoading ? (
+            <p className="py-10 text-center text-sm font-bold text-slate-400">
+              {t('classes.loading')}
+            </p>
+          ) : (
+            <div className="rounded-3xl border-2 border-dashed border-slate-200 py-14 text-center">
+              <p className="text-sm font-bold text-slate-400">{t('classes.classrooms.empty')}</p>
+            </div>
+          )
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {module.classrooms.items.map((item) => {
@@ -266,7 +266,6 @@ export function ClassroomsView({
             })}
           </div>
         )}
-
         <Pagination
           list={module.classrooms}
           onNext={module.classroomsNextPage}
