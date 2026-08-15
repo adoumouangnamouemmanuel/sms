@@ -434,7 +434,9 @@ export function ListToolbar({
                   aria-label={labels.sex}
                   className="h-9 cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] font-bold text-slate-600 hover:border-slate-300 focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-400"
                   onChange={(event) => {
-                    onSexChange((event.target.value as PersonSex) || null);
+                    onSexChange(
+                      event.target.value === '' ? null : (event.target.value as PersonSex)
+                    );
                   }}
                   value={sex ?? ''}
                 >
