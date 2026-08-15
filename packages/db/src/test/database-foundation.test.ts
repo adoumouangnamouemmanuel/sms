@@ -17,7 +17,7 @@ import {
   createUserRepository,
 } from '../repositories.js';
 import * as schema from '../schema.sqlite.js';
-import { foundationSeed, seedFoundation } from '../seeds.js';
+import { foundationSeed, foundationSeedVersion, seedFoundation } from '../seeds.js';
 
 const migrationsDir = fileURLToPath(new URL('../../migrations/sqlite/', import.meta.url));
 const legacySchoolId = '11111111-1111-4111-8111-111111111111';
@@ -368,7 +368,7 @@ describe('tenant-scoped database primitives', () => {
 
     expect(schoolCount?.value).toBe(2);
     expect(userCount?.value).toBe(2);
-    expect(seedVersion?.value).toBe('phase-1.3-foundation-2026-08-12');
+    expect(seedVersion?.value).toBe(foundationSeedVersion);
   });
 
   it('updates deterministic foundation rows when the seed version changes', () => {
@@ -397,7 +397,7 @@ describe('tenant-scoped database primitives', () => {
       .get();
 
     expect(upgradedSchool?.name).toBe(firstSchool.name);
-    expect(upgradedSeedVersion?.value).toBe('phase-1.3-foundation-2026-08-12');
+    expect(upgradedSeedVersion?.value).toBe(foundationSeedVersion);
   });
 
   it('isolates the first tenant-owned user query by school', () => {
