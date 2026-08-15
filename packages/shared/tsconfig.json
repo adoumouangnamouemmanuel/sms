@@ -4,6 +4,8 @@
     "composite": true,
     "declaration": true,
     "declarationMap": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "outDir": "dist",
     "rootDir": "src"
   },

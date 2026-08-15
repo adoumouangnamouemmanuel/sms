@@ -1,8 +1,8 @@
 import { and, asc, eq, isNull, like, or, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
-import type { RepositoryExecutor, TenantContext } from './base';
-import { TenantScopedRepository } from './base';
-import { guardian } from '../schema.sqlite';
+import type { RepositoryExecutor, TenantContext } from './base.js';
+import { TenantScopedRepository } from './base.js';
+import { guardian } from '../schema.sqlite.js';
 
 export interface CreateGuardianInput {
   firstName: string;

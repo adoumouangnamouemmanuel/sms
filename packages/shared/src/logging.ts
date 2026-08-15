@@ -1,4 +1,4 @@
-import { SIDECAR_CAPABILITY_HEADER } from './sidecar';
+import { SIDECAR_CAPABILITY_HEADER } from './sidecar.js';
 
 export const SENSITIVE_LOG_FIELDS = [
   'req.headers.authorization',

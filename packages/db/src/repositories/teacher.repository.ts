@@ -1,8 +1,8 @@
 import { and, asc, eq, isNull, like, or, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
-import type { RepositoryExecutor, TenantContext } from './base';
-import { TenantScopedRepository } from './base';
-import { teacher } from '../schema.sqlite';
+import type { RepositoryExecutor, TenantContext } from './base.js';
+import { TenantScopedRepository } from './base.js';
+import { teacher } from '../schema.sqlite.js';
 
 // TODO(roadmap §9.2/9.3): the default teacher code follows the student pattern
 // `{school.code}-{academicYear}-{NNI}`, generated at the service layer; an explicitly

@@ -1,4 +1,4 @@
-import type { EduTrackDatabase, EduTrackTransaction } from '../client';
+import type { EduTrackDatabase, EduTrackTransaction } from '../client.js';
 
 export type RepositoryExecutor = EduTrackDatabase | EduTrackTransaction;
 

@@ -1,9 +1,9 @@
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { IMPLEMENTED_SCHOOL_MODULES, type SchoolModuleName } from '@edutrack/shared';
-import type { RepositoryExecutor, TenantContext } from './base';
-import { TenantScopedRepository } from './base';
-import { schoolModuleConfig } from '../schema.sqlite';
+import type { RepositoryExecutor, TenantContext } from './base.js';
+import { TenantScopedRepository } from './base.js';
+import { schoolModuleConfig } from '../schema.sqlite.js';
 
 export interface SchoolModuleConfigRecord {
   id: string;

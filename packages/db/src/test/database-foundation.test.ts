@@ -8,16 +8,16 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   applyApplicationMigrations,
   resolveSqliteMigrationsFolder,
-} from '../application-migrations';
-import type { EduTrackDatabase } from '../client';
-import { withTransaction } from '../client';
+} from '../application-migrations.js';
+import type { EduTrackDatabase } from '../client.js';
+import { withTransaction } from '../client.js';
 import {
   createAuditLogRepository,
   createTenantContext,
   createUserRepository,
-} from '../repositories';
-import * as schema from '../schema.sqlite';
-import { foundationSeed, seedFoundation } from '../seeds';
+} from '../repositories.js';
+import * as schema from '../schema.sqlite.js';
+import { foundationSeed, seedFoundation } from '../seeds.js';
 
 const migrationsDir = fileURLToPath(new URL('../../migrations/sqlite/', import.meta.url));
 const legacySchoolId = '11111111-1111-4111-8111-111111111111';

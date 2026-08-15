@@ -1,7 +1,7 @@
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { openEduTrackDatabase } from './client';
+import { openEduTrackDatabase } from './client.js';
 
 const SQLITE_MIGRATIONS_FOLDER_ENV = 'EDUTRACK_SQLITE_MIGRATIONS_DIR';
 

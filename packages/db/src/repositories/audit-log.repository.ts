@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import type { RepositoryExecutor, TenantContext } from './base';
-import { TenantScopedRepository } from './base';
-import { auditLog, type AuditOutcome } from '../schema.sqlite';
+import type { RepositoryExecutor, TenantContext } from './base.js';
+import { TenantScopedRepository } from './base.js';
+import { auditLog, type AuditOutcome } from '../schema.sqlite.js';
 
 export interface CreateAuditLogInput {
   id?: string;

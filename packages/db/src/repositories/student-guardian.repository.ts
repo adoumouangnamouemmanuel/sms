@@ -1,9 +1,9 @@
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { GuardianRelationshipType } from '@edutrack/shared';
-import type { RepositoryExecutor, TenantContext } from './base';
-import { TenantScopedRepository } from './base';
-import { studentGuardian } from '../schema.sqlite';
+import type { RepositoryExecutor, TenantContext } from './base.js';
+import { TenantScopedRepository } from './base.js';
+import { studentGuardian } from '../schema.sqlite.js';
 
 export interface LinkStudentGuardianInput {
   studentId: string;

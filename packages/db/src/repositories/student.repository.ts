@@ -1,9 +1,9 @@
 import { and, asc, eq, isNull, like, or, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { PersonSex } from '@edutrack/shared';
-import type { RepositoryExecutor, TenantContext } from './base';
-import { TenantScopedRepository } from './base';
-import { student } from '../schema.sqlite';
+import type { RepositoryExecutor, TenantContext } from './base.js';
+import { TenantScopedRepository } from './base.js';
+import { student } from '../schema.sqlite.js';
 
 // TODO(roadmap §9.2/9.3): the default student code is `{school.code}-{academicYear}-{NNI}`,
 // generated at the service layer; an explicitly provided code (e.g. from the Excel import)

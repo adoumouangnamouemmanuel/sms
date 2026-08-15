@@ -4,11 +4,11 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { EduTrackDatabase } from '../client';
-import { createGuardianRepository } from '../repositories/guardian.repository';
-import { createTenantContext } from '../repositories/base';
-import * as schema from '../schema.sqlite';
-import { foundationSeed, seedFoundation } from '../seeds';
+import type { EduTrackDatabase } from '../client.js';
+import { createGuardianRepository } from '../repositories/guardian.repository.js';
+import { createTenantContext } from '../repositories/base.js';
+import * as schema from '../schema.sqlite.js';
+import { foundationSeed, seedFoundation } from '../seeds.js';
 
 const migrationsDir = fileURLToPath(new URL('../../migrations/sqlite/', import.meta.url));
 

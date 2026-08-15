@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import type { EduTrackDatabase } from './client';
-import { schemaMetadata, school, user, type UserRole } from './schema.sqlite';
+import type { EduTrackDatabase } from './client.js';
+import { schemaMetadata, school, user, type UserRole } from './schema.sqlite.js';
 
 const seedPasswordHash = '$2b$12$C6UzMDM.H6dfI/f/IKcEeOq8GmUiZ6ztp7Z8VsYzHf5fQK1x6ZVdW';
 
