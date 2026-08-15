@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import type {
   GuardianProfileResponse,
   GuardianResponse,
+  SetupStateResponse,
   StudentGuardianLinkResponse,
   StudentListQuery,
   StudentProfileResponse,
@@ -12,6 +13,50 @@ import { describe, expect, it, vi } from 'vitest';
 import '../i18n';
 import { StudentsModule } from '../modules/students/StudentsModule';
 import type { StudentsClient } from '../modules/students/useStudentsState';
+
+const minimalSetupState: SetupStateResponse = {
+  school: {
+    id: '00000000-0000-4000-8000-000000000101',
+    code: 'NDS-DEMO',
+    name: 'Ecole Demo',
+    shortName: 'Demo',
+    logoUrl: null,
+    address: null,
+    city: 'N Djamena',
+    country: 'TD',
+    phone: null,
+    email: null,
+    motto: null,
+    ministryCode: null,
+    locale: 'fr',
+    timezone: 'Africa/Ndjamena',
+    currency: 'XAF',
+    setupStatus: 'COMPLETED',
+  },
+  academicYear: {
+    id: '00000000-0000-4000-8000-000000000401',
+    schoolId: '00000000-0000-4000-8000-000000000101',
+    label: '2026-2027',
+    startDate: '2026-09-01',
+    endDate: '2027-06-30',
+    isCurrent: true,
+  },
+  termSystem: 'TRIMESTER',
+  terms: [],
+  classLevels: [
+    {
+      id: '00000000-0000-4000-8000-000000000601',
+      schoolId: '00000000-0000-4000-8000-000000000101',
+      code: '6E',
+      name: 'Sixième',
+      displayOrder: 1,
+      isExamYear: false,
+      isActive: true,
+    },
+  ],
+  enabledModules: [],
+  nextStep: 'review',
+};
 
 const student: StudentResponse = {
   id: '00000000-0000-4000-8000-000000000101',
@@ -85,7 +130,13 @@ describe('StudentsModule', () => {
       listGuardians: vi.fn().mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 }),
     });
 
-    render(<StudentsModule apiBaseUrl="http://127.0.0.1:49152" client={client} />);
+    render(
+      <StudentsModule
+        apiBaseUrl="http://127.0.0.1:49152"
+        client={client}
+        setupState={minimalSetupState}
+      />
+    );
 
     expect(await screen.findByText('Mahamat Aminata')).toBeInTheDocument();
     expect(screen.getByText('NDS-DEMO-2026-001')).toBeInTheDocument();
@@ -108,7 +159,13 @@ describe('StudentsModule', () => {
       listGuardians: vi.fn().mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 }),
     });
 
-    render(<StudentsModule apiBaseUrl="http://127.0.0.1:49152" client={client} />);
+    render(
+      <StudentsModule
+        apiBaseUrl="http://127.0.0.1:49152"
+        client={client}
+        setupState={minimalSetupState}
+      />
+    );
 
     await screen.findByText('Mahamat Aminata');
     const searchBox = screen.getByRole('textbox', { name: 'Rechercher' });
@@ -138,7 +195,13 @@ describe('StudentsModule', () => {
       listGuardians: vi.fn().mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 }),
     });
 
-    render(<StudentsModule apiBaseUrl="http://127.0.0.1:49152" client={client} />);
+    render(
+      <StudentsModule
+        apiBaseUrl="http://127.0.0.1:49152"
+        client={client}
+        setupState={minimalSetupState}
+      />
+    );
 
     await screen.findByText('Aucun élève trouvé.');
     await userSession.click(screen.getByRole('button', { name: 'Nouvel élève' }));
@@ -159,7 +222,13 @@ describe('StudentsModule', () => {
       listGuardians: vi.fn().mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 }),
     });
 
-    render(<StudentsModule apiBaseUrl="http://127.0.0.1:49152" client={client} />);
+    render(
+      <StudentsModule
+        apiBaseUrl="http://127.0.0.1:49152"
+        client={client}
+        setupState={minimalSetupState}
+      />
+    );
 
     await screen.findByText('Aucun élève trouvé.');
     await userSession.click(screen.getByRole('button', { name: 'Nouvel élève' }));
@@ -181,7 +250,13 @@ describe('StudentsModule', () => {
       updateStudent,
     });
 
-    render(<StudentsModule apiBaseUrl="http://127.0.0.1:49152" client={client} />);
+    render(
+      <StudentsModule
+        apiBaseUrl="http://127.0.0.1:49152"
+        client={client}
+        setupState={minimalSetupState}
+      />
+    );
 
     await screen.findByText('Mahamat Aminata');
     await userSession.click(screen.getByRole('button', { name: 'Mahamat Aminata' }));
@@ -211,7 +286,13 @@ describe('StudentsModule', () => {
       listGuardians: vi.fn().mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 }),
     });
 
-    render(<StudentsModule apiBaseUrl="http://127.0.0.1:49152" client={client} />);
+    render(
+      <StudentsModule
+        apiBaseUrl="http://127.0.0.1:49152"
+        client={client}
+        setupState={minimalSetupState}
+      />
+    );
 
     await screen.findByText('Mahamat Aminata');
     await userSession.click(screen.getByRole('button', { name: 'Archiver' }));
@@ -243,7 +324,13 @@ describe('StudentsModule', () => {
       listGuardians: vi.fn().mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 }),
     });
 
-    render(<StudentsModule apiBaseUrl="http://127.0.0.1:49152" client={client} />);
+    render(
+      <StudentsModule
+        apiBaseUrl="http://127.0.0.1:49152"
+        client={client}
+        setupState={minimalSetupState}
+      />
+    );
 
     await screen.findByText('Mahamat Aminata');
     await userSession.click(screen.getByRole('button', { name: 'Mahamat Aminata' }));
@@ -270,7 +357,13 @@ describe('StudentsModule', () => {
       listGuardians: vi.fn().mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 }),
     });
 
-    render(<StudentsModule apiBaseUrl="http://127.0.0.1:49152" client={client} />);
+    render(
+      <StudentsModule
+        apiBaseUrl="http://127.0.0.1:49152"
+        client={client}
+        setupState={minimalSetupState}
+      />
+    );
 
     await screen.findByText('Mahamat Aminata');
     await userSession.click(screen.getByRole('button', { name: /Filtres/ }));
@@ -296,7 +389,13 @@ describe('StudentsModule', () => {
       }),
     });
 
-    render(<StudentsModule apiBaseUrl="http://127.0.0.1:49152" client={client} />);
+    render(
+      <StudentsModule
+        apiBaseUrl="http://127.0.0.1:49152"
+        client={client}
+        setupState={minimalSetupState}
+      />
+    );
 
     await userSession.click(await screen.findByRole('tab', { name: 'Responsables' }));
     expect(await screen.findByText('Abakar Fatime')).toBeInTheDocument();
@@ -313,7 +412,13 @@ describe('StudentsModule', () => {
       listStudents: vi.fn().mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 }),
     });
 
-    render(<StudentsModule apiBaseUrl="http://127.0.0.1:49152" client={client} />);
+    render(
+      <StudentsModule
+        apiBaseUrl="http://127.0.0.1:49152"
+        client={client}
+        setupState={minimalSetupState}
+      />
+    );
 
     await userSession.click(await screen.findByRole('tab', { name: 'Responsables' }));
     await userSession.click(await screen.findByRole('button', { name: 'Importer' }));
