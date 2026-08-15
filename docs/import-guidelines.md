@@ -1,7 +1,7 @@
 # Guide d'import Excel (Phase 3.4)
 
-Ce guide explique comment importer des élèves et des professeurs depuis un
-fichier Excel, et comment vérifier manuellement que tout fonctionne.
+Ce guide explique comment importer des élèves, des professeurs et des tuteurs
+depuis un fichier Excel, et comment vérifier manuellement que tout fonctionne.
 
 ## 1. Récupérer le modèle
 
@@ -16,8 +16,10 @@ Deux options :
    | -------------------------- | -------------------------------------------------------------------- |
    | `eleves_modele.xlsx`       | En-têtes + feuille « Mode d'emploi » + exemples (0 ligne de données) |
    | `professeurs_modele.xlsx`  | Idem pour les professeurs                                            |
+   | `tuteurs_modele.xlsx`      | Idem pour les tuteurs                                                |
    | `eleves_exemple.xlsx`      | **6 élèves valides, prêts à importer**                               |
    | `professeurs_exemple.xlsx` | **4 professeurs valides, prêts à importer**                          |
+   | `tuteurs_exemple.xlsx`     | **4 tuteurs valides, prêts à importer**                              |
    | `eleves_avec_erreurs.xlsx` | 6 lignes dont 3 en erreur (pour tester le rapport)                   |
 
 ## 2. Remplir le fichier
@@ -33,6 +35,7 @@ Deux options :
   | `Prénom`, `Nom`                                              | Oui    | Texte (max 120 caractères).                                                                                                                           |
   | `Sexe` (élèves)                                              | Non    | `M`, `F` ou `AUTRE` (ou `Masculin` / `Féminin`).                                                                                                      |
   | `Date de naissance` / `Date d'embauche`                      | Non    | `JJ/MM/AAAA` (ex. `14/03/2012`) ou `AAAA-MM-JJ`.                                                                                                      |
+  | `Code élève` (tuteurs)                                       | Non    | Code de l'élève à lier automatiquement au tuteur.                                                                                                     |
   | `Nationalité`, `Spécialité`, `Téléphone`, `Email`, `Adresse` | Non    | Texte libre.                                                                                                                                          |
 
 - **Codes** : un code utilisé deux fois dans le même fichier, ou déjà présent
@@ -41,7 +44,7 @@ Deux options :
 
 ## 3. Importer
 
-1. Cliquez sur **Importer** (barre du module Élèves ou Professeurs).
+1. Cliquez sur **Importer** (barre du module Élèves, Professeurs ou Tuteurs).
 2. **Analyser le fichier** — l'application lit le fichier, montre un aperçu
    (`valides` / `en erreur`) et **n'enregistre rien** à ce stade.
 3. En cas d'erreurs, les messages s'affichent ligne par ligne. Cliquez sur
@@ -67,7 +70,7 @@ identifiant **différent** pour chaque fichier réellement nouveau.
    sélectionnez `docs/import-templates/eleves_exemple.xlsx` → **Analyser**.
    Attendu : **6 valides / 0 en erreur**. Identifiant `test-eleves-1` →
    **Confirmer**. Attendu au rapport : **6 importés**. Retour à la liste :
-   6 élèves, dont les codes générés `NDS-DEMO-2026-001`…`006` et le code
+   6 élèves, dont les codes générés `NDS-DEMO-2026-001`…`005` et le code
    explicite `NDS-DEMO-2026-X00001`.
 3. **Test 2 — idempotence** : re-faites l'import du même fichier avec le même
    identifiant `test-eleves-1`. Attendu au rapport : **« déjà confirmé »**,
@@ -76,12 +79,15 @@ identifiant **différent** pour chaque fichier réellement nouveau.
    `professeurs_exemple.xlsx` → analyser (4 valides) → identifiant
    `test-professeurs-1` → confirmer → 4 importés (la date `01/09/2015` devient
    `2015-09-01` sur le profil).
-5. **Test 4 — erreurs** : **Élèves** → **Importer** →
+5. **Test 4 — tuteurs** : module **Tuteurs** → **Importer** →
+   `tuteurs_exemple.xlsx` → analyser (4 valides) → identifiant
+   `test-tuteurs-1` → confirmer → 4 importés. Les tuteurs sont créés et liés automatiquement s'ils ont un code d'élève.
+6. **Test 5 — erreurs** : **Élèves** → **Importer** →
    `eleves_avec_erreurs.xlsx` → analyser. Attendu : **3 en erreur** (Prénom
    manquant ligne 3, Sexe invalide ligne 4, Code dupliqué ligne 5).
    Téléchargez le CSV des lignes en erreur et vérifiez qu'il s'ouvre dans
    Excel.
-6. **Test 5 — sécurité** : confirmez que seuls les 3 élèves valides du test 4
+7. **Test 6 — sécurité** : confirmez que seuls les 3 élèves valides du test 5
    ont été ajoutés (identifiant `test-eleves-2`), et que le compte d'un
    **enseignant** ne peut pas ouvrir la fenêtre d'import (bouton absent ou
    refus `403`).
