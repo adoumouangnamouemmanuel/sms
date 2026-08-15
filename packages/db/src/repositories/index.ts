@@ -3,6 +3,7 @@ export * from './audit-log.repository.js';
 export * from './base.js';
 export * from './class-level.repository.js';
 export * from './guardian.repository.js';
+export * from './import-batch.repository.js';
 export * from './refresh-session.repository.js';
 export * from './school.repository.js';
 export * from './school-module-config.repository.js';
