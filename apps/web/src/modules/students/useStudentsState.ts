@@ -9,6 +9,7 @@ import type {
   LinkStudentGuardianRequest,
   PaginatedGuardiansResponse,
   PaginatedStudentsResponse,
+  RecordStatus,
   StudentGuardianLinkResponse,
   StudentListQuery,
   StudentProfileResponse,
@@ -125,6 +126,7 @@ export interface PaginatedListState<T> {
   offset: number;
   pageCount: number;
   search: string;
+  status: RecordStatus;
   total: number;
 }
 
@@ -155,7 +157,7 @@ export function useStudentsModule({
   );
 
   const loadStudents = useCallback(
-    async (search: string, offset: number) => {
+    async (search: string, offset: number, status: RecordStatus) => {
       if (!apiBaseUrl && !client) {
         return;
       }
@@ -164,10 +166,13 @@ export function useStudentsModule({
 
       try {
         const page = client
-          ? await client.listStudents({ search, limit: PAGE_SIZE, offset }, requestOptions())
+          ? await client.listStudents(
+              { search, status, limit: PAGE_SIZE, offset },
+              requestOptions()
+            )
           : await listStudents(
               apiBaseUrl ?? '',
-              { search, limit: PAGE_SIZE, offset },
+              { search, status, limit: PAGE_SIZE, offset },
               requestOptions()
             );
 
@@ -179,6 +184,7 @@ export function useStudentsModule({
           offset: page.offset,
           pageCount: Math.max(1, Math.ceil(page.total / page.limit)),
           search,
+          status,
           total: page.total,
         });
       } catch (error) {
@@ -193,7 +199,7 @@ export function useStudentsModule({
   );
 
   const loadGuardians = useCallback(
-    async (search: string, offset: number) => {
+    async (search: string, offset: number, status: RecordStatus) => {
       if (!apiBaseUrl && !client) {
         return;
       }
@@ -202,10 +208,13 @@ export function useStudentsModule({
 
       try {
         const page = client
-          ? await client.listGuardians({ search, limit: PAGE_SIZE, offset }, requestOptions())
+          ? await client.listGuardians(
+              { search, status, limit: PAGE_SIZE, offset },
+              requestOptions()
+            )
           : await listGuardians(
               apiBaseUrl ?? '',
-              { search, limit: PAGE_SIZE, offset },
+              { search, status, limit: PAGE_SIZE, offset },
               requestOptions()
             );
 
@@ -217,6 +226,7 @@ export function useStudentsModule({
           offset: page.offset,
           pageCount: Math.max(1, Math.ceil(page.total / page.limit)),
           search,
+          status,
           total: page.total,
         });
       } catch (error) {
@@ -236,8 +246,8 @@ export function useStudentsModule({
     }
 
     const loadHandle = window.setTimeout(() => {
-      void loadStudents('', 0);
-      void loadGuardians('', 0);
+      void loadStudents('', 0, 'active');
+      void loadGuardians('', 0, 'active');
     }, 0);
 
     return () => {
@@ -247,23 +257,37 @@ export function useStudentsModule({
 
   const searchStudents = useCallback(
     (search: string) => {
-      void loadStudents(search.trim(), 0);
+      void loadStudents(search.trim(), 0, studentsList.status);
     },
-    [loadStudents]
+    [loadStudents, studentsList.status]
   );
 
   const searchGuardians = useCallback(
     (search: string) => {
-      void loadGuardians(search.trim(), 0);
+      void loadGuardians(search.trim(), 0, guardiansList.status);
     },
-    [loadGuardians]
+    [guardiansList.status, loadGuardians]
+  );
+
+  const setStudentsStatus = useCallback(
+    (status: RecordStatus) => {
+      void loadStudents(studentsList.search, 0, status);
+    },
+    [loadStudents, studentsList.search]
+  );
+
+  const setGuardiansStatus = useCallback(
+    (status: RecordStatus) => {
+      void loadGuardians(guardiansList.search, 0, status);
+    },
+    [guardiansList.search, loadGuardians]
   );
 
   const nextStudentsPage = useCallback(() => {
     const nextOffset = studentsList.offset + studentsList.limit;
 
     if (nextOffset < studentsList.total) {
-      void loadStudents(studentsList.search, nextOffset);
+      void loadStudents(studentsList.search, nextOffset, studentsList.status);
     }
   }, [loadStudents, studentsList]);
 
@@ -271,7 +295,7 @@ export function useStudentsModule({
     const previousOffset = Math.max(0, studentsList.offset - studentsList.limit);
 
     if (previousOffset !== studentsList.offset) {
-      void loadStudents(studentsList.search, previousOffset);
+      void loadStudents(studentsList.search, previousOffset, studentsList.status);
     }
   }, [loadStudents, studentsList]);
 
@@ -279,7 +303,7 @@ export function useStudentsModule({
     const nextOffset = guardiansList.offset + guardiansList.limit;
 
     if (nextOffset < guardiansList.total) {
-      void loadGuardians(guardiansList.search, nextOffset);
+      void loadGuardians(guardiansList.search, nextOffset, guardiansList.status);
     }
   }, [guardiansList, loadGuardians]);
 
@@ -287,7 +311,7 @@ export function useStudentsModule({
     const previousOffset = Math.max(0, guardiansList.offset - guardiansList.limit);
 
     if (previousOffset !== guardiansList.offset) {
-      void loadGuardians(guardiansList.search, previousOffset);
+      void loadGuardians(guardiansList.search, previousOffset, guardiansList.status);
     }
   }, [guardiansList, loadGuardians]);
 
@@ -361,11 +385,11 @@ export function useStudentsModule({
   );
 
   const refreshStudents = useCallback(() => {
-    return loadStudents(studentsList.search, studentsList.offset);
+    return loadStudents(studentsList.search, studentsList.offset, studentsList.status);
   }, [loadStudents, studentsList]);
 
   const refreshGuardians = useCallback(() => {
-    return loadGuardians(guardiansList.search, guardiansList.offset);
+    return loadGuardians(guardiansList.search, guardiansList.offset, guardiansList.status);
   }, [guardiansList, loadGuardians]);
 
   const refreshStudentProfile = useCallback(async () => {
@@ -566,6 +590,8 @@ export function useStudentsModule({
     reactivateStudent,
     searchGuardians,
     searchStudents,
+    setGuardiansStatus,
+    setStudentsStatus,
     studentProfile,
     students: studentsList,
     tab,
@@ -586,6 +612,7 @@ function emptyListState<T>(): PaginatedListState<T> {
     offset: 0,
     pageCount: 1,
     search: '',
+    status: 'active',
     total: 0,
   };
 }
