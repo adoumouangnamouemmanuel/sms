@@ -25,6 +25,17 @@ import {
 } from '../seeds.js';
 
 const migrationsDir = fileURLToPath(new URL('../../migrations/sqlite/', import.meta.url));
+
+interface JournalEntry {
+  idx: number;
+  tag: string;
+  when: number;
+}
+
+function readJournal() {
+  const raw = readFileSync(join(migrationsDir, 'meta', '_journal.json'), 'utf8');
+  return JSON.parse(raw) as { entries: JournalEntry[] };
+}
 const legacySchoolId = '11111111-1111-4111-8111-111111111111';
 const legacyUserId = '22222222-2222-4222-8222-222222222222';
 
@@ -512,6 +523,39 @@ describe('Phase 3 people migration', () => {
           'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
         )
     ).toThrow();
+  });
+});
+
+describe('migration journal integrity', () => {
+  it('keeps the journal when timestamps strictly increasing so drizzle never skips entries', () => {
+    const journal = readJournal();
+
+    expect(journal.entries.length).toBeGreaterThan(0);
+
+    for (let index = 1; index < journal.entries.length; index += 1) {
+      const previous = journal.entries[index - 1];
+      const current = journal.entries[index];
+
+      if (current === undefined || previous === undefined) {
+        continue;
+      }
+
+      expect(
+        current.when,
+        `journal entry ${String(current.idx)} (${current.tag}) must have a when greater than entry ${String(previous.idx)} (${previous.tag})`
+      ).toBeGreaterThan(previous.when);
+    }
+  });
+
+  it('keeps one committed sql file per journal entry and nothing more', () => {
+    const journal = readJournal();
+    const sqlFiles = readdirSync(migrationsDir).filter((file) => file.endsWith('.sql'));
+
+    expect(sqlFiles.length).toBe(journal.entries.length);
+
+    for (const entry of journal.entries) {
+      expect(sqlFiles, `missing migration file for ${entry.tag}`).toContain(`${entry.tag}.sql`);
+    }
   });
 });
 
