@@ -11,6 +11,7 @@ export type PeopleErrorCode =
   | 'TEACHER_LOGIN_NOT_FOUND'
   | 'TEACHER_LOGIN_REQUIRES_ACTIVE_RECORD'
   | 'TEACHER_NOT_FOUND'
+  | 'TEACHER_VERSION_CONFLICT'
   | 'PEOPLE_FAILED';
 
 /** Public-safe people error with a stable API code. */
@@ -98,5 +99,13 @@ export function teacherLoginRequiresActiveRecord() {
     'TEACHER_LOGIN_REQUIRES_ACTIVE_RECORD',
     409,
     'Seul un professeur actif peut recevoir un compte de connexion.'
+  );
+}
+
+export function teacherVersionConflict() {
+  return new PeopleServiceError(
+    'TEACHER_VERSION_CONFLICT',
+    409,
+    'Ce dossier a été modifié depuis votre dernière consultation. Rechargez-le avant de réessayer.'
   );
 }
