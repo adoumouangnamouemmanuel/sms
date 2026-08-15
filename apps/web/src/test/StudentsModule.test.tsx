@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import type {
   GuardianProfileResponse,
   GuardianResponse,
+  StudentGuardianLinkResponse,
   StudentProfileResponse,
   StudentResponse,
 } from '@edutrack/shared';
@@ -41,23 +42,20 @@ const guardian: GuardianResponse = {
   recordVersion: 1,
 };
 
+const primaryLink: StudentGuardianLinkResponse = {
+  id: '00000000-0000-4000-8000-000000000401',
+  studentId: student.id,
+  guardianId: guardian.id,
+  relationshipType: 'MERE',
+  isPrimary: true,
+  isEmergency: false,
+  notes: null,
+  recordVersion: 1,
+};
+
 const studentProfile: StudentProfileResponse = {
   student,
-  guardians: [
-    {
-      link: {
-        id: '00000000-0000-4000-8000-000000000401',
-        studentId: student.id,
-        guardianId: guardian.id,
-        relationshipType: 'MERE',
-        isPrimary: true,
-        isEmergency: false,
-        notes: null,
-        recordVersion: 1,
-      },
-      guardian,
-    },
-  ],
+  guardians: [{ link: primaryLink, guardian }],
 };
 
 const guardianProfile: GuardianProfileResponse = {
@@ -226,14 +224,14 @@ function createStudentsClient(overrides: Partial<StudentsClient>): StudentsClien
     createStudent: () => Promise.resolve(student),
     getGuardianProfile: () => Promise.resolve(guardianProfile),
     getStudentProfile: () => Promise.resolve(studentProfile),
-    linkGuardian: () => Promise.resolve(studentProfile.guardians[0]!.link),
+    linkGuardian: () => Promise.resolve(primaryLink),
     listGuardians: () => Promise.resolve(emptyPage),
     listStudents: () => Promise.resolve(emptyPage),
     reactivateGuardian: () => Promise.resolve(guardian),
     reactivateStudent: () => Promise.resolve(student),
-    unlinkGuardian: () => Promise.resolve(studentProfile.guardians[0]!.link),
+    unlinkGuardian: () => Promise.resolve(primaryLink),
     updateGuardian: () => Promise.resolve(guardian),
-    updateGuardianLink: () => Promise.resolve(studentProfile.guardians[0]!.link),
+    updateGuardianLink: () => Promise.resolve(primaryLink),
     updateStudent: () => Promise.resolve(student),
     ...overrides,
   };
