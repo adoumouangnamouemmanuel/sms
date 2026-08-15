@@ -5,6 +5,7 @@ import type { DesktopDeploymentStatus } from '../../desktopStatus';
 import { useLogoutAction, type LogoutClient } from '../auth';
 import type { SetupStateResponse } from '@edutrack/shared';
 import { StudentsModule } from '../students';
+import { TeachersModule } from '../teachers';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -110,6 +111,24 @@ function PeopleIcon() {
   );
 }
 
+function TeacherIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      viewBox="0 0 24 24"
+    >
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+    </svg>
+  );
+}
+
 function SearchIcon() {
   return (
     <svg
@@ -181,6 +200,7 @@ const MODULE_NAV_CONFIG: Partial<Record<SchoolModuleName, Omit<NavItem, 'moduleN
   SCHOOL_SETUP: { labelKey: 'setup.modules.SCHOOL_SETUP', icon: <GearIcon /> },
   ACADEMIC_STRUCTURE: { labelKey: 'setup.modules.ACADEMIC_STRUCTURE', icon: <AcademicIcon /> },
   STUDENTS: { labelKey: 'setup.modules.STUDENTS', icon: <PeopleIcon /> },
+  TEACHERS: { labelKey: 'setup.modules.TEACHERS', icon: <TeacherIcon /> },
 };
 
 // ---------------------------------------------------------------------------
@@ -454,6 +474,11 @@ export function MainAppShell({
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           {activeModule === 'STUDENTS' ? (
             <StudentsModule
+              apiBaseUrl={apiBaseUrl}
+              {...(capabilityToken ? { capabilityToken } : {})}
+            />
+          ) : activeModule === 'TEACHERS' ? (
+            <TeachersModule
               apiBaseUrl={apiBaseUrl}
               {...(capabilityToken ? { capabilityToken } : {})}
             />
@@ -788,7 +813,6 @@ function WelcomePlaceholder() {
  * They must NOT use i18n keys because no real SchoolModuleName exists for them yet.
  */
 const COMING_SOON_MODULES = [
-  'Enseignants',
   'Classes',
   'Notes et bulletins',
   'Finances',
@@ -838,26 +862,6 @@ function ComingSoonNavButton({
  * Remove an entry here when the matching module ships.
  */
 const COMING_SOON_NAV_ITEMS: { label: string; icon: React.ReactNode }[] = [
-  {
-    label: 'Enseignants',
-    icon: (
-      <svg
-        aria-hidden="true"
-        className="h-5 w-5 shrink-0"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        viewBox="0 0 24 24"
-      >
-        <rect height="16" rx="2" width="20" x="2" y="4" />
-        <path d="M10 4v4" />
-        <path d="M2 8h20" />
-        <path d="M6 12h.01M10 12h.01M14 12h.01M18 12h.01M6 16h.01M10 16h.01M14 16h.01M18 16h.01" />
-      </svg>
-    ),
-  },
   {
     label: 'Notes & bulletins',
     icon: (
