@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type { PersonSex } from '@edutrack/shared';
 import type { RepositoryExecutor, TenantContext } from './base.js';
 import { TenantScopedRepository } from './base.js';
-import { student } from '../schema.sqlite.js';
+import { academicYear, classEnrollment, classroom, student } from '../schema.sqlite.js';
 
 // TODO(roadmap §9.2/9.3): the default student code is `{school.code}-{academicYear}-{NNI}`,
 // generated at the service layer; an explicitly provided code (e.g. from the Excel import)
@@ -60,6 +60,10 @@ export interface ListStudentsOptions {
   search?: string;
   /** 'archived' lists archived records; omitted or 'active' lists active ones. */
   status?: 'active' | 'archived';
+  /** Only students with an ACTIVE enrollment this year in a classroom of this level. */
+  classLevelId?: string;
+  /** Only students with an ACTIVE enrollment this year in this classroom. */
+  classroomId?: string;
   limit?: number;
   offset?: number;
 }
@@ -67,6 +71,8 @@ export interface ListStudentsOptions {
 export interface CountStudentsOptions {
   search?: string;
   status?: 'active' | 'archived';
+  classLevelId?: string;
+  classroomId?: string;
 }
 
 /** Persists tenant-scoped student records; codes are durable identity and never reused. */
@@ -129,7 +135,9 @@ export class StudentRepository extends TenantScopedRepository {
     return this.db
       .select(studentColumns)
       .from(student)
-      .where(studentWhere(this.schoolId, search, options.status))
+      .where(
+        and(studentWhere(this.schoolId, search, options.status), this.enrollmentFilter(options))
+      )
       .orderBy(asc(student.lastName), asc(student.firstName), asc(student.code))
       .limit(limit)
       .offset(offset)
@@ -142,10 +150,55 @@ export class StudentRepository extends TenantScopedRepository {
     const row = this.db
       .select({ value: count() })
       .from(student)
-      .where(studentWhere(this.schoolId, search, options.status))
+      .where(
+        and(studentWhere(this.schoolId, search, options.status), this.enrollmentFilter(options))
+      )
       .get();
 
     return row?.value ?? 0;
+  }
+
+  /**
+   * Restricts the list to students with an ACTIVE enrollment in the current
+   * academic year, optionally narrowed to a classroom or a class level. The
+   * filter queries the enrollment relationship (never a raw student field), so
+   * it stays correct once transfers and year rollovers exist.
+   */
+  private enrollmentFilter(options: { classLevelId?: string; classroomId?: string }) {
+    const { classLevelId, classroomId } = options;
+
+    if (!classLevelId && !classroomId) {
+      return undefined;
+    }
+
+    const currentYear = this.db
+      .select({ id: academicYear.id })
+      .from(academicYear)
+      .where(
+        and(
+          eq(academicYear.schoolId, this.schoolId),
+          eq(academicYear.isCurrent, true),
+          isNull(academicYear.deletedAt)
+        )
+      )
+      .get();
+
+    if (!currentYear) {
+      return sql`1 = 0`;
+    }
+
+    return sql`exists (
+      select 1
+      from ${classEnrollment} ce
+      join ${classroom} cr on cr.id = ce.classroom_id
+      where ce.school_id = ${this.schoolId}
+        and ce.academic_year_id = ${currentYear.id}
+        and ce.status = 'ACTIVE'
+        and ce.deleted_at is null
+        and ce.student_id = ${student.id}
+        ${classLevelId ? sql`and cr.class_level_id = ${classLevelId}` : sql``}
+        ${classroomId ? sql`and ce.classroom_id = ${classroomId}` : sql``}
+    )`;
   }
 
   listActive(options: ListStudentsOptions = {}) {
