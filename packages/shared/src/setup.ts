@@ -173,4 +173,5 @@ export type SetupCalendarRequest = z.infer<typeof setupCalendarRequestSchema>;
 export type SetupClassLevelsRequest = z.infer<typeof setupClassLevelsRequestSchema>;
 export type SetupTermInput = z.infer<typeof setupTermInputSchema>;
 export type SetupClassLevelInput = z.infer<typeof setupClassLevelInputSchema>;
+export type SetupClassLevel = z.infer<typeof setupClassLevelSchema>;
 export type SetupStateResponse = z.infer<typeof setupStateResponseSchema>;
