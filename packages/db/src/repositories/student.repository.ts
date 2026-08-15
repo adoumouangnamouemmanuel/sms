@@ -1,4 +1,4 @@
-import { and, asc, count, eq, isNull, like, or, sql } from 'drizzle-orm';
+import { and, asc, count, eq, isNotNull, isNull, like, or, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { PersonSex } from '@edutrack/shared';
 import type { RepositoryExecutor, TenantContext } from './base.js';
@@ -58,8 +58,15 @@ export interface StudentRecord {
 
 export interface ListStudentsOptions {
   search?: string;
+  /** 'archived' lists archived records; omitted or 'active' lists active ones. */
+  status?: 'active' | 'archived';
   limit?: number;
   offset?: number;
+}
+
+export interface CountStudentsOptions {
+  search?: string;
+  status?: 'active' | 'archived';
 }
 
 /** Persists tenant-scoped student records; codes are durable identity and never reused. */
@@ -92,7 +99,7 @@ export class StudentRepository extends TenantScopedRepository {
       .get();
   }
 
-  listActive(options: ListStudentsOptions = {}) {
+  list(options: ListStudentsOptions = {}) {
     const search = options.search?.trim();
     const limit = options.limit ?? 50;
     const offset = options.offset ?? 0;
@@ -100,23 +107,32 @@ export class StudentRepository extends TenantScopedRepository {
     return this.db
       .select(studentColumns)
       .from(student)
-      .where(activeStudentWhere(this.schoolId, search))
+      .where(studentWhere(this.schoolId, search, options.status))
       .orderBy(asc(student.lastName), asc(student.firstName), asc(student.code))
       .limit(limit)
       .offset(offset)
       .all();
   }
 
-  /** Total number of active students, used for stable pagination totals. */
-  countActive(options: { search?: string } = {}) {
+  /** Total students matching the list filters, used for stable pagination totals. */
+  count(options: CountStudentsOptions = {}) {
     const search = options.search?.trim();
     const row = this.db
       .select({ value: count() })
       .from(student)
-      .where(activeStudentWhere(this.schoolId, search))
+      .where(studentWhere(this.schoolId, search, options.status))
       .get();
 
     return row?.value ?? 0;
+  }
+
+  listActive(options: ListStudentsOptions = {}) {
+    return this.list({ ...options, status: 'active' });
+  }
+
+  /** Total number of active students, used for stable pagination totals. */
+  countActive(options: CountStudentsOptions = {}) {
+    return this.count({ ...options, status: 'active' });
   }
 
   /**
@@ -179,11 +195,17 @@ export function createStudentRepository(db: RepositoryExecutor, tenant: TenantCo
   return new StudentRepository(db, tenant);
 }
 
-function activeStudentWhere(schoolId: string, search: string | undefined) {
+function studentWhere(
+  schoolId: string,
+  search: string | undefined,
+  status: 'active' | 'archived' | undefined
+) {
+  const archived = status === 'archived';
+
   return and(
     eq(student.schoolId, schoolId),
-    eq(student.isActive, true),
-    isNull(student.deletedAt),
+    eq(student.isActive, !archived),
+    archived ? isNotNull(student.deletedAt) : isNull(student.deletedAt),
     search
       ? or(
           like(student.firstName, `%${search}%`),
