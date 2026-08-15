@@ -4,7 +4,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   applyApplicationMigrations,
   resolveSqliteMigrationsFolder,
@@ -17,11 +17,21 @@ import {
   createUserRepository,
 } from '../repositories.js';
 import * as schema from '../schema.sqlite.js';
-import { foundationSeed, foundationSeedVersion, seedFoundation } from '../seeds.js';
+import {
+  foundationSeed,
+  foundationSeedVersion,
+  resolveSeedPasswordHash,
+  seedFoundation,
+} from '../seeds.js';
 
 const migrationsDir = fileURLToPath(new URL('../../migrations/sqlite/', import.meta.url));
 const legacySchoolId = '11111111-1111-4111-8111-111111111111';
 const legacyUserId = '22222222-2222-4222-8222-222222222222';
+
+// Real bcrypt-format hashes: only the prefix and cost are validated, so the
+// remainder is a stable dummy body used across the seed tests.
+const cost11Hash = '$2b$11$C6UzMDM.H6dfI/f/IKcEeOq8GmUiZ6ztp7Z8VsYzHf5fQK1x6ZVdW';
+const cost12Hash = '$2b$12$C6UzMDM.H6dfI/f/IKcEeOq8GmUiZ6ztp7Z8VsYzHf5fQK1x6ZVdW';
 
 describe('database foundation migrations', () => {
   let sqlite: Database.Database;
@@ -416,17 +426,26 @@ describe('tenant-scoped database primitives', () => {
     sqlite.close();
   });
 
-  it('rejects an invalid EDUTRACK_SEED_PASSWORD_HASH instead of persisting a broken login', async () => {
-    vi.stubEnv('EDUTRACK_SEED_PASSWORD_HASH', 'plaintext-password');
-    vi.resetModules();
+  it('keeps demo accounts locked when the seed password hash is unset or empty', () => {
+    expect(resolveSeedPasswordHash(undefined)).toBe('!UNUSABLE_PASSWORD_HASH!');
+    expect(resolveSeedPasswordHash('')).toBe('!UNUSABLE_PASSWORD_HASH!');
+  });
 
-    try {
-      await expect(import('../seeds.js')).rejects.toThrow(
-        /EDUTRACK_SEED_PASSWORD_HASH doit être un hash bcrypt/
-      );
-    } finally {
-      vi.unstubAllEnvs();
-    }
+  it('rejects invalid EDUTRACK_SEED_PASSWORD_HASH values instead of persisting a broken login', () => {
+    expect(() => resolveSeedPasswordHash('plaintext-password')).toThrow(
+      /EDUTRACK_SEED_PASSWORD_HASH doit être un hash bcrypt/
+    );
+    expect(() => resolveSeedPasswordHash('$2b$12$too-short')).toThrow(
+      /EDUTRACK_SEED_PASSWORD_HASH doit être un hash bcrypt/
+    );
+    // Bcrypt below work factor 12 (the app's BCRYPT_COST) is rejected.
+    expect(() => resolveSeedPasswordHash(cost11Hash)).toThrow(
+      /EDUTRACK_SEED_PASSWORD_HASH doit être un hash bcrypt/
+    );
+  });
+
+  it('accepts a valid bcrypt cost-12 EDUTRACK_SEED_PASSWORD_HASH', () => {
+    expect(resolveSeedPasswordHash(cost12Hash)).toBe(cost12Hash);
   });
 
   it('seeds deterministic foundation data idempotently', () => {
