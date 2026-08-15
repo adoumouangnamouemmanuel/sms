@@ -108,8 +108,10 @@ export function parseImportWorkbook(kind: ImportKind, buffer: Buffer): ParsedImp
 // ---------------------------------------------------------------------------
 
 function findHeaderRow(rawRows: unknown[][]): number {
+  // sheet_to_json with header: 1 can leave holes for blank rows — skip them.
   return rawRows.findIndex(
     (row) =>
+      Array.isArray(row) &&
       row.some((cell) => normalizeHeader(cell) === 'prénom') &&
       row.some((cell) => normalizeHeader(cell) === 'nom')
   );
