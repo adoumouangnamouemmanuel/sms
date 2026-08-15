@@ -181,7 +181,7 @@ export class ImportsService {
         const validRows = preview.rows.filter((row) => row.errors.length === 0);
         let imported = 0;
         let skippedExisting = 0;
-        let errored = 0;
+        const errored = 0;
 
         if (preview.kind === 'GUARDIANS') {
           // Guardians carry no code: names are not identity, so every row is
@@ -215,7 +215,8 @@ export class ImportsService {
               if (isUniqueConstraintViolation(error)) {
                 skippedExisting += 1;
               } else {
-                errored += 1;
+                console.error('Unexpected error importing guardian row:', error);
+                throw error;
               }
             }
           }
@@ -241,23 +242,40 @@ export class ImportsService {
               continue;
             }
 
-            const code = explicitCode
-              ? normalizePeopleCode(explicitCode)
-              : generatePeopleCode(transaction, tenant, this.now, () => repository.countAll());
+            for (let attempt = 0; attempt < (explicitCode ? 1 : 3); attempt++) {
+              const code = explicitCode
+                ? normalizePeopleCode(explicitCode)
+                : generatePeopleCode(
+                    transaction,
+                    tenant,
+                    this.now,
+                    () => repository.countAll(),
+                    attempt
+                  );
 
-            try {
-              if (preview.kind === 'STUDENTS') {
-                repository.create(toStudentCreateInput(row, code));
-              } else {
-                repository.create(toTeacherCreateInput(row, code));
-              }
+              try {
+                if (preview.kind === 'STUDENTS') {
+                  repository.create(toStudentCreateInput(row, code));
+                } else {
+                  repository.create(toTeacherCreateInput(row, code));
+                }
 
-              imported += 1;
-            } catch (error) {
-              if (isUniqueConstraintViolation(error)) {
-                skippedExisting += 1;
-              } else {
-                errored += 1;
+                imported += 1;
+                break;
+              } catch (error) {
+                if (isUniqueConstraintViolation(error)) {
+                  if (explicitCode) {
+                    skippedExisting += 1;
+                    break;
+                  } else if (attempt === 2) {
+                    console.error('Failed to generate unique code for row after 3 attempts');
+                    throw error;
+                  }
+                  // Continue to retry generated code
+                } else {
+                  console.error('Unexpected error importing student/teacher row:', error);
+                  throw error;
+                }
               }
             }
           }
