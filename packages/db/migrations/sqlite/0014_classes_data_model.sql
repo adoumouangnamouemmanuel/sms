@@ -1,3 +1,9 @@
+-- Re-issued as 0014 (was 0009_gifted_kronos): the original entry's journal
+-- `when` timestamp was lower than already-applied migrations, so drizzle's
+-- migrator permanently skipped it on databases that had already migrated past
+-- 0007 (a fresh database applied everything in order and was unaffected). This
+-- renumbering with a later `when` lets existing databases pick up the DDL.
+--
 -- Phase 4.1: classes and curriculum data model (roadmap §10.1).
 -- Additive migration: five new tenant-scoped tables (subject, classroom,
 -- class_subject, class_enrollment, student_subject_enrollment) with composite
