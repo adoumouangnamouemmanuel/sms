@@ -157,6 +157,48 @@ describe('student repository', () => {
     ).toEqual(['NDS-DEMO-2026-000000031']);
   });
 
+  it('searches active students by code and counts totals for pagination', () => {
+    const [school] = foundationSeed.schools;
+    const repository = createStudentRepository(db, createTenantContext(school.id));
+
+    repository.create({
+      code: 'NDS-DEMO-2026-000000040',
+      firstName: 'Aminata',
+      lastName: 'Mahamat',
+    });
+    repository.create({
+      code: 'NDS-DEMO-2026-000000041',
+      firstName: 'Ibrahim',
+      lastName: 'Ousmane',
+    });
+
+    const byCode = repository.listActive({ search: '2026-000000040' });
+    expect(byCode).toHaveLength(1);
+    expect(byCode[0]?.firstName).toBe('Aminata');
+    expect(repository.countActive({ search: '000000040' })).toBe(1);
+    expect(repository.countActive()).toBe(2);
+  });
+
+  it('counts archived students in the code sequence total', () => {
+    const [school] = foundationSeed.schools;
+    const repository = createStudentRepository(db, createTenantContext(school.id));
+
+    const studentRecord = repository.create({
+      code: 'NDS-DEMO-2026-000000050',
+      firstName: 'Aminata',
+      lastName: 'Mahamat',
+    });
+
+    expect(repository.countActive()).toBe(1);
+    expect(repository.countAll()).toBe(1);
+
+    repository.archive(studentRecord.id, '2026-08-15T10:00:00.000Z');
+
+    expect(repository.countActive()).toBe(0);
+    // Archived students keep their codes, so they stay in the sequence total.
+    expect(repository.countAll()).toBe(1);
+  });
+
   it('archives and reactivates a student', () => {
     const [school] = foundationSeed.schools;
     const repository = createStudentRepository(db, createTenantContext(school.id));

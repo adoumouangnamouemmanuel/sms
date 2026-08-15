@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull, like, or, sql } from 'drizzle-orm';
+import { and, asc, count, eq, isNull, like, or, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { PersonSex } from '@edutrack/shared';
 import type { RepositoryExecutor, TenantContext } from './base.js';
@@ -100,20 +100,37 @@ export class StudentRepository extends TenantScopedRepository {
     return this.db
       .select(studentColumns)
       .from(student)
-      .where(
-        and(
-          eq(student.schoolId, this.schoolId),
-          eq(student.isActive, true),
-          isNull(student.deletedAt),
-          search
-            ? or(like(student.firstName, `%${search}%`), like(student.lastName, `%${search}%`))
-            : undefined
-        )
-      )
+      .where(activeStudentWhere(this.schoolId, search))
       .orderBy(asc(student.lastName), asc(student.firstName), asc(student.code))
       .limit(limit)
       .offset(offset)
       .all();
+  }
+
+  /** Total number of active students, used for stable pagination totals. */
+  countActive(options: { search?: string } = {}) {
+    const search = options.search?.trim();
+    const row = this.db
+      .select({ value: count() })
+      .from(student)
+      .where(activeStudentWhere(this.schoolId, search))
+      .get();
+
+    return row?.value ?? 0;
+  }
+
+  /**
+   * Total student rows for the school including archived ones. Codes are
+   * durable and never reused, so this drives the sequential NNI fallback.
+   */
+  countAll() {
+    const row = this.db
+      .select({ value: count() })
+      .from(student)
+      .where(eq(student.schoolId, this.schoolId))
+      .get();
+
+    return row?.value ?? 0;
   }
 
   update(id: string, input: UpdateStudentInput, updatedAt: string) {
@@ -160,6 +177,21 @@ export class StudentRepository extends TenantScopedRepository {
 
 export function createStudentRepository(db: RepositoryExecutor, tenant: TenantContext) {
   return new StudentRepository(db, tenant);
+}
+
+function activeStudentWhere(schoolId: string, search: string | undefined) {
+  return and(
+    eq(student.schoolId, schoolId),
+    eq(student.isActive, true),
+    isNull(student.deletedAt),
+    search
+      ? or(
+          like(student.firstName, `%${search}%`),
+          like(student.lastName, `%${search}%`),
+          like(student.code, `%${search}%`)
+        )
+      : undefined
+  );
 }
 
 function normalizeStudentCreate(input: CreateStudentInput) {
