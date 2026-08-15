@@ -276,6 +276,73 @@ describe('imports routes', () => {
     expect((readJson(listResponse) as ApiSuccess<PaginatedStudentsResponse>).data.total).toBe(2);
   });
 
+  it('skips already-present people when the same file is re-imported under a new identifier', async () => {
+    const accessToken = await loginAndReadAccessToken('directeur');
+    const { payload, contentType } = buildMultipart(
+      studentWorkbook([
+        [null, 'Aminata', 'Mahamat', 'F'],
+        [null, 'Ibrahim', 'Ousmane', 'M'],
+      ]),
+      'eleves.xlsx'
+    );
+
+    const firstPreview = await preview(accessToken, payload, contentType);
+    const firstConfirm = await server.inject({
+      method: 'POST',
+      url: '/imports/confirm',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { importId: firstPreview.importId, importIdentifier: 'rentree-2026' },
+    });
+    expect((readJson(firstConfirm) as ApiSuccess<ConfirmImportResponse>).data.imported).toBe(2);
+
+    // Same file, different identifier: the codes are generated, so the only
+    // way to catch the duplicate is the exact full-name check.
+    const secondPreview = await preview(accessToken, payload, contentType);
+    const secondConfirm = await server.inject({
+      method: 'POST',
+      url: '/imports/confirm',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { importId: secondPreview.importId, importIdentifier: 'rentree-septembre' },
+    });
+
+    expect(readJson(secondConfirm) as ApiSuccess<ConfirmImportResponse>).toMatchObject({
+      success: true,
+      data: { alreadyConfirmed: false, imported: 0, skippedExisting: 2, errorRows: 0 },
+    });
+
+    const listResponse = await server.inject({
+      method: 'GET',
+      url: '/students',
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect((readJson(listResponse) as ApiSuccess<PaginatedStudentsResponse>).data.total).toBe(2);
+  });
+
+  it('does not block coded rows that share a name with existing students', async () => {
+    const accessToken = await loginAndReadAccessToken('directeur');
+    const { payload, contentType } = buildMultipart(
+      studentWorkbook([
+        ['NDS-DEMO-2026-A1', 'Aminata', 'Mahamat', 'F'],
+        ['NDS-DEMO-2026-A2', 'Aminata', 'Mahamat', 'F'],
+      ]),
+      'eleves.xlsx'
+    );
+    const previewData = await preview(accessToken, payload, contentType);
+
+    const confirmResponse = await server.inject({
+      method: 'POST',
+      url: '/imports/confirm',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { importId: previewData.importId, importIdentifier: 'jumelles-2026' },
+    });
+
+    // Names are never the sole identity when codes exist.
+    expect(readJson(confirmResponse) as ApiSuccess<ConfirmImportResponse>).toMatchObject({
+      success: true,
+      data: { imported: 2, skippedExisting: 0, errorRows: 0 },
+    });
+  });
+
   it('skips rows whose code already exists in the school', async () => {
     const accessToken = await loginAndReadAccessToken('directeur');
     // A student with this explicit code already exists in the school.
