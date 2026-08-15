@@ -99,6 +99,28 @@ export class StudentRepository extends TenantScopedRepository {
       .get();
   }
 
+  /**
+   * Case-insensitive exact full-name match, including archived rows: used by the
+   * import slice to block duplicate people when no code identity is available
+   * (codes stay the strong identity whenever they exist).
+   */
+  findByName(firstName: string, lastName: string) {
+    const trimmedFirstName = firstName.trim();
+    const trimmedLastName = lastName.trim();
+
+    return this.db
+      .select(studentColumns)
+      .from(student)
+      .where(
+        and(
+          eq(student.schoolId, this.schoolId),
+          sql`lower(${student.firstName}) = lower(${trimmedFirstName})`,
+          sql`lower(${student.lastName}) = lower(${trimmedLastName})`
+        )
+      )
+      .get();
+  }
+
   list(options: ListStudentsOptions = {}) {
     const search = options.search?.trim();
     const limit = options.limit ?? 50;
