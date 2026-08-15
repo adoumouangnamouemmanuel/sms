@@ -104,7 +104,7 @@ export function SubjectsView({
           status={module.subjects.status}
         />
 
-        {module.subjects.isLoading ? (
+        {module.subjects.items.length === 0 && module.subjects.isLoading ? (
           <p className="py-10 text-center text-sm font-bold text-slate-400">
             {t('classes.loading')}
           </p>
