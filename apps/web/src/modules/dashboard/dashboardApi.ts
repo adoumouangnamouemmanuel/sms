@@ -9,7 +9,7 @@ import { listGuardians, listStudents } from '../students/studentsApi';
 import { listTeachers } from '../teachers/teachersApi';
 
 /**
- * Real dashboard data — never simulated. Headcounts come from the list
+ * Real dashboard data - never simulated. Headcounts come from the list
  * endpoints' `total`; the class distribution is aggregated from live
  * classrooms and their enrollment counts; the activity timeline is backed by
  * the tenant audit log.

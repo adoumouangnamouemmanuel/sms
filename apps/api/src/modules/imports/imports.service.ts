@@ -86,8 +86,8 @@ export class ImportsService {
       throw emptyImportFile();
     }
 
-    // Advisory duplicate warnings (never blocking): a row whose code — or, for
-    // uncoded rows, whose exact full name — already exists in the school. Names
+    // Advisory duplicate warnings (never blocking): a row whose code - or, for
+    // uncoded rows, whose exact full name - already exists in the school. Names
     // are deliberately NOT treated as identity: two real people can share an
     // exact name, so this only flags the row for the admin to double-check.
     const tenant = createTenantContext(actor.schoolId);
@@ -108,7 +108,7 @@ export class ImportsService {
 
         // Optional student code: when present, the guardian is auto-linked to
         // the matching student at confirm. An unknown code is a hard row error
-        // — the admin explicitly asked for a link that cannot exist.
+        // - the admin explicitly asked for a link that cannot exist.
         const studentCode = row.values.studentCode?.trim();
 
         if (studentCode) {
@@ -421,7 +421,7 @@ export class ImportsService {
 
             // Codes are the ONLY identity: a code already present in the school
             // (including archived rows) is skipped. Uncoded rows are always
-            // imported — the preview already warned the admin about possible
+            // imported - the preview already warned the admin about possible
             // name matches, because two real people can share an exact name.
             const alreadyPresent = explicitCode
               ? Boolean(repository.findByCode(normalizePeopleCode(explicitCode)))

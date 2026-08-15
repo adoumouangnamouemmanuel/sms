@@ -122,7 +122,7 @@ const resources = {
         modules: {
           ACADEMIC_STRUCTURE: 'Structure académique',
           CLASSES: 'Classes & programmes',
-          SCHOOL_SETUP: 'Configuration',
+          SCHOOL_SETUP: 'Établissement',
           STUDENTS: 'Élèves',
           TEACHERS: 'Professeurs',
         },
@@ -640,7 +640,7 @@ const resources = {
         cancel: 'Annuler',
         classes: {
           effectif: '{{count}} élèves',
-          hint: 'Aperçu des classes par niveau. Données simulées — remplacées par le module Classes.',
+          hint: 'Aperçu des classes par niveau. Données simulées - remplacées par le module Classes.',
           title: 'Classes par niveau',
         },
         errors: {
@@ -751,7 +751,7 @@ const resources = {
         edit: 'Modifier',
         enrolment: {
           bulkHint: 'Élèves sans classe active pour l’année en cours.',
-          bulkHintYear: 'Élèves sans classe active — {{year}}.',
+          bulkHintYear: 'Élèves sans classe active - {{year}}.',
           bulkTitle: 'Inscription groupée',
           capacity: 'Capacité : {{capacity}}',
           chooseClass: 'Choisir une classe…',
@@ -840,7 +840,7 @@ const resources = {
           noOptional: 'Aucune matière optionnelle dans cette classe.',
           options: 'Options',
           optionsHint: 'Choisissez les matières optionnelles à activer pour cet élève.',
-          optionsTitle: 'Options — {{name}}',
+          optionsTitle: 'Options - {{name}}',
           reason: 'Motif',
           reasonPlaceholder: 'Ex. changement de section, départ de la famille…',
           selected: '{{count}} sélectionné(s)',
@@ -910,7 +910,7 @@ const resources = {
           confirming: 'Import en cours…',
           identifier: 'Identifiant d’import',
           identifierHint:
-            'Pré-rempli à partir du nom du fichier — vous pouvez le modifier. Le même identifiant ne peut être importé qu’une seule fois.',
+            'Pré-rempli à partir du nom du fichier - vous pouvez le modifier. Le même identifiant ne peut être importé qu’une seule fois.',
           identifierPlaceholder: 'Ex. rentree-2026-09-01',
           identifierRequired: 'L’identifiant d’import est requis.',
           submit: 'Confirmer l’import',
@@ -1619,7 +1619,7 @@ const resources = {
         cancel: 'إلغاء',
         classes: {
           effectif: '{{count}} طالب',
-          hint: 'معاينة الأقسام لكل مستوى. بيانات محاكاة — سيتم استبدالها بوحدة الأقسام.',
+          hint: 'معاينة الأقسام لكل مستوى. بيانات محاكاة - سيتم استبدالها بوحدة الأقسام.',
           title: 'الأقسام حسب المستوى',
         },
         errors: {
@@ -1729,7 +1729,7 @@ const resources = {
         edit: 'تعديل',
         enrolment: {
           bulkHint: 'طلاب بلا قسم نشط للسنة الدراسية الحالية.',
-          bulkHintYear: 'طلاب بلا قسم نشط — {{year}}.',
+          bulkHintYear: 'طلاب بلا قسم نشط - {{year}}.',
           bulkTitle: 'تسجيل جماعي',
           capacity: 'السعة: {{capacity}}',
           chooseClass: 'اختر قسماً…',
@@ -1812,7 +1812,7 @@ const resources = {
           noOptional: 'لا توجد مواد اختيارية في هذا القسم.',
           options: 'خيارات',
           optionsHint: 'اختر المواد الاختيارية لتفعيلها لهذا الطالب.',
-          optionsTitle: 'الخيارات — {{name}}',
+          optionsTitle: 'الخيارات - {{name}}',
           reason: 'السبب',
           reasonPlaceholder: 'مثال: تغيير الشعبة، انتقال العائلة…',
           selected: '{{count}} محدد',
@@ -1881,7 +1881,7 @@ const resources = {
           confirming: 'جارٍ الاستيراد…',
           identifier: 'معرّف الاستيراد',
           identifierHint:
-            'يُملأ تلقائياً من اسم الملف — يمكنك تعديله. لا يمكن استيراد نفس المعرّف إلا مرة واحدة.',
+            'يُملأ تلقائياً من اسم الملف - يمكنك تعديله. لا يمكن استيراد نفس المعرّف إلا مرة واحدة.',
           identifierPlaceholder: 'مثال: rentree-2026-09-01',
           identifierRequired: 'معرّف الاستيراد مطلوب.',
           submit: 'تأكيد الاستيراد',
@@ -2565,7 +2565,7 @@ const resources = {
         cancel: 'Cancel',
         classes: {
           effectif: '{{count}} students',
-          hint: 'Classes preview per level. Simulated data — replaced by the Classes module.',
+          hint: 'Classes preview per level. Simulated data - replaced by the Classes module.',
           title: 'Classes per level',
         },
         errors: {
@@ -2675,7 +2675,7 @@ const resources = {
         edit: 'Edit',
         enrolment: {
           bulkHint: 'Students without an active class for the current academic year.',
-          bulkHintYear: 'Students without an active class — {{year}}.',
+          bulkHintYear: 'Students without an active class - {{year}}.',
           bulkTitle: 'Bulk enrolment',
           capacity: 'Capacity: {{capacity}}',
           chooseClass: 'Choose a class…',
@@ -2761,7 +2761,7 @@ const resources = {
           noOptional: 'No optional subjects in this class.',
           options: 'Options',
           optionsHint: 'Choose the optional subjects to activate for this student.',
-          optionsTitle: 'Options — {{name}}',
+          optionsTitle: 'Options - {{name}}',
           reason: 'Reason',
           reasonPlaceholder: 'E.g. section change, family move…',
           selected: '{{count}} selected',
@@ -2830,7 +2830,7 @@ const resources = {
           confirming: 'Importing…',
           identifier: 'Import identifier',
           identifierHint:
-            'Prefilled from the file name — you can edit it. The same identifier can only be imported once.',
+            'Prefilled from the file name - you can edit it. The same identifier can only be imported once.',
           identifierPlaceholder: 'e.g. rentree-2026-09-01',
           identifierRequired: 'The import identifier is required.',
           submit: 'Confirm import',

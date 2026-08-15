@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * Audit trail — recent tenant events for the dashboard activity timeline.
+ * Audit trail - recent tenant events for the dashboard activity timeline.
  * Read-only for the school; events are written by the application services.
  */
 

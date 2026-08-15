@@ -15,7 +15,7 @@ export interface ParsedImportRow {
   errors: string[];
   /**
    * Advisory only: the code (or exact full name for uncoded rows) already
-   * exists in the school. Set by the service at preview time — the parser
+   * exists in the school. Set by the service at preview time - the parser
    * itself never touches the database, so this always starts false.
    */
   possibleDuplicate: boolean;
@@ -50,7 +50,7 @@ export function importFileError(fileError: string): ParsedImportWorkbook {
  * Reads the first sheet of an .xlsx buffer, locates the French header row
  * (first row containing Prénom + Nom), maps the template columns, validates
  * every data row with French messages, and marks duplicate codes within the
- * batch. Never touches the database — preview-only data.
+ * batch. Never touches the database - preview-only data.
  */
 export function parseImportWorkbook(kind: ImportKind, buffer: Buffer): ParsedImportWorkbook {
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
@@ -118,7 +118,7 @@ export function parseImportWorkbook(kind: ImportKind, buffer: Buffer): ParsedImp
 // ---------------------------------------------------------------------------
 
 function findHeaderRow(kind: ImportKind, rawRows: unknown[][]): number {
-  // sheet_to_json with header: 1 can leave holes for blank rows — skip them.
+  // sheet_to_json with header: 1 can leave holes for blank rows - skip them.
   const requiredHeaders = requiredHeaderPair(kind);
 
   return rawRows.findIndex(
@@ -565,7 +565,7 @@ function markDuplicateCodes(rows: ParsedImportRow[]) {
 }
 
 // ---------------------------------------------------------------------------
-// CSV export (rejected rows) — formula-injection safe
+// CSV export (rejected rows) - formula-injection safe
 // ---------------------------------------------------------------------------
 
 /** Quotes CSV cells and neutralizes spreadsheet formula injection. */

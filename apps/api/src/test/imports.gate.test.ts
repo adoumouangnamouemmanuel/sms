@@ -157,13 +157,13 @@ describe('Phase 3 §9.5 gate', () => {
       },
     });
 
-    // Every valid row was persisted — nothing was lost or partially written.
+    // Every valid row was persisted - nothing was lost or partially written.
     expect(countRows('student')).toBe(VALID_ROWS);
 
     // No two students share a code (explicit or generated) within the school.
     expect(duplicateCodeRows()).toBe(0);
 
-    // Every created row has a code plus both names — no partial records.
+    // Every created row has a code plus both names - no partial records.
     const incomplete = sqlite
       .prepare(
         `SELECT COUNT(*) AS value
@@ -369,7 +369,7 @@ function buildGateWorkbook() {
     ]);
   }
 
-  // 20 invalid rows — 10 missing first names, 10 invalid sexes.
+  // 20 invalid rows - 10 missing first names, 10 invalid sexes.
   for (let index = 0; index < 10; index += 1) {
     rows.push([null, '', pick(LAST_NAMES, random), pick(SEXES, random)]);
     rows.push([null, pick(FIRST_NAMES, random), pick(LAST_NAMES, random), 'XX']);

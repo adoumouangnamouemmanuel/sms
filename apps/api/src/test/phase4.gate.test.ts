@@ -45,7 +45,7 @@ const teacherFourId = '00000000-0000-4000-8000-00000000a304';
 
 /**
  * Pilot fixture for the 10.4 gate: a realistic Troisième (3E-A) cohort and
- * curriculum as a SchoolMaster would configure it — subject catalogue, one
+ * curriculum as a SchoolMaster would configure it - subject catalogue, one
  * classroom for the current year, subject/coefficient/teacher assignments and
  * three enrolled students. The expected bulletin rows below are the reference
  * for the structure (roadmap §10.4, "exact subject rows expected on a
@@ -136,7 +136,7 @@ describe('phase 4 gate (roadmap §10.4)', () => {
   });
 
   // -------------------------------------------------------------------------
-  // 10.4 — "A SchoolMaster configures a realistic class and curriculum from a
+  // 10.4 - "A SchoolMaster configures a realistic class and curriculum from a
   // pilot fixture."
   // -------------------------------------------------------------------------
 
@@ -181,7 +181,7 @@ describe('phase 4 gate (roadmap §10.4)', () => {
   });
 
   // -------------------------------------------------------------------------
-  // 10.4 — "The structure produces the exact subject rows expected on a
+  // 10.4 - "The structure produces the exact subject rows expected on a
   // reference bulletin."
   // -------------------------------------------------------------------------
 
@@ -213,7 +213,7 @@ describe('phase 4 gate (roadmap §10.4)', () => {
   });
 
   // -------------------------------------------------------------------------
-  // 10.4 — "Reimporting the same confirmed curriculum file is idempotent and
+  // 10.4 - "Reimporting the same confirmed curriculum file is idempotent and
   // does not duplicate assignments."
   // -------------------------------------------------------------------------
 
@@ -265,7 +265,7 @@ describe('phase 4 gate (roadmap §10.4)', () => {
   });
 
   // -------------------------------------------------------------------------
-  // 10.4 — "Teacher assignment and optional-subject authorization tests pass."
+  // 10.4 - "Teacher assignment and optional-subject authorization tests pass."
   // -------------------------------------------------------------------------
 
   it('authorizes optional-subject enrolment only for optional class-subjects', async () => {
@@ -322,7 +322,7 @@ describe('phase 4 gate (roadmap §10.4)', () => {
   });
 
   // -------------------------------------------------------------------------
-  // 10.4 — "Transfer and historical-enrolment tests pass."
+  // 10.4 - "Transfer and historical-enrolment tests pass."
   // -------------------------------------------------------------------------
 
   it('transfers a pilot student with effective date and reason, preserving history', async () => {

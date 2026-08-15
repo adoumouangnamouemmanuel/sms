@@ -745,7 +745,7 @@ describe('classes routes', () => {
     await assignSubject(accessToken, classroomSixA, subjectMathId, 4, true, teacherOneId);
     await assignSubject(accessToken, classroomSixA, subjectFrenchId, 3, false, null);
 
-    // Target already has FR — the preview flags it as already assigned.
+    // Target already has FR - the preview flags it as already assigned.
     await assignSubject(accessToken, classroomThreeA, subjectFrenchId, 2, true, null);
 
     const preview = await server.inject({

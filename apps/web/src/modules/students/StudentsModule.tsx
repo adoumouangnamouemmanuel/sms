@@ -637,7 +637,7 @@ function StudentTable({
               </button>
             </td>
             <td className="px-3 py-3 text-[13px] font-semibold text-slate-500">
-              {student.sex ? t(`students.sex.${student.sex}`) : '—'}
+              {student.sex ? t(`students.sex.${student.sex}`) : '-'}
             </td>
             <td className="px-3 py-3">
               <StatusBadge
@@ -718,7 +718,7 @@ function GuardianTable({
               </button>
             </td>
             <td className="px-3 py-3 text-[13px] font-semibold text-slate-500">
-              {guardian.phone ?? '—'}
+              {guardian.phone ?? '-'}
             </td>
             <td className="px-3 py-3">
               <StatusBadge
@@ -840,19 +840,19 @@ function StudentDetail({
       <dl className="mb-6 grid grid-cols-2 gap-x-6 gap-y-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-3">
         <DetailField
           label={t('students.columns.sex')}
-          value={profile.student.sex ? t(`students.sex.${profile.student.sex}`) : '—'}
+          value={profile.student.sex ? t(`students.sex.${profile.student.sex}`) : '-'}
         />
         <DetailField
           label={t('students.detail.dateOfBirth')}
-          value={profile.student.dateOfBirth ? formatISODate(profile.student.dateOfBirth) : '—'}
+          value={profile.student.dateOfBirth ? formatISODate(profile.student.dateOfBirth) : '-'}
         />
         <DetailField
           label={t('students.detail.nationality')}
-          value={profile.student.nationality ?? '—'}
+          value={profile.student.nationality ?? '-'}
         />
-        <DetailField label={t('students.detail.phone')} value={profile.student.phone ?? '—'} />
-        <DetailField label={t('students.detail.email')} value={profile.student.email ?? '—'} />
-        <DetailField label={t('students.detail.address')} value={profile.student.address ?? '—'} />
+        <DetailField label={t('students.detail.phone')} value={profile.student.phone ?? '-'} />
+        <DetailField label={t('students.detail.email')} value={profile.student.email ?? '-'} />
+        <DetailField label={t('students.detail.address')} value={profile.student.address ?? '-'} />
       </dl>
 
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -1014,9 +1014,9 @@ function GuardianDetail({
       </div>
 
       <dl className="mb-6 grid grid-cols-2 gap-x-6 gap-y-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-3">
-        <DetailField label={t('students.detail.phone')} value={profile.guardian.phone ?? '—'} />
-        <DetailField label={t('students.detail.email')} value={profile.guardian.email ?? '—'} />
-        <DetailField label={t('students.detail.address')} value={profile.guardian.address ?? '—'} />
+        <DetailField label={t('students.detail.phone')} value={profile.guardian.phone ?? '-'} />
+        <DetailField label={t('students.detail.email')} value={profile.guardian.email ?? '-'} />
+        <DetailField label={t('students.detail.address')} value={profile.guardian.address ?? '-'} />
       </dl>
 
       <h3 className="text-[13px] font-black uppercase tracking-wide text-slate-500">

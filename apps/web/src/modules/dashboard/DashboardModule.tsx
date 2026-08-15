@@ -126,7 +126,7 @@ export function DashboardModule({
         </div>
       ) : null}
 
-      {/* ── KPI cards — real headcounts ──────────────────────────────────── */}
+      {/* ── KPI cards - real headcounts ──────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
           icon={<UsersIcon />}
@@ -163,7 +163,7 @@ export function DashboardModule({
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* ── Structure académique — real levels and effectifs ───────────── */}
+        {/* ── Structure académique - real levels and effectifs ───────────── */}
         <section className="flex flex-col rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] lg:col-span-2 lg:p-8">
           <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -225,7 +225,7 @@ export function DashboardModule({
           </div>
         </section>
 
-        {/* ── Activité récente — real audit events ───────────────────────── */}
+        {/* ── Activité récente - real audit events ───────────────────────── */}
         <section className="flex flex-col rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] lg:p-8">
           <div className="mb-8 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -418,7 +418,7 @@ function ActivityDot() {
   );
 }
 
-// Icons — 24×24, 2px stroke
+// Icons - 24×24, 2px stroke
 
 function UsersIcon() {
   return (

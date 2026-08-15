@@ -18,7 +18,7 @@ import { classesForbidden, classroomNotFound } from './classes.errors.js';
 
 /**
  * Copies the subject/coefficient/teacher assignment of a source classroom
- * onto a target classroom (roadmap §10.2 — "copy a curriculum from a previous
+ * onto a target classroom (roadmap §10.2 - "copy a curriculum from a previous
  * class/year with review before confirmation"). The preview lists exactly what
  * would be assigned; confirmation only adds pairs the target does not already
  * have (idempotent).
@@ -170,7 +170,7 @@ export class CurriculumService {
 }
 
 function buildClassroomLabel(code: string, name: string | null) {
-  return name ? `${code} — ${name}` : code;
+  return name ? `${code} - ${name}` : code;
 }
 
 function isUniqueConstraintViolation(error: unknown) {

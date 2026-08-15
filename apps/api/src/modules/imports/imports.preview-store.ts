@@ -16,7 +16,7 @@ export interface StoredImportPreview {
 }
 
 /**
- * Holds parsed previews in memory only — the roadmap requires that preview
+ * Holds parsed previews in memory only - the roadmap requires that preview
  * never persists anything. Entries expire after IMPORT_PREVIEW_TTL_MS; the
  * confirm step re-reads from here and writes to the DB only when the user
  * confirms.

@@ -513,7 +513,7 @@ describe('imports routes', () => {
     });
 
     // Same name under a new identifier: warned, but never blocked (names are
-    // not identity — two real people can share an exact name).
+    // not identity - two real people can share an exact name).
     const secondPreview = await preview(accessToken, payload, contentType, 'GUARDIANS');
     expect(secondPreview.rows[0]?.possibleDuplicate).toBe(true);
     expect(secondPreview.rows[0]?.errors).toEqual([]);

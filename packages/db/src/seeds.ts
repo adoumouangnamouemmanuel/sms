@@ -9,7 +9,7 @@ import { schemaMetadata, school, user, type UserRole } from './schema.sqlite.js'
  * - Username: `directeur`
  * - Password: (set via EDUTRACK_SEED_PASSWORD_HASH)
  *
- * Synthetic demo data only — never use in a real school.
+ * Synthetic demo data only - never use in a real school.
  */
 const seedPasswordHash = resolveSeedPasswordHash(process.env.EDUTRACK_SEED_PASSWORD_HASH);
 

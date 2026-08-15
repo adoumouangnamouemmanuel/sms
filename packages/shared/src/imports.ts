@@ -182,8 +182,8 @@ export const importPreviewRowSchema = z.object({
   errors: z.array(z.string()),
   /**
    * Advisory warning (never blocks): the row's code or full name already
-   * exists in the school. Names alone are NOT identity — two real people can
-   * share an exact name — so this only flags the row for the admin to check.
+   * exists in the school. Names alone are NOT identity - two real people can
+   * share an exact name - so this only flags the row for the admin to check.
    */
   possibleDuplicate: z.boolean(),
 });
@@ -195,7 +195,7 @@ export const importPreviewResponseSchema = z.object({
   totalRows: z.number().int().min(0),
   validRows: z.number().int().min(0),
   errorRows: z.number().int().min(0),
-  /** Preview is capped (e.g. first rows) — never the whole file for huge sheets. */
+  /** Preview is capped (e.g. first rows) - never the whole file for huge sheets. */
   rows: z.array(importPreviewRowSchema),
 });
 

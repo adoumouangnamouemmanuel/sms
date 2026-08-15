@@ -48,7 +48,7 @@ export interface ClassEnrollmentsServiceOptions {
  * - Joining a class auto-enrols the required class-subjects; optional
  *   class-subjects are enrolled explicitly (EnrolOptionalSubjects).
  * - A transfer closes the current ACTIVE enrollment (TRANSFERRED, with the
- *   effective date and reason preserved) and opens a new one — history is
+ *   effective date and reason preserved) and opens a new one - history is
  *   never destroyed (AGENTS.md §9.3).
  * - Class capacity is respected when set.
  */
@@ -177,7 +177,7 @@ export class ClassEnrollmentsService {
   /**
    * Transfers a student to another classroom with an effective date and a
    * reason. The current ACTIVE enrollment is closed (status TRANSFERRED) and a
-   * new ACTIVE enrollment opens on the target classroom — the old row and its
+   * new ACTIVE enrollment opens on the target classroom - the old row and its
    * history remain consultable.
    */
   transfer(
@@ -212,7 +212,7 @@ export class ClassEnrollmentsService {
       );
 
       if (!current) {
-        // No active enrollment to transfer from — this is a fresh enrolment.
+        // No active enrollment to transfer from - this is a fresh enrolment.
         throw enrollmentNotFound();
       }
 

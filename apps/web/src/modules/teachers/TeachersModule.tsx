@@ -322,7 +322,7 @@ function TeacherTable({
               </button>
             </td>
             <td className="px-3 py-3 text-[13px] font-semibold text-slate-500">
-              {teacher.specialization ?? '—'}
+              {teacher.specialization ?? '-'}
             </td>
             <td className="px-3 py-3">
               <StatusBadge
@@ -444,15 +444,15 @@ function TeacherDetail({
       <dl className="mb-6 grid grid-cols-2 gap-x-6 gap-y-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-3">
         <DetailField
           label={t('teachers.detail.specialization')}
-          value={teacher.specialization ?? '—'}
+          value={teacher.specialization ?? '-'}
         />
         <DetailField
           label={t('teachers.detail.hireDate')}
-          value={teacher.hireDate ? formatISODate(teacher.hireDate) : '—'}
+          value={teacher.hireDate ? formatISODate(teacher.hireDate) : '-'}
         />
-        <DetailField label={t('teachers.detail.phone')} value={teacher.phone ?? '—'} />
-        <DetailField label={t('teachers.detail.email')} value={teacher.email ?? '—'} />
-        <DetailField label={t('teachers.detail.address')} value={teacher.address ?? '—'} />
+        <DetailField label={t('teachers.detail.phone')} value={teacher.phone ?? '-'} />
+        <DetailField label={t('teachers.detail.email')} value={teacher.email ?? '-'} />
+        <DetailField label={t('teachers.detail.address')} value={teacher.address ?? '-'} />
       </dl>
 
       <LoginSection
@@ -699,7 +699,7 @@ function CredentialsModal({
         setCopied(false);
       }, 1500);
     } catch {
-      // Clipboard unavailable (e.g. non-secure context) — the user can still
+      // Clipboard unavailable (e.g. non-secure context) - the user can still
       // read and type the credentials manually.
     }
   };

@@ -284,7 +284,7 @@ export function EnrolmentView({
                     <option value="">{t('classes.enrolment.chooseClass')}</option>
                     {classroomOptions.map((item) => (
                       <option key={item.classroom.id} value={item.classroom.id}>
-                        {item.classLevelName} {item.classroom.code} —{' '}
+                        {item.classLevelName} {item.classroom.code} -{' '}
                         {t('classes.enrolment.classEffectif', {
                           count: item.activeEnrollmentCount,
                         })}

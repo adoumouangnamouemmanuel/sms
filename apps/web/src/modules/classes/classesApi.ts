@@ -377,7 +377,7 @@ async function requestJson<T>(
 
   if (!response.ok || !payload.success) {
     // Fastify's default 404 body (route not registered on the running sidecar)
-    // has no `error.code` — fall back to a stable code so the UI can tell a
+    // has no `error.code` - fall back to a stable code so the UI can tell a
     // stale-service situation apart from a real application error.
     const errorBody = (payload as { error?: { code?: unknown; message?: unknown } }).error;
     const code =

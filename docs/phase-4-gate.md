@@ -1,4 +1,4 @@
-# Phase 4 Gate — classes, curriculum and enrolment (roadmap §10.4)
+# Phase 4 Gate - classes, curriculum and enrolment (roadmap §10.4)
 
 This document maps every acceptance item of the Phase 4 gate (roadmap §10.4) to
 its automated evidence. The gate is exercised end-to-end against the real API
@@ -43,10 +43,10 @@ import_identifier)` unique index keeps each batch traceable).
 ### 3. Teacher assignment and optional-subject authorization tests pass
 
 - **Evidence:**
-  - `classes.routes.test.ts` — "assigns a subject with coefficient and teacher
+  - `classes.routes.test.ts` - "assigns a subject with coefficient and teacher
     to a classroom", "rejects an already-assigned pair and an unknown teacher",
     "lists class-subjects with names and updates coefficient".
-  - `phase4.gate.test.ts` — "authorizes optional-subject enrolment only for
+  - `phase4.gate.test.ts` - "authorizes optional-subject enrolment only for
     optional class-subjects": the optional `EPS` class-subject accepts explicit
     enrolment, while requesting a required class-subject through
     `POST /class-enrollments/optional-subjects` is rejected with
@@ -56,11 +56,11 @@ import_identifier)` unique index keeps each batch traceable).
 ### 4. Transfer and historical-enrolment tests pass
 
 - **Evidence:**
-  - `classes.routes.test.ts` — "transfers a student with effective date and
+  - `classes.routes.test.ts` - "transfers a student with effective date and
     reason while preserving history" (closed enrollment `TRANSFERRED` with
     `exitDate`, new enrollment `ACTIVE` from the effective date, both rows kept
     per student/year, `ENROLMENT_TRANSFER` audit event).
-  - `phase4.gate.test.ts` — "transfers a pilot student with effective date and
+  - `phase4.gate.test.ts` - "transfers a pilot student with effective date and
     reason, preserving history" repeats the same assertions inside the pilot
     fixture, and confirms the source roster drops to 0.
 
@@ -69,7 +69,7 @@ import_identifier)` unique index keeps each batch traceable).
 - **Evidence:** `phase4.gate.test.ts → "produces the exact reference-bulletin subject rows for 3E-A"`.
 - After configuring the pilot fixture, `GET /class-subjects` returns the 8
   assignments; sorted by subject code (the bulletin display convention) they
-  match the reference rows **exactly** — subject code, name, coefficient,
+  match the reference rows **exactly** - subject code, name, coefficient,
   required/optional flag and assigned teacher:
 
   | Code | Matière                           | Coef. | Obligatoire | Professeur      |

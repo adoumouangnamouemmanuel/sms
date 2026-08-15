@@ -16,7 +16,7 @@ Roadmap §9.3 requires that a Teacher login be created and deactivated
 
 ## Decision
 
-### DP2 — generated credentials, shown exactly once
+### DP2 - generated credentials, shown exactly once
 
 `POST /teachers/:id/login` generates a username and a strong initial password
 server-side. The response (`teacherLoginCreatedResponseSchema`) contains
@@ -37,13 +37,13 @@ Rationale:
 
 - `POST /teachers/:id/login` requires an **active** teacher record.
 - `POST /teachers/:id/login/deactivate` requires a reason (same rule as
-  archiving a record) and only flips the `user` account flag — the teacher
+  archiving a record) and only flips the `user` account flag - the teacher
   record keeps its status.
 - `POST /teachers/:id/login/reactivate` re-enables the account.
 - Archiving a teacher record does not cascade to the account, and vice versa;
   the profile shows both statuses side by side.
 
-### DP1 — teachers are their own school module
+### DP1 - teachers are their own school module
 
 `TEACHERS` joins `STUDENTS` in `IMPLEMENTED_SCHOOL_MODULES` and the
 `school_module_config` CHECK (migration `0005`), with the same backfill for

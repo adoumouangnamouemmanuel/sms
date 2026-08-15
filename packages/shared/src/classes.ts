@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * Phase 4 — classes and curriculum domain (roadmap §10).
+ * Phase 4 - classes and curriculum domain (roadmap §10).
  * Transport types shared by the API and the web UI.
  */
 
@@ -23,7 +23,7 @@ export type SubjectCategory = (typeof SUBJECT_CATEGORIES)[number];
 
 /**
  * Controlled class-enrollment statuses (AGENTS.md §9.3): state transitions are
- * validated at the service layer — never free-form string updates.
+ * validated at the service layer - never free-form string updates.
  */
 export const ENROLLMENT_STATUSES = [
   'ACTIVE',
@@ -331,7 +331,7 @@ export const curriculumCopyPreviewItemSchema = z.object({
   isRequired: z.boolean(),
   teacherId: z.uuid().nullable(),
   teacherName: z.string().nullable(),
-  /** Already assigned on the target — will be skipped on confirm. */
+  /** Already assigned on the target - will be skipped on confirm. */
   alreadyAssigned: z.boolean(),
 });
 

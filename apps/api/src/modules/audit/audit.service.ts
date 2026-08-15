@@ -6,7 +6,7 @@ const MAX_RECENT_EVENTS = 20;
 
 /**
  * Read-only access to the tenant audit trail. The dashboard's activity
- * timeline is backed by these real events — never simulated data.
+ * timeline is backed by these real events - never simulated data.
  */
 export class AuditService {
   constructor(private readonly db: EduTrackDatabase) {}

@@ -12,15 +12,15 @@ The Phase 3 §9.2 people module introduced form labels in uppercase small-caps w
 
 Two label styles exist and are both intentional. The deciding factor is whether the label is attached to an editable form control:
 
-1. **Editable form field labels** (inputs, selects, textareas inside forms and modals): bold, normal-case, dark slate — `text-[13px] font-bold text-slate-800`, with a suffix of a space plus an asterisk (`*`) for required fields. This matches the setup wizard's `SetupField` and `CalendarField`. Required markers are a space followed by an asterisk; optional fields carry no marker (the wizard sets this precedent).
+1. **Editable form field labels** (inputs, selects, textareas inside forms and modals): bold, normal-case, dark slate - `text-[13px] font-bold text-slate-800`, with a suffix of a space plus an asterisk (`*`) for required fields. This matches the setup wizard's `SetupField` and `CalendarField`. Required markers are a space followed by an asterisk; optional fields carry no marker (the wizard sets this precedent).
 
-2. **Display/data labels and section headers** (read-only info grids such as SEXE / DATE DE NAISSANCE, table column headers, and section headers such as RESPONSABLES LIÉS): uppercase small-caps micro labels — `text-[10px]/[11px]/[13px] font-black uppercase tracking-wide text-slate-400/500`. These are never attached to editable controls.
+2. **Display/data labels and section headers** (read-only info grids such as SEXE / DATE DE NAISSANCE, table column headers, and section headers such as RESPONSABLES LIÉS): uppercase small-caps micro labels - `text-[10px]/[11px]/[13px] font-black uppercase tracking-wide text-slate-400/500`. These are never attached to editable controls.
 
 Input fields follow the wizard recipe: `h-[50px]` (48px in modal grids), `rounded-2xl`, `border-slate-200 bg-slate-50`, inset shadow, hover border, and the teal focus treatment (`focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-600/10`).
 
 Date inputs in editable forms use the native `<input type="date">` so the browser renders the field in the user's locale format. The shared calendar picker (`apps/web/src/components/DatePicker.tsx`) remains available for the setup-wizard calendar step where a month-grid picker is part of the established flow. Read-only date displays format ISO values as DD/MM/YYYY via `formatISODate` from `apps/web/src/components/dateFormat.ts`.
 
-List search inputs stay bound to the active query: the input value reflects the query state and is cleared only by an explicit clear control (an ✕ inside the field) or manual deletion — never as a side effect of submitting a search. This keeps the user oriented (filtered vs. full list) and supports refining an existing query.
+List search inputs stay bound to the active query: the input value reflects the query state and is cleared only by an explicit clear control (an ✕ inside the field) or manual deletion - never as a side effect of submitting a search. This keeps the user oriented (filtered vs. full list) and supports refining an existing query.
 
 Nationality is a curated dropdown of African countries (French names, Tchad as default), defined once in `apps/web/src/modules/students/countries.ts`. Country names are treated as data proper nouns kept in the product's primary locale rather than translated per i18n locale.
 

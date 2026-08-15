@@ -63,7 +63,7 @@ export function LevelsView({
       }
       setPerLevelCounts(counts);
     } catch {
-      // Counts are decorative — a failure here must not block the levels UI.
+      // Counts are decorative - a failure here must not block the levels UI.
     }
   }, [apiBaseUrl, client, requestOptions]);
 

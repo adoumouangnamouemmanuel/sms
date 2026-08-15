@@ -82,6 +82,7 @@ export class ClassLevelRepository extends TenantScopedRepository {
         this.db
           .update(classLevel)
           .set({
+            code: input.code,
             name: input.name,
             displayOrder: input.displayOrder,
             isExamYear: input.isExamYear,

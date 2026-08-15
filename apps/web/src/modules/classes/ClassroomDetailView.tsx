@@ -89,6 +89,7 @@ export interface DetailApi {
   }>;
   subjects(options?: ClassesRequestOptions): Promise<SubjectResponse[]>;
   classrooms(options?: ClassesRequestOptions): Promise<ClassroomView[]>;
+  teachers(options?: ClassesRequestOptions): Promise<{ id: string; code: string; firstName: string; lastName: string; specialization?: string | null }[]>;
   archive(
     classroomId: string,
     input: { reason: string },
@@ -370,10 +371,10 @@ export function ClassroomDetailView({
                           {entry.student.lastName} {entry.student.firstName}
                         </td>
                         <td className="px-3 py-3 text-[12px] font-bold text-slate-500">
-                          {entry.student.sex ?? '—'}
+                          {entry.student.sex ?? '-'}
                         </td>
                         <td className="px-3 py-3 text-[12px] font-semibold text-slate-500">
-                          {entry.student.dateOfBirth ?? '—'}
+                          {entry.student.dateOfBirth ?? '-'}
                         </td>
                         <td className="px-3 py-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
@@ -638,7 +639,7 @@ export function ClassroomDetailView({
 }
 
 // ---------------------------------------------------------------------------
-// useDetailApi — routes through the injected client when present, else the API
+// useDetailApi - routes through the injected client when present, else the API
 // ---------------------------------------------------------------------------
 
 function useDetailApi(apiBaseUrl: string | null, client?: ClassesClient): DetailApi {
@@ -703,6 +704,10 @@ function useDetailApi(apiBaseUrl: string | null, client?: ClassesClient): Detail
         const { listClassrooms } = await import('./classesApi');
         return (await listClassrooms(apiBaseUrl ?? '', { limit: 100, offset: 0 }, options)).items;
       },
+      teachers: async (options) => {
+        const { listTeachers } = await import('../teachers/teachersApi');
+        return (await listTeachers(apiBaseUrl ?? '', { limit: 100, offset: 0, status: 'active' }, options)).items;
+      },
       archive: (classroomId, input, options) =>
         client
           ? client.archiveClassroom(classroomId, input, options)
@@ -732,7 +737,7 @@ async function removeClassSubjectPublic(
 }
 
 // ---------------------------------------------------------------------------
-// ClassSubjectRow — inline coefficient edit + removal
+// ClassSubjectRow - inline coefficient edit + removal
 // ---------------------------------------------------------------------------
 
 function ClassSubjectRow({
@@ -789,7 +794,7 @@ function ClassSubjectRow({
         )}
       </td>
       <td className="px-3 py-3 text-[12px] font-semibold text-slate-500">
-        {view.teacherName ?? '—'}
+        {view.teacherName ?? '-'}
       </td>
       <td className="px-3 py-3 text-right">
         <div className="flex items-center justify-end gap-1.5">
@@ -867,6 +872,7 @@ function AssignSubjectModal({
 }) {
   const { t } = useTranslation();
   const [subjects, setSubjects] = useState<SubjectResponse[]>([]);
+  const [teachers, setTeachers] = useState<{ id: string; code: string; firstName: string; lastName: string; specialization?: string | null }[]>([]);
   const [subjectId, setSubjectId] = useState('');
   const [coefficient, setCoefficient] = useState('1');
   const [isRequired, setIsRequired] = useState(true);
@@ -878,6 +884,11 @@ function AssignSubjectModal({
     void api.subjects(requestOptions).then((items) => {
       if (!cancelled) {
         setSubjects(items);
+      }
+    });
+    void api.teachers(requestOptions).then((items) => {
+      if (!cancelled) {
+        setTeachers(items);
       }
     });
     return () => {
@@ -892,6 +903,7 @@ function AssignSubjectModal({
     <ModalShell
       closeLabel={t('classes.cancel')}
       onClose={onClose}
+      size="md"
       title={t('classes.curriculum.assignTitle')}
     >
       <form
@@ -929,7 +941,7 @@ function AssignSubjectModal({
               .filter((subject) => subject.isActive)
               .map((subject) => (
                 <option key={subject.id} value={subject.id}>
-                  {subject.code} — {subject.name}
+                  {subject.code} - {subject.name}
                 </option>
               ))}
           </select>
@@ -967,14 +979,20 @@ function AssignSubjectModal({
           <span className="text-[13px] font-bold text-slate-800">
             {t('classes.curriculum.teacher')}
           </span>
-          <input
-            className={fieldClassName}
+          <select
+            className={selectClassName}
             onChange={(event) => {
               setTeacherId(event.target.value);
             }}
-            placeholder={t('classes.curriculum.teacherPlaceholder')}
             value={teacherId}
-          />
+          >
+            <option value="">{t('classes.curriculum.teacherPlaceholder')}</option>
+            {teachers.map((teacher) => (
+              <option key={teacher.id} value={teacher.id}>
+                {teacher.lastName} {teacher.firstName} {teacher.specialization ? `- ${teacher.specialization}` : ''}
+              </option>
+            ))}
+          </select>
         </label>
 
         <div className="flex justify-end gap-2 pt-2">
@@ -1336,7 +1354,7 @@ function OptionalSubjectsModal({
 }
 
 // ---------------------------------------------------------------------------
-// CopyCurriculumModal — preview then confirm
+// CopyCurriculumModal - preview then confirm
 // ---------------------------------------------------------------------------
 
 function CopyCurriculumModal({
@@ -1473,7 +1491,7 @@ function CopyCurriculumModal({
                       {item.coefficient}
                     </td>
                     <td className="px-3 py-2.5 text-[12px] font-semibold text-slate-500">
-                      {item.teacherName ?? '—'}
+                      {item.teacherName ?? '-'}
                     </td>
                     <td className="px-3 py-2.5">
                       <StatusBadge

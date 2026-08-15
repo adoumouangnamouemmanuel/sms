@@ -528,7 +528,7 @@ function isInvalidAccessToken(error: unknown) {
   );
 }
 
-// Icons — 24×24, 2px stroke
+// Icons - 24×24, 2px stroke
 
 const iconProps = {
   'aria-hidden': true,

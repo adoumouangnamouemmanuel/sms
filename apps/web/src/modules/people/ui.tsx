@@ -228,7 +228,7 @@ export function SelectField({
   label,
   name,
   options,
-  placeholderOption = '—',
+  placeholderOption = '-',
 }: {
   defaultValue?: string;
   label: string;

@@ -135,7 +135,7 @@ describe('classes imports', () => {
     expect((readJson(confirmResponse) as ApiSuccess<ConfirmImportResponse>).data).toMatchObject({
       alreadyConfirmed: false,
       imported: 2,
-      // MATH already exists in the school (fixture) — skipped, never duplicated.
+      // MATH already exists in the school (fixture) - skipped, never duplicated.
       skippedExisting: 1,
     });
 
@@ -199,7 +199,7 @@ describe('classes imports', () => {
       payload: { importId: previewData.importId, importIdentifier: 'classes-1' },
     });
     expect((readJson(confirmResponse) as ApiSuccess<ConfirmImportResponse>).data).toMatchObject({
-      // 6E-A already exists in the school (fixture) — skipped, never duplicated.
+      // 6E-A already exists in the school (fixture) - skipped, never duplicated.
       imported: 1,
       skippedExisting: 1,
     });
