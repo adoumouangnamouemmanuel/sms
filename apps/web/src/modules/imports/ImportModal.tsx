@@ -9,6 +9,8 @@ export interface ImportModalProps {
   capabilityToken?: string;
   client?: ImportsClient;
   kind: ImportKind;
+  /** Called when the local session expired mid-import, after the modal closes. */
+  onSessionExpired?: () => void;
   onClose: () => void;
 }
 
@@ -17,6 +19,7 @@ export function ImportModal({
   capabilityToken,
   client,
   kind,
+  onSessionExpired,
   onClose,
 }: ImportModalProps) {
   const { t } = useTranslation();
@@ -26,6 +29,12 @@ export function ImportModal({
     ...(client ? { client } : {}),
   });
 
+  const handleSessionExpired = () => {
+    module.reset();
+    onClose();
+    onSessionExpired?.();
+  };
+
   return (
     <ModalShell
       closeLabel={t('imports.close')}
@@ -33,13 +42,16 @@ export function ImportModal({
         module.reset();
         onClose();
       }}
+      size={module.step === 'preview' ? 'lg' : 'md'}
       title={t(module.step === 'report' ? 'imports.report.title' : 'imports.title', {
         kind: t(`imports.kind.${kind}`),
       })}
     >
       {module.step === 'choose' ? (
         <ChooseStep
+          errorKey={module.errorKey}
           isBusy={module.isBusy}
+          isSessionExpired={module.isSessionExpired}
           onAnalyze={(file) => {
             void module.analyzeFile(kind, file);
           }}
@@ -49,11 +61,13 @@ export function ImportModal({
               `modele-${kind.toLowerCase()}.xlsx`
             );
           }}
+          onSessionExpired={handleSessionExpired}
         />
       ) : module.step === 'preview' && module.preview ? (
         <PreviewStep
           errorKey={module.errorKey}
           isBusy={module.isBusy}
+          isSessionExpired={module.isSessionExpired}
           kind={kind}
           onConfirm={(identifier) => {
             void module.confirm(identifier);
@@ -61,6 +75,7 @@ export function ImportModal({
           onDownloadErrors={() => {
             void downloadBlobToFile(module.downloadErrors(), 'lignes-en-erreur.csv');
           }}
+          onSessionExpired={handleSessionExpired}
           preview={module.preview}
         />
       ) : module.report ? (
@@ -70,21 +85,59 @@ export function ImportModal({
   );
 }
 
+/** Red banner shared by the choose and preview steps; blocks the flow on session expiry. */
+function ImportErrorBanner({
+  errorKey,
+  isSessionExpired,
+  onSessionExpired,
+}: {
+  errorKey: string | null;
+  isSessionExpired: boolean;
+  onSessionExpired: () => void;
+}) {
+  const { t } = useTranslation();
+
+  if (!errorKey) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+      <p className="text-[12px] font-bold text-red-700">{t(errorKey)}</p>
+      {isSessionExpired ? (
+        <button
+          className="mt-1.5 cursor-pointer rounded-lg bg-red-500 px-3 py-1.5 text-[12px] font-bold text-white hover:bg-red-400"
+          onClick={onSessionExpired}
+          type="button"
+        >
+          {t('imports.sessionExpiredAction')}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Step 1 — choose a file
 // ---------------------------------------------------------------------------
 
 function ChooseStep({
+  errorKey,
   isBusy,
+  isSessionExpired,
   onAnalyze,
   onDownloadTemplate,
+  onSessionExpired,
 }: {
+  errorKey: string | null;
   isBusy: boolean;
+  isSessionExpired: boolean;
   onAnalyze: (file: File) => void;
   onDownloadTemplate: () => void;
+  onSessionExpired: () => void;
 }) {
   const { t } = useTranslation();
-  const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [localErrorKey, setLocalErrorKey] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   return (
@@ -95,7 +148,7 @@ function ChooseStep({
 
       <button
         className="cursor-pointer rounded-xl border border-teal-200 bg-teal-50 px-3 py-2 text-[12px] font-bold text-teal-700 hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-50"
-        disabled={isBusy}
+        disabled={isBusy || isSessionExpired}
         onClick={onDownloadTemplate}
         type="button"
       >
@@ -107,38 +160,44 @@ function ChooseStep({
         <input
           accept=".xlsx"
           className="cursor-pointer rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[13px] font-semibold text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-teal-500 file:px-3 file:py-1.5 file:text-[12px] file:font-bold file:text-white"
-          disabled={isBusy}
+          disabled={isBusy || isSessionExpired}
           onChange={(event) => {
             const file = event.target.files?.[0] ?? null;
             setSelectedFile(file);
-            setErrorKey(null);
+            setLocalErrorKey(null);
           }}
           type="file"
         />
       </label>
 
-      {errorKey ? (
+      {localErrorKey ? (
         <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] font-bold text-red-700">
-          {t(errorKey)}
+          {t(localErrorKey)}
         </p>
       ) : null}
+
+      <ImportErrorBanner
+        errorKey={errorKey}
+        isSessionExpired={isSessionExpired}
+        onSessionExpired={onSessionExpired}
+      />
 
       <div className="flex justify-end">
         <button
           className="cursor-pointer rounded-xl bg-teal-500 px-4 py-2 text-[13px] font-bold text-white hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={isBusy || !selectedFile}
+          disabled={isBusy || !selectedFile || isSessionExpired}
           onClick={() => {
             if (!selectedFile) {
-              setErrorKey('imports.choose.fileRequired');
+              setLocalErrorKey('imports.choose.fileRequired');
               return;
             }
 
             if (!selectedFile.name.toLowerCase().endsWith('.xlsx')) {
-              setErrorKey('imports.choose.extensionRequired');
+              setLocalErrorKey('imports.choose.extensionRequired');
               return;
             }
 
-            setErrorKey(null);
+            setLocalErrorKey(null);
             onAnalyze(selectedFile);
           }}
           type="button"
@@ -157,16 +216,20 @@ function ChooseStep({
 function PreviewStep({
   errorKey,
   isBusy,
+  isSessionExpired,
   kind,
   onConfirm,
   onDownloadErrors,
+  onSessionExpired,
   preview,
 }: {
   errorKey: string | null;
   isBusy: boolean;
+  isSessionExpired: boolean;
   kind: ImportKind;
   onConfirm: (importIdentifier: string) => void;
   onDownloadErrors: () => void;
+  onSessionExpired: () => void;
   preview: NonNullable<ReturnType<typeof useImportState>['preview']>;
 }) {
   const { t } = useTranslation();
@@ -187,22 +250,22 @@ function PreviewStep({
         </span>
       </div>
 
-      <div className="max-h-56 overflow-auto rounded-xl border border-slate-100">
-        <table className="w-full border-collapse">
+      <div className="max-h-72 overflow-auto rounded-xl border border-slate-100">
+        <table className="w-full min-w-[640px] border-collapse whitespace-nowrap">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/70 text-left">
-              <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-wide text-slate-400">
+              <th className="px-2.5 py-2 text-[10px] font-black uppercase tracking-wide text-slate-400">
                 {t('imports.preview.row')}
               </th>
               {columns.map((column) => (
                 <th
-                  className="px-2 py-1.5 text-[10px] font-black uppercase tracking-wide text-slate-400"
+                  className="px-2.5 py-2 text-[10px] font-black uppercase tracking-wide text-slate-400"
                   key={column.key}
                 >
                   {column.label}
                 </th>
               ))}
-              <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-wide text-slate-400">
+              <th className="px-2.5 py-2 text-[10px] font-black uppercase tracking-wide text-slate-400">
                 {t('imports.preview.errorsColumn')}
               </th>
             </tr>
@@ -213,18 +276,24 @@ function PreviewStep({
                 className={`border-b border-slate-50 ${row.errors.length > 0 ? 'bg-red-50/50' : ''}`}
                 key={row.rowNumber}
               >
-                <td className="px-2 py-1.5 text-[11px] font-bold text-slate-400">
+                <td className="px-2.5 py-2 text-[11px] font-bold text-slate-400">
                   {row.rowNumber}
                 </td>
                 {columns.map((column) => (
                   <td
-                    className="px-2 py-1.5 text-[12px] font-semibold text-slate-700"
+                    className="px-2.5 py-2 text-[12px] font-semibold text-slate-700"
                     key={column.key}
                   >
-                    {row.values[column.key] ?? '—'}
+                    {column.key === 'code' && !row.values.code ? (
+                      <span className="text-[10px] font-bold italic text-slate-300">
+                        {t('imports.preview.autoCode')}
+                      </span>
+                    ) : (
+                      (row.values[column.key] ?? '—')
+                    )}
                   </td>
                 ))}
-                <td className="px-2 py-1.5">
+                <td className="px-2.5 py-2">
                   {row.errors.length > 0 ? (
                     <span className="text-[11px] font-bold leading-snug text-red-600">
                       {row.errors.join(' · ')}
@@ -269,16 +338,16 @@ function PreviewStep({
         </p>
       </label>
 
-      {errorKey ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] font-bold text-red-700">
-          {t(errorKey)}
-        </p>
-      ) : null}
+      <ImportErrorBanner
+        errorKey={errorKey}
+        isSessionExpired={isSessionExpired}
+        onSessionExpired={onSessionExpired}
+      />
 
       <div className="flex justify-end">
         <button
           className="cursor-pointer rounded-xl bg-teal-500 px-4 py-2 text-[13px] font-bold text-white hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={isBusy || !identifier.trim()}
+          disabled={isBusy || !identifier.trim() || isSessionExpired}
           onClick={() => {
             onConfirm(identifier);
           }}
