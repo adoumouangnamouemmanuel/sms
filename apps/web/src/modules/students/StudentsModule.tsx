@@ -78,7 +78,7 @@ export function StudentsModule({
     let cancelled = false;
 
     const loadClassrooms = async () => {
-      if (!classLevelId || !apiBaseUrl) {
+      if (!apiBaseUrl) {
         if (!cancelled) {
           setClassrooms([]);
         }
@@ -92,7 +92,7 @@ export function StudentsModule({
             limit: 100,
             offset: 0,
             status: 'active',
-            classLevelId,
+            ...(classLevelId ? { classLevelId } : {}),
             ...(academicYearId ? { academicYearId } : {}),
           },
           capabilityToken ? { capabilityToken } : {}
@@ -410,6 +410,10 @@ function StudentsTab({
           status: t('students.list.status'),
           statusActive: t('students.list.statusActive'),
           statusArchived: t('students.list.statusArchived'),
+          sex: t('students.columns.sex'),
+          allSexes: t('students.list.allSexes', 'Tous'),
+          sexMale: t('students.sex.M'),
+          sexFemale: t('students.sex.F'),
         }}
         onClassLevelChange={(classLevelId) => {
           module.setStudentsClassLevel(classLevelId);
@@ -430,8 +434,12 @@ function StudentsTab({
         onStatusChange={(status) => {
           module.setStudentsStatus(status);
         }}
+        onSexChange={(sex) => {
+          module.setStudentsSex(sex);
+        }}
         searchValue={module.students.search}
         status={module.students.status}
+        sex={module.students.sex}
       />
 
       <StudentTable
@@ -611,6 +619,9 @@ function StudentTable({
             {t('students.columns.name')}
           </th>
           <th className="px-3 py-2 text-[11px] font-black uppercase tracking-wide text-slate-400">
+            {t('students.list.classroom')}
+          </th>
+          <th className="px-3 py-2 text-[11px] font-black uppercase tracking-wide text-slate-400">
             {t('students.columns.sex')}
           </th>
           <th className="px-3 py-2 text-[11px] font-black uppercase tracking-wide text-slate-400">
@@ -635,6 +646,11 @@ function StudentTable({
               >
                 {student.lastName} {student.firstName}
               </button>
+            </td>
+            <td className="px-3 py-3 text-[13px] font-semibold text-slate-500">
+              {student.currentClassroom?.name ?? (
+                <span className="italic text-slate-400">{t('students.status.notEnrolled', 'Non inscrit(e)')}</span>
+              )}
             </td>
             <td className="px-3 py-3 text-[13px] font-semibold text-slate-500">
               {student.sex ? t(`students.sex.${student.sex}`) : '-'}
@@ -838,6 +854,10 @@ function StudentDetail({
       </div>
 
       <dl className="mb-6 grid grid-cols-2 gap-x-6 gap-y-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-3">
+        <DetailField
+          label={t('students.list.classroom', 'Classe')}
+          value={profile.student.currentClassroom?.name ?? t('students.status.notEnrolled', 'Non inscrit(e)')}
+        />
         <DetailField
           label={t('students.columns.sex')}
           value={profile.student.sex ? t(`students.sex.${profile.student.sex}`) : '-'}

@@ -81,6 +81,13 @@ export const studentResponseSchema = z.object({
   address: z.string().nullable(),
   isActive: z.boolean(),
   recordVersion: z.number().int().min(0),
+  currentClassroom: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+    })
+    .nullable()
+    .optional(),
 });
 
 export const studentListQuerySchema = z.object({
@@ -89,6 +96,7 @@ export const studentListQuerySchema = z.object({
   classLevelId: z.uuid().optional(),
   /** Filter by ACTIVE enrollment in the current year, in this classroom. */
   classroomId: z.uuid().optional(),
+  sex: z.enum(PERSON_SEX_VALUES).optional(),
   status: z.enum(RECORD_STATUS_VALUES).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   offset: z.coerce.number().int().min(0).default(0),
@@ -190,10 +198,19 @@ export const teacherResponseSchema = z.object({
   userId: z.uuid().nullable(),
   isActive: z.boolean(),
   recordVersion: z.number().int().min(0),
+  assignedClassrooms: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+      })
+    )
+    .optional(),
 });
 
 export const teacherListQuerySchema = z.object({
   search: z.string().trim().max(120).optional(),
+  sex: z.enum(PERSON_SEX_VALUES).optional(),
   status: z.enum(RECORD_STATUS_VALUES).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   offset: z.coerce.number().int().min(0).default(0),

@@ -66,7 +66,7 @@ export class TeachersService {
       limit: query.limit,
       offset: query.offset,
     };
-    const items = repository.list(listOptions);
+    const items = repository.listWithAssignedClassrooms(listOptions);
 
     return {
       items: items.map(toTeacherResponse),
@@ -79,7 +79,7 @@ export class TeachersService {
   getProfile(actor: AuthenticatedUser, teacherId: string): TeacherProfileResponse {
     this.assertSchoolMaster(actor);
     const tenant = createTenantContext(actor.schoolId);
-    const teacher = createTeacherRepository(this.db, tenant).findById(teacherId);
+    const teacher = createTeacherRepository(this.db, tenant).findByIdWithClassrooms(teacherId);
 
     if (!teacher) {
       throw teacherNotFound();

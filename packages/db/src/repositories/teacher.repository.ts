@@ -1,8 +1,8 @@
-import { and, asc, count, eq, isNotNull, isNull, like, or, sql } from 'drizzle-orm';
+import { and, asc, count, eq, isNotNull, isNull, like, or, sql, inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { RepositoryExecutor, TenantContext } from './base.js';
 import { TenantScopedRepository } from './base.js';
-import { teacher } from '../schema.sqlite.js';
+import { teacher, classSubject, classroom } from '../schema.sqlite.js';
 
 // TODO(roadmap §9.2/9.3): the default teacher code follows the student pattern
 // `{school.code}-{academicYear}-{NNI}`, generated at the service layer; an explicitly
@@ -87,6 +87,38 @@ export class TeacherRepository extends TenantScopedRepository {
       .get();
   }
 
+  findByIdWithClassrooms(id: string) {
+    const teacherRow = this.findById(id);
+    if (!teacherRow) return undefined;
+
+    const classroomsRows = this.db
+      .select({
+        classroomId: classroom.id,
+        classroomCode: classroom.code,
+        classroomName: classroom.name,
+      })
+      .from(classSubject)
+      .innerJoin(classroom, eq(classroom.id, classSubject.classroomId))
+      .where(
+        and(
+          eq(classSubject.schoolId, this.schoolId),
+          eq(classSubject.isActive, true),
+          eq(classSubject.teacherId, id)
+        )
+      )
+      .all();
+
+    const uniqueClassroomsMap = new Map<string, { id: string; name: string }>();
+    for (const row of classroomsRows) {
+      uniqueClassroomsMap.set(row.classroomId, { id: row.classroomId, name: row.classroomName ?? row.classroomCode });
+    }
+
+    return {
+      ...teacherRow,
+      assignedClassrooms: Array.from(uniqueClassroomsMap.values()),
+    };
+  }
+
   findByCode(code: string) {
     return this.db
       .select(teacherColumns)
@@ -138,6 +170,49 @@ export class TeacherRepository extends TenantScopedRepository {
       .limit(limit)
       .offset(offset)
       .all();
+  }
+
+  listWithAssignedClassrooms(options: ListTeachersOptions = {}) {
+    const teachers = this.list(options);
+
+    if (teachers.length === 0) return [];
+
+    const teacherIds = teachers.map((t) => t.id);
+
+    const classroomsRows = this.db
+      .select({
+        teacherId: classSubject.teacherId,
+        classroomId: classroom.id,
+        classroomCode: classroom.code,
+        classroomName: classroom.name,
+      })
+      .from(classSubject)
+      .innerJoin(classroom, eq(classroom.id, classSubject.classroomId))
+      .where(
+        and(
+          eq(classSubject.schoolId, this.schoolId),
+          eq(classSubject.isActive, true),
+          inArray(classSubject.teacherId, teacherIds)
+        )
+      )
+      .all();
+
+    const classroomsByTeacher = classroomsRows.reduce((acc, row) => {
+      if (!row.teacherId) return acc;
+      if (!acc[row.teacherId]) {
+        acc[row.teacherId] = new Map();
+      }
+      // Deduplicate classrooms since a teacher can teach multiple subjects in the same class
+      acc[row.teacherId]!.set(row.classroomId, { id: row.classroomId, name: row.classroomName ?? row.classroomCode });
+      return acc;
+    }, {} as Record<string, Map<string, { id: string; name: string }>>);
+
+    return teachers.map((teacher) => ({
+      ...teacher,
+      assignedClassrooms: classroomsByTeacher[teacher.id]
+        ? Array.from(classroomsByTeacher[teacher.id]!.values())
+        : [],
+    }));
   }
 
   /** Total teachers matching the list filters, used for stable pagination totals. */

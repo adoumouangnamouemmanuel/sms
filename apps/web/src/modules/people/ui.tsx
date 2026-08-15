@@ -1,4 +1,4 @@
-import type { RecordStatus } from '@edutrack/shared';
+import type { RecordStatus, PersonSex } from '@edutrack/shared';
 import { useEffect, useId, useRef, useState } from 'react';
 
 export const formInputClassName =
@@ -272,6 +272,10 @@ export interface ListToolbarLabels {
   classroom?: string;
   allLevels?: string;
   allClassrooms?: string;
+  sex?: string;
+  sexMale?: string;
+  sexFemale?: string;
+  allSexes?: string;
 }
 
 export interface ClassFilterOption {
@@ -297,7 +301,9 @@ export function ListToolbar({
   onSearch,
   onSearchValueChange,
   onStatusChange,
+  onSexChange,
   searchValue,
+  sex,
   status,
 }: {
   /** Optional ACTIVE-enrollment class filters (students list, Phase 4). */
@@ -313,35 +319,18 @@ export function ListToolbar({
   onSearch: (search: string) => void;
   onSearchValueChange: (value: string) => void;
   onStatusChange: (status: RecordStatus) => void;
+  onSexChange?: (sex: PersonSex | null) => void;
   searchValue: string;
+  sex?: PersonSex | null;
   status: RecordStatus;
 }) {
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const filtersRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!filtersOpen) {
-      return;
-    }
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (filtersRef.current && !filtersRef.current.contains(event.target as Node)) {
-        setFiltersOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [filtersOpen]);
-
   return (
-    <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <p className="text-[13px] font-bold text-slate-500">{labels.count}</p>
+    <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto flex-1">
+        <p className="text-[13px] font-bold text-slate-500 whitespace-nowrap">{labels.count}</p>
 
         <form
-          className="flex items-center gap-2"
+          className="flex flex-wrap items-center gap-2"
           onSubmit={(event) => {
             event.preventDefault();
             onSearch(searchValue);
@@ -378,78 +367,82 @@ export function ListToolbar({
             {labels.search}
           </button>
 
-          <div className="relative" ref={filtersRef}>
-            <button
-              aria-expanded={filtersOpen}
-              className="h-9 cursor-pointer whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-              onClick={() => {
-                setFiltersOpen((open) => !open);
-              }}
-              type="button"
-            >
-              {labels.filter}
-              <span className="ml-1 text-slate-400">{filtersOpen ? '▲' : '▼'}</span>
-            </button>
-            {filtersOpen ? (
-              <div className="absolute right-0 top-full z-30 mt-3 w-56 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-900/10 ring-1 ring-black/5">
-                <label className="flex flex-col gap-2">
-                  <span className="text-[13px] font-bold text-slate-800">{labels.status}</span>
-                  <select
-                    className={`${formSelectClassName} h-10`}
-                    onChange={(event) => {
-                      onStatusChange(event.target.value as RecordStatus);
-                    }}
-                    value={status}
-                  >
-                    <option value="active">{labels.statusActive}</option>
-                    <option value="archived">{labels.statusArchived}</option>
-                  </select>
-                </label>
+          <div className="flex flex-wrap items-center gap-2 ml-2">
+            {labels.status ? (
+              <label className="flex items-center gap-2">
+                <span className="sr-only">{labels.status}</span>
+                <select
+                  aria-label={labels.status}
+                  className="h-9 cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] font-bold text-slate-600 hover:border-slate-300 focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-400"
+                  onChange={(event) => {
+                    onStatusChange(event.target.value as RecordStatus);
+                  }}
+                  value={status}
+                >
+                  <option value="active">{labels.statusActive}</option>
+                  <option value="archived">{labels.statusArchived}</option>
+                </select>
+              </label>
+            ) : null}
 
-                {classLevels && onClassLevelChange && labels.classLevel ? (
-                  <label className="flex flex-col gap-2">
-                    <span className="text-[13px] font-bold text-slate-800">
-                      {labels.classLevel}
-                    </span>
-                    <select
-                      className={`${formSelectClassName} h-10`}
-                      onChange={(event) => {
-                        onClassLevelChange(event.target.value || null);
-                      }}
-                      value={classLevelId ?? ''}
-                    >
-                      <option value="">{labels.allLevels ?? ''}</option>
-                      {classLevels.map((level) => (
-                        <option key={level.id} value={level.id}>
-                          {level.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ) : null}
+            {classLevels && onClassLevelChange && labels.classLevel ? (
+              <label className="flex items-center gap-2">
+                <span className="sr-only">{labels.classLevel}</span>
+                <select
+                  aria-label={labels.classLevel}
+                  className="h-9 cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] font-bold text-slate-600 hover:border-slate-300 focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-400"
+                  onChange={(event) => {
+                    onClassLevelChange(event.target.value || null);
+                  }}
+                  value={classLevelId ?? ''}
+                >
+                  <option value="">{labels.allLevels ?? ''}</option>
+                  {classLevels.map((level) => (
+                    <option key={level.id} value={level.id}>
+                      {level.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
 
-                {classrooms && onClassroomChange && labels.classroom ? (
-                  <label className="flex flex-col gap-2">
-                    <span className="text-[13px] font-bold text-slate-800">{labels.classroom}</span>
-                    <select
-                      className={`${formSelectClassName} h-10`}
-                      onChange={(event) => {
-                        onClassroomChange(event.target.value || null);
-                      }}
-                      value={classroomId ?? ''}
-                    >
-                      <option value="">{labels.allClassrooms ?? ''}</option>
-                      {classrooms.map((classroom) => (
-                        <option key={classroom.id} value={classroom.id}>
-                          {classroom.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ) : null}
+            {classrooms && onClassroomChange && labels.classroom ? (
+              <label className="flex items-center gap-2">
+                <span className="sr-only">{labels.classroom}</span>
+                <select
+                  aria-label={labels.classroom}
+                  className="h-9 cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] font-bold text-slate-600 hover:border-slate-300 focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-400"
+                  onChange={(event) => {
+                    onClassroomChange(event.target.value || null);
+                  }}
+                  value={classroomId ?? ''}
+                >
+                  <option value="">{labels.allClassrooms ?? ''}</option>
+                  {classrooms.map((classroom) => (
+                    <option key={classroom.id} value={classroom.id}>
+                      {classroom.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
 
-                {/* TODO: add the sex filter (lower priority; the field exists). */}
-              </div>
+            {onSexChange && labels.sex ? (
+              <label className="flex items-center gap-2">
+                <span className="sr-only">{labels.sex}</span>
+                <select
+                  aria-label={labels.sex}
+                  className="h-9 cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] font-bold text-slate-600 hover:border-slate-300 focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-400"
+                  onChange={(event) => {
+                    onSexChange((event.target.value as PersonSex) || null);
+                  }}
+                  value={sex ?? ''}
+                >
+                  <option value="">{labels.allSexes ?? ''}</option>
+                  <option value="M">{labels.sexMale ?? 'M'}</option>
+                  <option value="F">{labels.sexFemale ?? 'F'}</option>
+                </select>
+              </label>
             ) : null}
           </div>
         </form>

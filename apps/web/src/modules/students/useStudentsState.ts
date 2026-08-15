@@ -10,6 +10,7 @@ import type {
   PaginatedGuardiansResponse,
   PaginatedStudentsResponse,
   RecordStatus,
+  PersonSex,
   StudentGuardianLinkResponse,
   StudentListQuery,
   StudentProfileResponse,
@@ -127,10 +128,10 @@ export interface PaginatedListState<T> {
   pageCount: number;
   search: string;
   status: RecordStatus;
-  /** ACTIVE-enrollment class level filter (current year), null = all. */
   classLevelId: string | null;
   /** ACTIVE-enrollment classroom filter (current year), null = all. */
   classroomId: string | null;
+  sex: PersonSex | null;
   total: number;
 }
 
@@ -166,7 +167,8 @@ export function useStudentsModule({
       offset: number,
       status: RecordStatus,
       classLevelId: string | null,
-      classroomId: string | null
+      classroomId: string | null,
+      sex: PersonSex | null
     ) => {
       if (!apiBaseUrl && !client) {
         return;
@@ -184,6 +186,7 @@ export function useStudentsModule({
                 offset,
                 ...(classLevelId ? { classLevelId } : {}),
                 ...(classroomId ? { classroomId } : {}),
+                ...(sex ? { sex } : {}),
               },
               requestOptions()
             )
@@ -196,6 +199,7 @@ export function useStudentsModule({
                 offset,
                 ...(classLevelId ? { classLevelId } : {}),
                 ...(classroomId ? { classroomId } : {}),
+                ...(sex ? { sex } : {}),
               },
               requestOptions()
             );
@@ -211,6 +215,7 @@ export function useStudentsModule({
           status,
           classLevelId,
           classroomId,
+          sex,
           total: page.total,
         });
       } catch (error) {
@@ -255,6 +260,7 @@ export function useStudentsModule({
           status,
           classLevelId: null,
           classroomId: null,
+          sex: null,
           total: page.total,
         });
       } catch (error) {
@@ -274,7 +280,7 @@ export function useStudentsModule({
     }
 
     const loadHandle = window.setTimeout(() => {
-      void loadStudents('', 0, 'active', null, null);
+      void loadStudents('', 0, 'active', null, null, null);
       void loadGuardians('', 0, 'active');
     }, 0);
 
@@ -290,7 +296,8 @@ export function useStudentsModule({
         0,
         studentsList.status,
         studentsList.classLevelId,
-        studentsList.classroomId
+        studentsList.classroomId,
+        studentsList.sex
       );
     },
     [loadStudents, studentsList]
@@ -310,7 +317,8 @@ export function useStudentsModule({
         0,
         status,
         studentsList.classLevelId,
-        studentsList.classroomId
+        studentsList.classroomId,
+        studentsList.sex
       );
     },
     [loadStudents, studentsList]
@@ -319,7 +327,7 @@ export function useStudentsModule({
   const setStudentsClassLevel = useCallback(
     (classLevelId: string | null) => {
       // Changing the level invalidates any classroom selection from another level.
-      void loadStudents(studentsList.search, 0, studentsList.status, classLevelId, null);
+      void loadStudents(studentsList.search, 0, studentsList.status, classLevelId, null, studentsList.sex);
     },
     [loadStudents, studentsList]
   );
@@ -331,7 +339,22 @@ export function useStudentsModule({
         0,
         studentsList.status,
         studentsList.classLevelId,
-        classroomId
+        classroomId,
+        studentsList.sex
+      );
+    },
+    [loadStudents, studentsList]
+  );
+
+  const setStudentsSex = useCallback(
+    (sex: PersonSex | null) => {
+      void loadStudents(
+        studentsList.search,
+        0,
+        studentsList.status,
+        studentsList.classLevelId,
+        studentsList.classroomId,
+        sex
       );
     },
     [loadStudents, studentsList]
@@ -353,7 +376,8 @@ export function useStudentsModule({
         nextOffset,
         studentsList.status,
         studentsList.classLevelId,
-        studentsList.classroomId
+        studentsList.classroomId,
+        studentsList.sex
       );
     }
   }, [loadStudents, studentsList]);
@@ -367,7 +391,8 @@ export function useStudentsModule({
         previousOffset,
         studentsList.status,
         studentsList.classLevelId,
-        studentsList.classroomId
+        studentsList.classroomId,
+        studentsList.sex
       );
     }
   }, [loadStudents, studentsList]);
@@ -463,7 +488,8 @@ export function useStudentsModule({
       studentsList.offset,
       studentsList.status,
       studentsList.classLevelId,
-      studentsList.classroomId
+      studentsList.classroomId,
+      studentsList.sex
     );
   }, [loadStudents, studentsList]);
 
@@ -672,6 +698,7 @@ export function useStudentsModule({
     setGuardiansStatus,
     setStudentsClassLevel,
     setStudentsClassroom,
+    setStudentsSex,
     setStudentsStatus,
     studentProfile,
     students: studentsList,
@@ -696,6 +723,7 @@ function emptyListState<T>(): PaginatedListState<T> {
     status: 'active',
     classLevelId: null,
     classroomId: null,
+    sex: null,
     total: 0,
   };
 }

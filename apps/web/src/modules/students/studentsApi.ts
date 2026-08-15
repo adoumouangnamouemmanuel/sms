@@ -49,6 +49,18 @@ export async function listStudents(
     params.set('status', query.status);
   }
 
+  if (query.classLevelId) {
+    params.set('classLevelId', query.classLevelId);
+  }
+
+  if (query.classroomId) {
+    params.set('classroomId', query.classroomId);
+  }
+
+  if (query.sex) {
+    params.set('sex', query.sex);
+  }
+
   return requestJson<PaginatedStudentsResponse>(apiBaseUrl, `/students?${params.toString()}`, {
     method: 'GET',
     options,
