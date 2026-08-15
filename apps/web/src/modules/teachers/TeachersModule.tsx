@@ -2,6 +2,7 @@ import type { CreateTeacherRequest, TeacherLoginView, TeacherResponse } from '@e
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatISODate } from '../../components/dateFormat';
+import { ImportModal } from '../imports';
 import {
   ArchiveDialog,
   DetailField,
@@ -28,6 +29,7 @@ export function TeachersModule({ apiBaseUrl, capabilityToken, client }: Teachers
     ...(capabilityToken ? { capabilityToken } : {}),
     ...(client ? { client } : {}),
   });
+  const [importOpen, setImportOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<TeacherResponse | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<{
@@ -89,12 +91,16 @@ export function TeachersModule({ apiBaseUrl, capabilityToken, client }: Teachers
               clearSearch: t('teachers.list.clearSearch'),
               count: t('teachers.list.total', { count: module.teachers.total }),
               filter: t('teachers.list.filter'),
+              import: t('imports.action'),
               new: t('teachers.list.new'),
               search: t('teachers.list.search'),
               searchPlaceholder: t('teachers.list.searchPlaceholder'),
               status: t('teachers.list.status'),
               statusActive: t('teachers.list.statusActive'),
               statusArchived: t('teachers.list.statusArchived'),
+            }}
+            onImport={() => {
+              setImportOpen(true);
             }}
             onNew={() => {
               setEditingTeacher(null);
@@ -135,6 +141,17 @@ export function TeachersModule({ apiBaseUrl, capabilityToken, client }: Teachers
           />
         </div>
       )}
+
+      {importOpen ? (
+        <ImportModal
+          apiBaseUrl={apiBaseUrl}
+          {...(capabilityToken ? { capabilityToken } : {})}
+          kind="TEACHERS"
+          onClose={() => {
+            setImportOpen(false);
+          }}
+        />
+      ) : null}
 
       {formOpen ? (
         <TeacherFormModal
