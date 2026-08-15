@@ -5,10 +5,10 @@ import type {
 } from '@edutrack/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { formInputClassName } from '../people/ui';
 import { saveSchoolProfile } from '../setup/setupApi';
 import { resolveSetupErrorMessageKey } from '../setup/setupErrors';
 import { createProfileDraft } from '../setup/setupSteps';
-import { formInputClassName } from '../people/ui';
 
 export interface SettingsClient {
   saveProfile: (input: SetupSchoolProfileRequest) => Promise<SetupStateResponse>;
@@ -79,28 +79,51 @@ export function SettingsModule({
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-black tracking-tight text-slate-950">{t('settings.title')}</h1>
-        <p className="mt-1 text-[13px] font-semibold text-slate-500">{t('settings.subtitle')}</p>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-5">
+      {/* ── School identity hero ─────────────────────────────────────────── */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-[#0f172a] via-[#0a1628] to-[#061020] p-7 text-white shadow-2xl">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-teal-500/20 blur-3xl"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -bottom-32 -left-16 h-72 w-72 rounded-full bg-indigo-500/10 blur-3xl"
+        />
+        <div className="relative flex flex-wrap items-center gap-5">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-400 to-teal-600 text-xl font-black text-white shadow-lg shadow-teal-950/40 ring-1 ring-white/20">
+            {(school.shortName ?? school.name).slice(0, 2).toUpperCase()}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-teal-300">
+              {t('settings.hero.eyebrow')}
+            </p>
+            <h1 className="mt-1 text-2xl font-black tracking-tight">{school.name}</h1>
+            <p className="mt-0.5 text-[12px] font-bold text-slate-300">
+              {school.city ?? school.shortName ?? ''}
+              {school.ministryCode ? ` · ${school.ministryCode}` : ''}
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-400/30 bg-teal-500/15 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-teal-200">
+              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-teal-300" />
+              {t('settings.hero.status')}
+            </span>
+            <p className="font-mono text-[11px] font-bold text-slate-400">{school.code}</p>
+          </div>
+        </div>
+      </section>
 
-      {/* School profile */}
+      {saved && (
+        <p className="rounded-2xl border border-teal-200 bg-teal-50 px-4 py-3 text-[13px] font-bold text-teal-700 shadow-sm">
+          {t('settings.saved')}
+        </p>
+      )}
+
+      {/* ── School profile ───────────────────────────────────────────────── */}
       <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
         <div className="mb-5 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 text-sm font-black text-white shadow-sm">
-              {(school.shortName ?? school.name).slice(0, 2).toUpperCase()}
-            </div>
-            <div>
-              <h2 className="text-[13px] font-black uppercase tracking-wide text-slate-800">
-                {t('settings.profile.title')}
-              </h2>
-              <p className="text-[11px] font-bold text-slate-400">
-                {t('settings.profile.code', { code: school.code })}
-              </p>
-            </div>
-          </div>
+          <SectionTitle icon={<BuildingIcon />} title={t('settings.profile.title')} />
           {!isEditing && (
             <button
               className="cursor-pointer rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-[12px] font-bold text-slate-600 transition hover:border-teal-300 hover:text-teal-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
@@ -208,79 +231,120 @@ export function SettingsModule({
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
-            <InfoRow label={t('settings.profile.name')} value={school.name} />
-            <InfoRow label={t('settings.profile.city')} value={school.city ?? '—'} />
-            <InfoRow label={t('settings.profile.address')} value={school.address ?? '—'} />
-            <InfoRow label={t('settings.profile.phone')} value={school.phone ?? '—'} />
-            <InfoRow label={t('settings.profile.email')} value={school.email ?? '—'} />
-            <InfoRow
-              label={t('settings.profile.ministryCode')}
-              value={school.ministryCode ?? '—'}
+          <div className="grid grid-cols-1 gap-x-10 gap-y-4 sm:grid-cols-2">
+            <DetailRow icon={<PinIcon />} label={t('settings.profile.city')} value={school.city} />
+            <DetailRow
+              icon={<MapIcon />}
+              label={t('settings.profile.address')}
+              value={school.address}
             />
-            <InfoRow label={t('settings.profile.motto')} value={school.motto ?? '—'} />
-            <InfoRow label={t('settings.profile.shortName')} value={school.shortName ?? '—'} />
+            <DetailRow
+              icon={<PhoneIcon />}
+              label={t('settings.profile.phone')}
+              value={school.phone}
+            />
+            <DetailRow
+              icon={<MailIcon />}
+              label={t('settings.profile.email')}
+              value={school.email}
+            />
+            <DetailRow
+              icon={<TagIcon />}
+              label={t('settings.profile.ministryCode')}
+              value={school.ministryCode}
+            />
+            <DetailRow
+              icon={<QuoteIcon />}
+              label={t('settings.profile.motto')}
+              value={school.motto}
+            />
+            <DetailRow
+              icon={<ShortNameIcon />}
+              label={t('settings.profile.shortName')}
+              value={school.shortName}
+            />
+            <DetailRow
+              icon={<BuildingIcon />}
+              label={t('settings.profile.name')}
+              value={school.name}
+            />
           </div>
         )}
       </section>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Calendar */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        {/* ── Calendar ────────────────────────────────────────────────────── */}
         <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-[13px] font-black uppercase tracking-wide text-slate-800">
-            {t('settings.calendar.title')}
-          </h2>
-          <div className="space-y-4">
-            <InfoRow
+          <SectionTitle icon={<CalendarIcon />} title={t('settings.calendar.title')} />
+          <div className="mt-4 space-y-4">
+            <DetailRow
+              icon={<YearIcon />}
               label={t('settings.calendar.academicYear')}
-              value={setupState.academicYear?.label ?? '—'}
+              value={setupState.academicYear?.label ?? null}
             />
-            <InfoRow
+            <DetailRow
+              icon={<ClockIcon />}
               label={t('settings.calendar.termSystem')}
               value={t(`settings.calendar.termSystems.${setupState.termSystem ?? 'TRIMESTER'}`)}
             />
             {setupState.terms.map((term) => (
-              <InfoRow
+              <DetailRow
+                icon={<TermIcon />}
                 key={term.id}
                 label={`${term.label}${term.isCurrent ? ` · ${t('settings.calendar.current')}` : ''}`}
                 value={`${formatDate(term.startDate)} → ${formatDate(term.endDate)}`}
               />
             ))}
-            <p className="text-[11px] font-semibold text-slate-400">
+            <p className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-[11px] font-semibold text-slate-400">
               {t('settings.calendar.hint')}
             </p>
           </div>
         </section>
 
-        {/* System */}
+        {/* ── System ──────────────────────────────────────────────────────── */}
         <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-[13px] font-black uppercase tracking-wide text-slate-800">
-            {t('settings.system.title')}
-          </h2>
-          <div className="space-y-4">
-            <InfoRow label={t('settings.system.locale')} value={school.locale} />
-            <InfoRow label={t('settings.system.currency')} value={school.currency} />
-            <InfoRow label={t('settings.system.timezone')} value={school.timezone} />
-            <InfoRow label={t('settings.system.country')} value={school.country} />
+          <SectionTitle icon={<ChipIcon />} title={t('settings.system.title')} />
+          <div className="mt-4 space-y-4">
+            <DetailRow
+              icon={<GlobeIcon />}
+              label={t('settings.system.locale')}
+              value={school.locale}
+            />
+            <DetailRow
+              icon={<CoinsIcon />}
+              label={t('settings.system.currency')}
+              value={school.currency}
+            />
+            <DetailRow
+              icon={<ClockIcon />}
+              label={t('settings.system.timezone')}
+              value={school.timezone}
+            />
+            <DetailRow
+              icon={<FlagIcon />}
+              label={t('settings.system.country')}
+              value={school.country}
+            />
           </div>
         </section>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Modules */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        {/* ── Modules ─────────────────────────────────────────────────────── */}
         <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-[13px] font-black uppercase tracking-wide text-slate-800">
-            {t('settings.modules.title')}
-          </h2>
-          <ul className="space-y-2.5">
+          <SectionTitle icon={<ModulesIcon />} title={t('settings.modules.title')} />
+          <ul className="mt-4 space-y-2.5">
             {enabledModules.map((module) => (
-              <li className="flex items-center gap-2.5" key={module.id}>
+              <li
+                className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3"
+                key={module.id}
+              >
                 <span
                   aria-hidden="true"
-                  className="flex h-4 w-4 items-center justify-center rounded-full bg-teal-500"
+                  className="flex h-5 w-5 items-center justify-center rounded-full bg-teal-500"
                 >
                   <svg
-                    className="h-2.5 w-2.5 text-white"
+                    className="h-3 w-3 text-white"
                     fill="none"
                     stroke="currentColor"
                     strokeLinecap="round"
@@ -299,27 +363,30 @@ export function SettingsModule({
           </ul>
         </section>
 
-        {/* Session */}
+        {/* ── Session & access ────────────────────────────────────────────── */}
         <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-[13px] font-black uppercase tracking-wide text-slate-800">
-            {t('settings.session.title')}
-          </h2>
-          <div className="space-y-4">
-            <InfoRow label={t('settings.session.user')} value={user.username} />
-            <InfoRow label={t('settings.session.role')} value={t(`auth.roles.${user.role}`)} />
+          <SectionTitle icon={<LockIcon />} title={t('settings.session.title')} />
+          <div className="mt-4 space-y-4">
+            <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-500 text-[12px] font-black text-white">
+                {getInitials(user.username)}
+              </div>
+              <div className="min-w-0">
+                <p className="text-[13px] font-black text-slate-800">{user.username}</p>
+                <p className="text-[11px] font-bold text-teal-600">
+                  {t(`auth.roles.${user.role}`)}
+                </p>
+              </div>
+            </div>
             {/* TODO(roadmap §Users & permissions): real account management
                 (invite, deactivate, reset password for other users) ships with
                 the dedicated module. */}
-            <p className="text-[11px] font-semibold text-slate-400">{t('settings.session.hint')}</p>
+            <p className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-[11px] font-semibold text-slate-400">
+              {t('settings.session.hint')}
+            </p>
           </div>
         </section>
       </div>
-
-      {saved && (
-        <p className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-[13px] font-bold text-teal-700">
-          {t('settings.saved')}
-        </p>
-      )}
     </div>
   );
 }
@@ -327,6 +394,17 @@ export function SettingsModule({
 // ---------------------------------------------------------------------------
 // Building blocks
 // ---------------------------------------------------------------------------
+
+function SectionTitle({ icon, title }: { icon: React.ReactNode; title: string }) {
+  return (
+    <h2 className="flex items-center gap-2.5 text-[13px] font-black uppercase tracking-wide text-slate-800">
+      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-50 text-teal-600 ring-1 ring-teal-100">
+        {icon}
+      </span>
+      {title}
+    </h2>
+  );
+}
 
 function ProfileField({
   label,
@@ -351,13 +429,43 @@ function ProfileField({
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function DetailRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string | null;
+}) {
+  const { t } = useTranslation();
+  const isEmpty = !value || value.trim().length === 0;
+
   return (
-    <div>
-      <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-0.5 text-[13px] font-bold text-slate-800">{value}</p>
+    <div className="flex items-center gap-3">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400 ring-1 ring-slate-100">
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{label}</p>
+        {isEmpty ? (
+          <p className="text-[13px] font-semibold italic text-slate-300">
+            {t('settings.emptyValue')}
+          </p>
+        ) : (
+          <p className="truncate text-[13px] font-bold text-slate-800">{value}</p>
+        )}
+      </div>
     </div>
   );
+}
+
+function getInitials(username: string): string {
+  const parts = username.split(/[\s._-]/).filter(Boolean);
+  if (parts.length >= 2) {
+    return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase();
+  }
+  return username.slice(0, 2).toUpperCase();
 }
 
 function formatDate(value: string): string {
@@ -374,5 +482,184 @@ function isInvalidAccessToken(error: unknown) {
     error !== null &&
     'code' in error &&
     (error as { code?: unknown }).code === 'INVALID_ACCESS_TOKEN'
+  );
+}
+
+// Icons — 24×24, 2px stroke
+
+const iconProps = {
+  'aria-hidden': true,
+  className: 'h-4 w-4',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+  strokeWidth: 2,
+  viewBox: '0 0 24 24',
+} as const;
+
+function BuildingIcon() {
+  return (
+    <svg {...iconProps}>
+      <rect height="16" width="14" x="5" y="4" rx="2" />
+      <path d="M9 8h2M13 8h2M9 12h2M13 12h2M9 16h2M13 16h2" />
+    </svg>
+  );
+}
+
+function PinIcon() {
+  return (
+    <svg {...iconProps}>
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  );
+}
+
+function MapIcon() {
+  return (
+    <svg {...iconProps}>
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+      <path d="M3.6 9h16.8M12 3a13.6 13.6 0 0 1 0 14" />
+    </svg>
+  );
+}
+
+function PhoneIcon() {
+  return (
+    <svg {...iconProps}>
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z" />
+    </svg>
+  );
+}
+
+function MailIcon() {
+  return (
+    <svg {...iconProps}>
+      <rect height="16" width="20" x="2" y="4" rx="2" />
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+    </svg>
+  );
+}
+
+function TagIcon() {
+  return (
+    <svg {...iconProps}>
+      <path d="M12 2H2v10l9.29 9.29a1 1 0 0 0 1.42 0l8.58-8.58a1 1 0 0 0 0-1.42z" />
+      <circle cx="7" cy="7" r="1.5" />
+    </svg>
+  );
+}
+
+function QuoteIcon() {
+  return (
+    <svg {...iconProps}>
+      <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z" />
+      <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z" />
+    </svg>
+  );
+}
+
+function ShortNameIcon() {
+  return (
+    <svg {...iconProps}>
+      <rect height="14" width="14" x="8" y="8" rx="2" />
+      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+    </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg {...iconProps}>
+      <rect height="18" width="18" x="3" y="4" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
+    </svg>
+  );
+}
+
+function YearIcon() {
+  return (
+    <svg {...iconProps}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6v6l4 2" />
+    </svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg {...iconProps}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6v6l4 2" />
+    </svg>
+  );
+}
+
+function TermIcon() {
+  return (
+    <svg {...iconProps}>
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+    </svg>
+  );
+}
+
+function ChipIcon() {
+  return (
+    <svg {...iconProps}>
+      <rect height="14" width="14" x="5" y="5" rx="2" />
+      <path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3" />
+    </svg>
+  );
+}
+
+function GlobeIcon() {
+  return (
+    <svg {...iconProps}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
+  );
+}
+
+function CoinsIcon() {
+  return (
+    <svg {...iconProps}>
+      <circle cx="8" cy="8" r="6" />
+      <path d="M18.09 10.37A6 6 0 1 1 10.34 18" />
+      <path d="M7 6h1v4" />
+      <path d="m16.71 13.88.7.71-2.82 2.82" />
+    </svg>
+  );
+}
+
+function FlagIcon() {
+  return (
+    <svg {...iconProps}>
+      <path d="M4 22V4c0-1.1.9-2 2-2h7v14H6" />
+      <path d="M13 2h5c1.1 0 2 .9 2 2v6c0 1.1-.9 2-2 2h-5z" />
+      <path d="M4 6H2M4 10H2" />
+    </svg>
+  );
+}
+
+function ModulesIcon() {
+  return (
+    <svg {...iconProps}>
+      <rect height="7" width="7" x="3" y="3" rx="1" />
+      <rect height="7" width="7" x="14" y="3" rx="1" />
+      <rect height="7" width="7" x="14" y="14" rx="1" />
+      <rect height="7" width="7" x="3" y="14" rx="1" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg {...iconProps}>
+      <rect height="11" width="18" x="3" y="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
   );
 }
