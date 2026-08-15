@@ -43,7 +43,7 @@ export function importFileError(fileError: string): ParsedImportWorkbook {
  * batch. Never touches the database — preview-only data.
  */
 export function parseImportWorkbook(kind: ImportKind, buffer: Buffer): ParsedImportWorkbook {
-  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: false });
+  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const sheetName = workbook.SheetNames[0];
 
   if (!sheetName) {
@@ -54,7 +54,7 @@ export function parseImportWorkbook(kind: ImportKind, buffer: Buffer): ParsedImp
   const rawRows = sheet
     ? XLSX.utils.sheet_to_json<unknown[]>(sheet, {
         header: 1,
-        raw: false,
+        raw: true,
         defval: null,
       })
     : [];
@@ -62,7 +62,7 @@ export function parseImportWorkbook(kind: ImportKind, buffer: Buffer): ParsedImp
 
   if (headerIndex === -1) {
     return importFileError(
-      "La premiere ligne doit contenir les en-tetes 'Prénom' et 'Nom' (modele a telecharger)."
+      "La première ligne doit contenir les en-têtes 'Prénom' et 'Nom' (modèle à télécharger)."
     );
   }
 
@@ -97,7 +97,7 @@ export function parseImportWorkbook(kind: ImportKind, buffer: Buffer): ParsedImp
   markDuplicateCodes(rows);
 
   if (rows.length === 0) {
-    return importFileError('Le fichier ne contient aucune ligne de donnees a importer.');
+    return importFileError('Le fichier ne contient aucune ligne de données à importer.');
   }
 
   return { rows };
@@ -372,7 +372,7 @@ function markDuplicateCodes(rows: ParsedImportRow[]) {
     const firstRowNumber = firstRowByCode.get(normalizedCode);
 
     if (firstRowNumber !== undefined) {
-      row.errors.push(`Code deja utilise dans le fichier (ligne ${String(firstRowNumber)}).`);
+      row.errors.push(`Code déjà utilisé dans le fichier (ligne ${String(firstRowNumber)}).`);
     } else {
       firstRowByCode.set(normalizedCode, row.rowNumber);
     }
