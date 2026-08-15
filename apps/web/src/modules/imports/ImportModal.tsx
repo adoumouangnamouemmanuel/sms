@@ -68,6 +68,7 @@ export function ImportModal({
           errorKey={module.errorKey}
           isBusy={module.isBusy}
           isSessionExpired={module.isSessionExpired}
+          key={module.preview.importId}
           kind={kind}
           onConfirm={(identifier) => {
             void module.confirm(identifier);
@@ -138,7 +139,13 @@ function ChooseStep({
 }) {
   const { t } = useTranslation();
   const [localErrorKey, setLocalErrorKey] = useState<string | null>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const selectFile = (file: File | null) => {
+    setSelectedFile(file);
+    setLocalErrorKey(null);
+  };
 
   return (
     <div className="space-y-3">
@@ -155,19 +162,60 @@ function ChooseStep({
         {t('imports.choose.downloadTemplate')}
       </button>
 
-      <label className="flex flex-col gap-2">
-        <span className="text-[13px] font-bold text-slate-800">{t('imports.choose.file')}</span>
+      <label
+        className={`flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed px-4 py-6 text-center transition-colors focus-within:ring-2 focus-within:ring-teal-400 ${
+          isDraggingOver
+            ? 'border-teal-400 bg-teal-50/60'
+            : 'border-slate-300 bg-slate-50 hover:border-teal-300 hover:bg-slate-100/50'
+        }`}
+        onDragEnter={(event) => {
+          event.preventDefault();
+          setIsDraggingOver(true);
+        }}
+        onDragLeave={() => {
+          setIsDraggingOver(false);
+        }}
+        onDragOver={(event) => {
+          event.preventDefault();
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          setIsDraggingOver(false);
+          selectFile(event.dataTransfer.files[0] ?? null);
+        }}
+        data-testid="import-dropzone"
+      >
         <input
           accept=".xlsx"
-          className="cursor-pointer rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[13px] font-semibold text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-teal-500 file:px-3 file:py-1.5 file:text-[12px] file:font-bold file:text-white"
+          className="sr-only"
           disabled={isBusy || isSessionExpired}
           onChange={(event) => {
-            const file = event.target.files?.[0] ?? null;
-            setSelectedFile(file);
-            setLocalErrorKey(null);
+            selectFile(event.target.files?.[0] ?? null);
           }}
           type="file"
         />
+        <svg
+          aria-hidden="true"
+          className="mb-1 h-8 w-8 text-slate-300"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          viewBox="0 0 24 24"
+        >
+          <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
+          <path d="M12 12v9" />
+          <path d="m16 16-4-4-4 4" />
+        </svg>
+        <p className="text-[13px] font-bold text-slate-600">{t('imports.choose.dropzone')}</p>
+        <p className="text-[12px] font-semibold text-slate-400">{t('imports.choose.dropzoneOr')}</p>
+        <span className="rounded-lg bg-teal-500 px-3 py-1.5 text-[12px] font-bold text-white">
+          {t('imports.choose.chooseFile')}
+        </span>
+        <p className="mt-1 text-[12px] font-bold text-slate-500">
+          {selectedFile ? selectedFile.name : t('imports.choose.noFile')}
+        </p>
       </label>
 
       {localErrorKey ? (
@@ -233,7 +281,9 @@ function PreviewStep({
   preview: NonNullable<ReturnType<typeof useImportState>['preview']>;
 }) {
   const { t } = useTranslation();
-  const [identifier, setIdentifier] = useState('');
+  // Prefilled from the file name (e.g. eleves-exemple-2026-08-15); editable, and
+  // re-derived per preview via the key on PreviewStep.
+  const [identifier, setIdentifier] = useState(() => suggestImportIdentifier(preview.filename));
   const columns = IMPORT_COLUMNS_BY_KIND[kind];
 
   return (
@@ -250,7 +300,7 @@ function PreviewStep({
         </span>
       </div>
 
-      <div className="max-h-72 overflow-auto rounded-xl border border-slate-100">
+      <div className="max-h-96 overflow-auto rounded-xl border border-slate-100">
         <table className="w-full min-w-[640px] border-collapse whitespace-nowrap">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/70 text-left">
@@ -435,6 +485,21 @@ function ReportCount({
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/** Slugs the file name (without extension) + today's date: eleves-exemple-2026-08-15. */
+function suggestImportIdentifier(filename: string) {
+  const baseName = filename.replace(/\.[^.]+$/, '');
+  const slug = baseName
+    .toLocaleLowerCase('fr')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+  const today = new Date().toISOString().slice(0, 10);
+
+  return `${slug}-${today}`;
+}
 
 async function downloadBlobToFile(blobPromise: Promise<Blob | null>, filename: string) {
   const blob = await blobPromise;
