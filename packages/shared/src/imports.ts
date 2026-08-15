@@ -83,6 +83,12 @@ export const importPreviewRowSchema = z.object({
   values: z.record(z.string(), z.string().nullable()),
   /** French validation messages; non-empty means the row is rejected. */
   errors: z.array(z.string()),
+  /**
+   * Advisory warning (never blocks): the row's code or full name already
+   * exists in the school. Names alone are NOT identity — two real people can
+   * share an exact name — so this only flags the row for the admin to check.
+   */
+  possibleDuplicate: z.boolean(),
 });
 
 export const importPreviewResponseSchema = z.object({
