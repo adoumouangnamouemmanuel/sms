@@ -7,11 +7,18 @@ import type {
 } from '@edutrack/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { DatePicker } from '../../components/DatePicker';
+import { formatISODate } from '../../components/dateFormat';
 import {
   useStudentsModule,
   type PaginatedListState,
   type StudentsClient,
 } from './useStudentsState';
+
+const formInputClassName =
+  'h-[50px] w-full cursor-text rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[14px] font-medium text-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] outline-none transition-all placeholder:font-medium placeholder:text-slate-400 hover:border-slate-300 focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-600/10';
+const formSelectClassName =
+  'h-[50px] w-full cursor-pointer rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[14px] font-medium text-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] outline-none transition-all hover:border-slate-300 focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-600/10';
 
 export interface StudentsModuleProps {
   apiBaseUrl: string | null;
@@ -358,40 +365,47 @@ function ListToolbar({
 
   return (
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-      <p className="text-[13px] font-bold text-slate-500">{t('students.list.total', { count })}</p>
+      <div className="flex flex-wrap items-center gap-3">
+        <p className="text-[13px] font-bold text-slate-500">
+          {t('students.list.total', { count })}
+        </p>
 
-      <form
-        className="flex flex-1 items-center gap-2 sm:max-w-sm"
-        onSubmit={(event) => {
-          event.preventDefault();
-          onSearch(searchValue);
-        }}
-      >
-        <input
-          aria-label={t('students.list.search')}
-          className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] text-slate-700 focus:border-teal-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-400/40"
-          onChange={(event) => {
-            onSearchValueChange(event.target.value);
+        <form
+          className="flex items-center gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onSearch(searchValue);
           }}
-          placeholder={searchPlaceholder}
-          type="search"
-          value={searchValue}
-        />
-        <button
-          className="h-9 cursor-pointer rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-          type="submit"
         >
-          {t('students.list.search')}
-        </button>
-      </form>
+          <input
+            aria-label={t('students.list.search')}
+            className="h-9 w-44 min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] text-slate-700 focus:border-teal-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-400/40 sm:w-56"
+            onChange={(event) => {
+              onSearchValueChange(event.target.value);
+            }}
+            placeholder={searchPlaceholder}
+            type="search"
+            value={searchValue}
+          />
+          <button
+            className="h-9 cursor-pointer whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+            type="submit"
+          >
+            {t('students.list.search')}
+          </button>
+        </form>
+      </div>
 
-      <button
-        className="h-9 cursor-pointer rounded-xl bg-teal-500 px-4 text-[13px] font-bold text-white shadow-sm hover:bg-teal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-        onClick={onNew}
-        type="button"
-      >
-        {newLabel}
-      </button>
+      <div className="flex items-center gap-3">
+        <span aria-hidden="true" className="hidden h-6 w-px bg-slate-200 sm:block" />
+        <button
+          className="h-9 cursor-pointer whitespace-nowrap rounded-xl bg-teal-500 px-4 text-[13px] font-bold text-white shadow-sm hover:bg-teal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+          onClick={onNew}
+          type="button"
+        >
+          {newLabel}
+        </button>
+      </div>
     </div>
   );
 }
@@ -415,7 +429,7 @@ function Pagination({
       </p>
       <div className="flex items-center gap-2">
         <button
-          className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40"
+          className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-50 disabled:text-slate-300"
           disabled={list.offset === 0}
           onClick={onPrevious}
           type="button"
@@ -423,7 +437,7 @@ function Pagination({
           {t('students.list.previous')}
         </button>
         <button
-          className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40"
+          className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-50 disabled:text-slate-300"
           disabled={list.offset + list.limit >= list.total}
           onClick={onNext}
           type="button"
@@ -716,7 +730,7 @@ function StudentDetail({
         />
         <DetailField
           label={t('students.detail.dateOfBirth')}
-          value={profile.student.dateOfBirth ?? '—'}
+          value={profile.student.dateOfBirth ? formatISODate(profile.student.dateOfBirth) : '—'}
         />
         <DetailField
           label={t('students.detail.nationality')}
@@ -957,6 +971,7 @@ function StudentFormModal({
 }) {
   const { t } = useTranslation();
   const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [dateOfBirth, setDateOfBirth] = useState('');
 
   return (
     <ModalShell onClose={onClose} title={t('students.form.studentTitle')}>
@@ -976,7 +991,6 @@ function StudentFormModal({
           setErrorKey(null);
 
           const code = readFormValue(form, 'code').trim();
-          const dateOfBirth = readFormValue(form, 'dateOfBirth').trim();
 
           void onSubmit({
             ...(code ? { code } : {}),
@@ -991,7 +1005,7 @@ function StudentFormModal({
           }).catch(() => undefined);
         }}
       >
-        <FormField label={t('students.form.code')} name="code" optional />
+        <FormField label={t('students.form.code')} name="code" />
         <FormField label={t('students.form.firstName')} name="firstName" required />
         <FormField label={t('students.form.lastName')} name="lastName" required />
         <SelectField
@@ -1003,7 +1017,12 @@ function StudentFormModal({
             { label: t('students.sex.AUTRE'), value: 'AUTRE' },
           ]}
         />
-        <FormField label={t('students.form.dateOfBirth')} name="dateOfBirth" type="date" />
+        <div className="flex flex-col gap-2">
+          <span className="text-[13px] font-bold text-slate-800">
+            {t('students.form.dateOfBirth')}
+          </span>
+          <DatePicker onChange={setDateOfBirth} value={dateOfBirth} />
+        </div>
         <FormField label={t('students.form.nationality')} name="nationality" />
         <FormField label={t('students.form.phone')} name="phone" />
         <FormField label={t('students.form.email')} name="email" type="email" />
@@ -1136,15 +1155,10 @@ function LinkGuardianModal({
           }).catch(() => undefined);
         }}
       >
-        <label className="block">
-          <span className="text-[11px] font-black uppercase tracking-wide text-slate-400">
-            {t('students.link.select')}
-          </span>
-          <select
-            className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] font-semibold text-slate-700 focus:border-teal-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-400/40"
-            name="guardianId"
-          >
-            <option value="">—</option>
+        <label className="flex flex-col gap-2">
+          <span className="text-[13px] font-bold text-slate-800">{t('students.link.select')}</span>
+          <select className={formSelectClassName} name="guardianId">
+            <option value="">{t('students.form.selectPlaceholder')}</option>
             {guardians.items.map((guardian) => (
               <option key={guardian.id} value={guardian.id}>
                 {guardian.lastName} {guardian.firstName}
@@ -1234,12 +1248,12 @@ function ArchiveDialog({
             ? t('students.archive.reactivateBody', { name: targetName })
             : t('students.archive.body', { name: targetName })}
         </p>
-        <label className="block">
-          <span className="text-[11px] font-black uppercase tracking-wide text-slate-400">
+        <label className="flex flex-col gap-2">
+          <span className="text-[13px] font-bold text-slate-800">
             {t('students.archive.reason')}
           </span>
           <textarea
-            className="mt-1 min-h-[80px] w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] font-semibold text-slate-700 focus:border-teal-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-400/40"
+            className="min-h-[80px] w-full cursor-text rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] font-medium text-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] outline-none transition-all placeholder:font-medium placeholder:text-slate-400 hover:border-slate-300 focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-600/10"
             onChange={(event) => {
               setReason(event.target.value);
             }}
@@ -1285,28 +1299,19 @@ function FormField({
   name,
   type = 'text',
   required = false,
-  optional = false,
 }: {
   label: string;
   name: string;
   type?: string;
   required?: boolean;
-  optional?: boolean;
 }) {
-  const { t } = useTranslation();
-
   return (
-    <label className="block">
-      <span className="text-[11px] font-black uppercase tracking-wide text-slate-400">
+    <label className="flex flex-col gap-2">
+      <span className="text-[13px] font-bold text-slate-800">
         {label}
-        {required ? ' *' : optional ? ` (${t('students.form.optional')})` : ''}
+        {required ? ' *' : ''}
       </span>
-      <input
-        className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] font-semibold text-slate-700 focus:border-teal-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-400/40"
-        name={name}
-        required={required}
-        type={type}
-      />
+      <input className={formInputClassName} name={name} required={required} type={type} />
     </label>
   );
 }
@@ -1320,14 +1325,13 @@ function SelectField({
   name: string;
   options: { label: string; value: string }[];
 }) {
+  const { t } = useTranslation();
+
   return (
-    <label className="block">
-      <span className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</span>
-      <select
-        className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] font-semibold text-slate-700 focus:border-teal-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-400/40"
-        name={name}
-      >
-        <option value="">—</option>
+    <label className="flex flex-col gap-2">
+      <span className="text-[13px] font-bold text-slate-800">{label}</span>
+      <select className={formSelectClassName} name={name}>
+        <option value="">{t('students.form.selectPlaceholder')}</option>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
