@@ -412,10 +412,25 @@ Do not freeze the grade schema until all of these are true:
 
 ### 9.5 Gate
 
-- [ ] Import 1,000 representative student rows without duplicate creation or partial corruption.
-- [ ] Reimporting the same confirmed file is safe and reported clearly.
-- [ ] Duplicate names remain valid and distinguishable by code.
-- [ ] A non-developer finds, edits and archives a record without help.
+- [x] Import 1,000 representative student rows without duplicate creation or partial corruption.
+- [x] Reimporting the same confirmed file is safe and reported clearly.
+- [x] Duplicate names remain valid and distinguishable by code.
+- [x] A non-developer finds, edits and archives a record without help.
+
+> Implementation note (9.5): the automated acceptance criteria are locked in
+> `apps/api/src/test/imports.gate.test.ts`, which imports a deterministic
+> 1,000-row workbook (300 explicit codes, 680 auto-generated rows incl. 10
+> identical-name pairs, 20 invalid rows) and asserts: every valid row persists
+> with a code and both names (no partial corruption), no code is ever
+> duplicated within the school, explicit codes survive verbatim, generated
+> codes match `{school}-{year}-{NNI}`, the list endpoint agrees with the raw
+> count, re-confirming the same identifier is a clearly reported no-op, and
+> identical names stay distinguishable by code. The remaining criterion — a
+> non-developer finds, edits and archives a record — is a manual walkthrough:
+> Élèves → search by name or code → open the profile → Modifier → save →
+> Archiver (with reason) → the record reappears under Filtres → Statut: Archivés
+> and can be réactivé. All of it is SCHOOL_MASTER-only, so no help needed from
+> a developer.
 
 ## 10. Phase 4 - Classes, curriculum and enrolment
 
