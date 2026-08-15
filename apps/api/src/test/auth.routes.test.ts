@@ -4,7 +4,12 @@ import type { OutgoingHttpHeaders } from 'node:http';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { BCRYPT_COST, REFRESH_TOKEN_TTL_SECONDS, hashPassword, hashToken } from '../modules/auth/index.js';
+import {
+  BCRYPT_COST,
+  REFRESH_TOKEN_TTL_SECONDS,
+  hashPassword,
+  hashToken,
+} from '../modules/auth/index.js';
 import { buildServer } from '../server.js';
 import {
   openEduTrackDatabase,
