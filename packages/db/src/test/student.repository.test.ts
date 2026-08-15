@@ -221,6 +221,33 @@ describe('student repository', () => {
     expect(repository.listActive()).toHaveLength(1);
   });
 
+  it('lists archived students separately from active ones', () => {
+    const [school] = foundationSeed.schools;
+    const repository = createStudentRepository(db, createTenantContext(school.id));
+
+    repository.create({
+      code: 'NDS-DEMO-2026-000000070',
+      firstName: 'Aminata',
+      lastName: 'Mahamat',
+    });
+    const archived = repository.create({
+      code: 'NDS-DEMO-2026-000000071',
+      firstName: 'Ibrahim',
+      lastName: 'Ousmane',
+    });
+    repository.archive(archived.id, '2026-08-15T10:00:00.000Z');
+
+    expect(repository.list().map((studentRecord) => studentRecord.code)).toEqual([
+      'NDS-DEMO-2026-000000070',
+    ]);
+    expect(
+      repository.list({ status: 'archived' }).map((studentRecord) => studentRecord.code)
+    ).toEqual(['NDS-DEMO-2026-000000071']);
+    expect(repository.count()).toBe(1);
+    expect(repository.count({ status: 'archived' })).toBe(1);
+    expect(repository.list({ status: 'archived', search: 'Mahamat' })).toHaveLength(0);
+  });
+
   it('updates profile fields, bumps record version, and never changes the code', () => {
     const [school] = foundationSeed.schools;
     const repository = createStudentRepository(db, createTenantContext(school.id));
