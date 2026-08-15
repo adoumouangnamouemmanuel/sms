@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ConfirmImportResponse, ImportPreviewResponse } from '@edutrack/shared';
 import { describe, expect, it, vi } from 'vitest';
@@ -96,12 +96,34 @@ describe('ImportModal', () => {
     );
 
     expect(screen.getByText('Importer des élèves')).toBeInTheDocument();
+    expect(screen.getByText('Choisir un fichier…')).toBeInTheDocument();
     await userSession.click(screen.getByRole('button', { name: 'Télécharger le modèle (.xlsx)' }));
 
     expect(downloadTemplate).toHaveBeenCalledWith('STUDENTS', expect.any(Object));
   });
 
-  it('analyzes a file and shows the preview with row-level errors', async () => {
+  it('accepts a file picked from the French chooser', async () => {
+    const userSession = userEvent.setup();
+    const previewImport = vi.fn().mockResolvedValue(preview);
+    const client = createImportsClient({ previewImport });
+
+    const view = render(
+      <ImportModal
+        apiBaseUrl="http://127.0.0.1:49152"
+        client={client}
+        kind="STUDENTS"
+        onClose={vi.fn()}
+      />
+    );
+
+    await uploadFile(userSession, view.container, 'eleves.xlsx');
+    await userSession.click(screen.getByRole('button', { name: 'Analyser le fichier' }));
+
+    expect(await screen.findByText('2 valides')).toBeInTheDocument();
+    expect(previewImport).toHaveBeenCalledTimes(1);
+  });
+
+  it('accepts a file dragged and dropped onto the drop zone', async () => {
     const userSession = userEvent.setup();
     const previewImport = vi.fn().mockResolvedValue(preview);
     const client = createImportsClient({ previewImport });
@@ -115,17 +137,65 @@ describe('ImportModal', () => {
       />
     );
 
-    const file = new File(['fake'], 'eleves.xlsx', {
+    const file = new File(['fake'], 'eleves-drag.xlsx', {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
-    await userSession.upload(screen.getByLabelText('Fichier à importer'), file);
+    const dropZone = screen.getByTestId('import-dropzone');
+    fireEvent.drop(dropZone, { dataTransfer: { files: [file] } });
+
+    expect(screen.getByText('eleves-drag.xlsx')).toBeInTheDocument();
     await userSession.click(screen.getByRole('button', { name: 'Analyser le fichier' }));
 
     expect(previewImport).toHaveBeenCalledWith('STUDENTS', file, expect.any(Object));
     expect(await screen.findByText('2 valides')).toBeInTheDocument();
+  });
+
+  it('analyzes a file and shows the preview with row-level errors', async () => {
+    const userSession = userEvent.setup();
+    const previewImport = vi.fn().mockResolvedValue(preview);
+    const client = createImportsClient({ previewImport });
+
+    const view = render(
+      <ImportModal
+        apiBaseUrl="http://127.0.0.1:49152"
+        client={client}
+        kind="STUDENTS"
+        onClose={vi.fn()}
+      />
+    );
+
+    await uploadFile(userSession, view.container, 'eleves.xlsx');
+    await userSession.click(screen.getByRole('button', { name: 'Analyser le fichier' }));
+
+    expect(previewImport).toHaveBeenCalledWith('STUDENTS', expect.any(File), expect.any(Object));
+    expect(await screen.findByText('2 valides')).toBeInTheDocument();
     expect(screen.getByText('1 en erreur')).toBeInTheDocument();
     expect(screen.getByText('Prénom requis.')).toBeInTheDocument();
     expect(screen.getByText('Aminata')).toBeInTheDocument();
+  });
+
+  it('prefills the import identifier from the file name and lets the user edit it', async () => {
+    const userSession = userEvent.setup();
+    const client = createImportsClient({ previewImport: vi.fn().mockResolvedValue(preview) });
+
+    const view = render(
+      <ImportModal
+        apiBaseUrl="http://127.0.0.1:49152"
+        client={client}
+        kind="STUDENTS"
+        onClose={vi.fn()}
+      />
+    );
+
+    await uploadFile(userSession, view.container, 'eleves.xlsx');
+    await userSession.click(screen.getByRole('button', { name: 'Analyser le fichier' }));
+    await screen.findByText('2 valides');
+
+    const expected = `eleves-${new Date().toISOString().slice(0, 10)}`;
+    expect(screen.getByPlaceholderText('Ex. rentree-2026-09-01')).toHaveValue(expected);
+
+    await userSession.clear(screen.getByPlaceholderText('Ex. rentree-2026-09-01'));
+    await userSession.type(screen.getByPlaceholderText('Ex. rentree-2026-09-01'), 'rentree-2026');
   });
 
   it('confirms the import and shows the report', async () => {
@@ -136,7 +206,7 @@ describe('ImportModal', () => {
       previewImport: vi.fn().mockResolvedValue(preview),
     });
 
-    render(
+    const view = render(
       <ImportModal
         apiBaseUrl="http://127.0.0.1:49152"
         client={client}
@@ -145,13 +215,11 @@ describe('ImportModal', () => {
       />
     );
 
-    const file = new File(['fake'], 'eleves.xlsx', {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    });
-    await userSession.upload(screen.getByLabelText('Fichier à importer'), file);
+    await uploadFile(userSession, view.container, 'eleves.xlsx');
     await userSession.click(screen.getByRole('button', { name: 'Analyser le fichier' }));
     await screen.findByText('2 valides');
 
+    await userSession.clear(screen.getByPlaceholderText('Ex. rentree-2026-09-01'));
     await userSession.type(screen.getByPlaceholderText('Ex. rentree-2026-09-01'), 'rentree-2026');
     await userSession.click(screen.getByRole('button', { name: 'Confirmer l’import' }));
 
@@ -177,7 +245,7 @@ describe('ImportModal', () => {
       previewImport: vi.fn().mockResolvedValue(preview),
     });
 
-    render(
+    const view = render(
       <ImportModal
         apiBaseUrl="http://127.0.0.1:49152"
         client={client}
@@ -186,13 +254,11 @@ describe('ImportModal', () => {
       />
     );
 
-    const file = new File(['fake'], 'eleves.xlsx', {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    });
-    await userSession.upload(screen.getByLabelText('Fichier à importer'), file);
+    await uploadFile(userSession, view.container, 'eleves.xlsx');
     await userSession.click(screen.getByRole('button', { name: 'Analyser le fichier' }));
     await screen.findByText('2 valides');
 
+    await userSession.clear(screen.getByPlaceholderText('Ex. rentree-2026-09-01'));
     await userSession.type(screen.getByPlaceholderText('Ex. rentree-2026-09-01'), 'rentree-2026');
     await userSession.click(screen.getByRole('button', { name: 'Confirmer l’import' }));
 
@@ -215,7 +281,7 @@ describe('ImportModal', () => {
       previewImport: vi.fn().mockResolvedValue(preview),
     });
 
-    render(
+    const view = render(
       <ImportModal
         apiBaseUrl="http://127.0.0.1:49152"
         client={client}
@@ -225,13 +291,11 @@ describe('ImportModal', () => {
       />
     );
 
-    const file = new File(['fake'], 'eleves.xlsx', {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    });
-    await userSession.upload(screen.getByLabelText('Fichier à importer'), file);
+    await uploadFile(userSession, view.container, 'eleves.xlsx');
     await userSession.click(screen.getByRole('button', { name: 'Analyser le fichier' }));
     await screen.findByText('2 valides');
 
+    await userSession.clear(screen.getByPlaceholderText('Ex. rentree-2026-09-01'));
     await userSession.type(screen.getByPlaceholderText('Ex. rentree-2026-09-01'), 'rentree-2026');
     await userSession.click(screen.getByRole('button', { name: 'Confirmer l’import' }));
 
@@ -254,7 +318,7 @@ describe('ImportModal', () => {
       previewImport: vi.fn().mockResolvedValue(preview),
     });
 
-    render(
+    const view = render(
       <ImportModal
         apiBaseUrl="http://127.0.0.1:49152"
         client={client}
@@ -263,10 +327,7 @@ describe('ImportModal', () => {
       />
     );
 
-    const file = new File(['fake'], 'eleves.xlsx', {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    });
-    await userSession.upload(screen.getByLabelText('Fichier à importer'), file);
+    await uploadFile(userSession, view.container, 'eleves.xlsx');
     await userSession.click(screen.getByRole('button', { name: 'Analyser le fichier' }));
     await screen.findByText('1 en erreur');
 
@@ -277,6 +338,22 @@ describe('ImportModal', () => {
     expect(downloadErrorsCsv).toHaveBeenCalledWith('preview-1', expect.any(Object));
   });
 });
+
+async function uploadFile(
+  userSession: ReturnType<typeof userEvent.setup>,
+  container: HTMLElement,
+  name: string
+) {
+  const fileInput = container.querySelector('input[type="file"]');
+  if (!(fileInput instanceof HTMLInputElement)) {
+    throw new Error('file input not found');
+  }
+  const file = new File(['fake'], name, {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+
+  await userSession.upload(fileInput, file);
+}
 
 function createImportsClient(overrides: Partial<ImportsClient>): ImportsClient {
   return {
