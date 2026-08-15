@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // drizzle-kit's bundled loader cannot map ESM `.js`-suffixed imports back
+    // to `.ts` sources, so it must not resolve `@edutrack/shared` to its
+    // TypeScript source. The empty `paths` override (no `baseUrl`) makes it
+    // fall through to node_modules, where the package `exports.require`
+    // condition loads the compiled dist. See db:generate.
+    "paths": {},
+    "baseUrl": "."
+  },
+  "include": ["src/schema.sqlite.ts", "drizzle.sqlite.config.ts"]
+}
