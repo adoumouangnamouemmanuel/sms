@@ -9,7 +9,7 @@ import {
   createSidecarReadyPayload,
   createSidecarSecurityOptions,
   getListenOptions,
-} from './server.js';
+} from '../server.js';
 
 const databaseStatus = {
   sqlitePath: 'C:\\Users\\Test\\AppData\\Roaming\\EduTrack\\edutrack.sqlite',

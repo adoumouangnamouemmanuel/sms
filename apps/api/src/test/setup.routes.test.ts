@@ -12,11 +12,11 @@ import {
   type EduTrackDatabaseConnection,
 } from '@edutrack/db';
 import type { AuthTokenResponse, SetupStateResponse } from '@edutrack/shared';
-import { buildServer } from '../../server.js';
-import { hashPassword } from '../auth/index.js';
+import { buildServer } from '../server.js';
+import { hashPassword } from '../modules/auth/index.js';
 
 const migrationsDir = fileURLToPath(
-  new URL('../../../../../packages/db/migrations/sqlite/', import.meta.url)
+  new URL('../../../../packages/db/migrations/sqlite/', import.meta.url)
 );
 const firstSchoolId = '00000000-0000-4000-8000-000000000101';
 const schoolMasterId = '00000000-0000-4000-8000-000000000201';

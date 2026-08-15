@@ -4,8 +4,8 @@ import type { OutgoingHttpHeaders } from 'node:http';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { BCRYPT_COST, REFRESH_TOKEN_TTL_SECONDS, hashPassword, hashToken } from './index.js';
-import { buildServer } from '../../server.js';
+import { BCRYPT_COST, REFRESH_TOKEN_TTL_SECONDS, hashPassword, hashToken } from '../modules/auth/index.js';
+import { buildServer } from '../server.js';
 import {
   openEduTrackDatabase,
   seedFoundation,
@@ -15,7 +15,7 @@ import {
 import type { AuthTokenResponse } from '@edutrack/shared';
 
 const migrationsDir = fileURLToPath(
-  new URL('../../../../../packages/db/migrations/sqlite/', import.meta.url)
+  new URL('../../../../packages/db/migrations/sqlite/', import.meta.url)
 );
 const firstSchoolId = '00000000-0000-4000-8000-000000000101';
 const schoolMasterId = '00000000-0000-4000-8000-000000000201';
