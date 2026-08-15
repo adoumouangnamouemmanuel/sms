@@ -14,6 +14,7 @@ import {
 } from '@edutrack/shared';
 import Fastify, { type FastifyReply, type FastifyServerOptions } from 'fastify';
 import { AuthService, registerAuthRoutes, type AuthServiceOptions } from './modules/auth/index.js';
+import { ImportsService, registerImportsRoutes } from './modules/imports/index.js';
 import {
   GuardiansService,
   registerPeopleRoutes,
@@ -175,6 +176,12 @@ export function buildServer(options: BuildServerOptions = {}) {
         ...(options.auth?.now ? { now: options.auth.now } : {}),
       }),
       teachersService: new TeachersService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+    });
+    registerImportsRoutes(server, {
+      authService,
+      importsService: new ImportsService(database, {
         ...(options.auth?.now ? { now: options.auth.now } : {}),
       }),
     });
