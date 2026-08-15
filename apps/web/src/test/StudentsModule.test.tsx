@@ -119,7 +119,7 @@ describe('StudentsModule', () => {
 
     expect(searchBox).toHaveValue('Ousmane');
     expect(listStudents).toHaveBeenLastCalledWith(
-      { search: 'Ousmane', limit: 20, offset: 0 },
+      { search: 'Ousmane', status: 'active', limit: 20, offset: 0 },
       expect.any(Object)
     );
 
@@ -252,6 +252,35 @@ describe('StudentsModule', () => {
     expect(screen.getByText('Abakar Fatime')).toBeInTheDocument();
     expect(screen.getByText('Mère')).toBeInTheDocument();
     expect(screen.getByText('Principal')).toBeInTheDocument();
+  });
+
+  it('filters the students list by archived status', async () => {
+    const userSession = userEvent.setup();
+    const listStudents = vi
+      .fn()
+      .mockImplementation((query: StudentListQuery) =>
+        Promise.resolve(
+          query.status === 'archived'
+            ? { items: [{ ...student, isActive: false }], total: 1, limit: 20, offset: 0 }
+            : { items: [student], total: 1, limit: 20, offset: 0 }
+        )
+      );
+    const client = createStudentsClient({
+      listStudents,
+      listGuardians: vi.fn().mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 }),
+    });
+
+    render(<StudentsModule apiBaseUrl="http://127.0.0.1:49152" client={client} />);
+
+    await screen.findByText('Mahamat Aminata');
+    await userSession.click(screen.getByRole('button', { name: /Filtres/ }));
+    await userSession.selectOptions(screen.getByRole('combobox', { name: 'Statut' }), 'archived');
+
+    expect(await screen.findByText('Archivé')).toBeInTheDocument();
+    expect(listStudents).toHaveBeenLastCalledWith(
+      { search: '', status: 'archived', limit: 20, offset: 0 },
+      expect.any(Object)
+    );
   });
 
   it('switches to the guardians tab and shows sibling students in a guardian profile', async () => {
