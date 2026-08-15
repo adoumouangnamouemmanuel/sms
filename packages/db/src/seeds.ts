@@ -11,7 +11,34 @@ import { schemaMetadata, school, user, type UserRole } from './schema.sqlite.js'
  *
  * Synthetic demo data only — never use in a real school.
  */
-const seedPasswordHash = process.env.EDUTRACK_SEED_PASSWORD_HASH ?? '!UNUSABLE_PASSWORD_HASH!';
+const seedPasswordHash = resolveSeedPasswordHash();
+
+/**
+ * Resolves the demo password hash for the foundation schools. When
+ * EDUTRACK_SEED_PASSWORD_HASH is set it must be a real bcrypt hash with a
+ * cost factor of at least 12 (the app's BCRYPT_COST); anything else fails
+ * seeding loudly instead of silently persisting a broken login. When unset,
+ * an unusable placeholder keeps the accounts locked until an administrator
+ * configures a real password.
+ */
+function resolveSeedPasswordHash(): string {
+  const configured = process.env.EDUTRACK_SEED_PASSWORD_HASH;
+
+  if (!configured) {
+    return '!UNUSABLE_PASSWORD_HASH!';
+  }
+
+  const match = /^\$2[aby]\$(\d{2})\$/.exec(configured);
+  const cost = match ? Number(match[1]) : NaN;
+
+  if (!match || Number.isNaN(cost) || cost < 12) {
+    throw new Error(
+      'EDUTRACK_SEED_PASSWORD_HASH doit être un hash bcrypt valide avec un facteur de coût >= 12.'
+    );
+  }
+
+  return configured;
+}
 
 export const foundationSeedVersion = 'phase-1.4-foundation-2026-08-15';
 
