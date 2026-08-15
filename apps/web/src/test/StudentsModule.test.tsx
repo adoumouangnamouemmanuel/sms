@@ -305,6 +305,23 @@ describe('StudentsModule', () => {
     expect(await screen.findByText('Élèves liés (fratrie)')).toBeInTheDocument();
     expect(screen.getByText('Mahamat Aminata')).toBeInTheDocument();
   });
+
+  it('opens the guardians import modal from the responsables tab', async () => {
+    const userSession = userEvent.setup();
+    const client = createStudentsClient({
+      listGuardians: vi.fn().mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 }),
+      listStudents: vi.fn().mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 }),
+    });
+
+    render(<StudentsModule apiBaseUrl="http://127.0.0.1:49152" client={client} />);
+
+    await userSession.click(await screen.findByRole('tab', { name: 'Responsables' }));
+    await userSession.click(await screen.findByRole('button', { name: 'Importer' }));
+
+    expect(await screen.findByText('Importer des responsables')).toBeInTheDocument();
+    // The guardian template has no code column.
+    expect(screen.getByText('Choisir un fichier…')).toBeInTheDocument();
+  });
 });
 
 function createStudentsClient(overrides: Partial<StudentsClient>): StudentsClient {
