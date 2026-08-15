@@ -233,7 +233,7 @@ export function EnrolmentView({
           ) : null}
         </div>
 
-        {isLoading ? (
+        {isLoading && !missing ? (
           <p className="py-10 text-center text-sm font-bold text-slate-400">
             {t('classes.loading')}
           </p>
