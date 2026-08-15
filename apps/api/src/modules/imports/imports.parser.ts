@@ -19,6 +19,12 @@ export interface ParsedImportRow {
    * itself never touches the database, so this always starts false.
    */
   possibleDuplicate: boolean;
+  /**
+   * Filled by the service at preview time (GUARDIANS only): the id of the
+   * student matched by `values.studentCode`, used to auto-link the guardian at
+   * confirm. The parser itself never touches the database.
+   */
+  linkedStudentId?: string | null;
 }
 
 export interface ParsedImportWorkbook {
@@ -214,6 +220,18 @@ function validateImportRow(kind: ImportKind, values: Record<string, string | nul
 
     if (!/^[A-Za-z0-9._-]+$/.test(code)) {
       errors.push("Code invalide (lettres, chiffres, '.', '_' ou '-' uniquement).");
+    }
+  }
+
+  const studentCode = values.studentCode?.trim();
+
+  if (studentCode) {
+    if (studentCode.length > 64) {
+      errors.push('Code élève trop long (64 caractères maximum).');
+    }
+
+    if (!/^[A-Za-z0-9._-]+$/.test(studentCode)) {
+      errors.push("Code élève invalide (lettres, chiffres, '.', '_' ou '-' uniquement).");
     }
   }
 
