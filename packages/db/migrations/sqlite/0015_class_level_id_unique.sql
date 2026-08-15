@@ -1,3 +1,10 @@
+-- Re-issued as 0015 (was 0010_slippery_mother_askani): the original entry's
+-- journal `when` timestamp was lower than already-applied migrations, so
+-- drizzle's migrator permanently skipped it on databases that had already
+-- migrated past 0007 (a fresh database applied everything in order and was
+-- unaffected). This renumbering with a later `when` lets existing databases
+-- pick up the DDL.
+--
 -- Phase 4.1: add the (school_id, id) unique index on class_level so the
 -- composite tenant foreign keys from classroom resolve (SQLite requires a
 -- unique index on the referenced columns). Additive; safe on non-empty data.
