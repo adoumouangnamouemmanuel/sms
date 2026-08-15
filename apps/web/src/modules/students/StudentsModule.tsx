@@ -8,6 +8,7 @@ import type {
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatISODate } from '../../components/dateFormat';
+import { AFRICAN_COUNTRIES, DEFAULT_NATIONALITY } from './countries';
 import {
   useStudentsModule,
   type PaginatedListState,
@@ -250,7 +251,6 @@ function StudentsTab({
   onSetArchiveTarget,
 }: StudentsTabProps) {
   const { t } = useTranslation();
-  const [draftSearch, setDraftSearch] = useState('');
 
   if (module.studentProfile) {
     return (
@@ -276,10 +276,11 @@ function StudentsTab({
         onNew={onOpenForm}
         onSearch={(search) => {
           module.searchStudents(search);
-          setDraftSearch('');
         }}
-        searchValue={draftSearch}
-        onSearchValueChange={setDraftSearch}
+        onSearchValueChange={(value) => {
+          module.searchStudents(value);
+        }}
+        searchValue={module.students.search}
       />
 
       <StudentTable
@@ -320,7 +321,6 @@ function GuardiansTab({
   onSetArchiveTarget,
 }: GuardiansTabProps) {
   const { t } = useTranslation();
-  const [draftSearch, setDraftSearch] = useState('');
 
   if (module.guardianProfile) {
     return (
@@ -345,10 +345,11 @@ function GuardiansTab({
         onNew={onOpenForm}
         onSearch={(search) => {
           module.searchGuardians(search);
-          setDraftSearch('');
         }}
-        searchValue={draftSearch}
-        onSearchValueChange={setDraftSearch}
+        onSearchValueChange={(value) => {
+          module.searchGuardians(value);
+        }}
+        searchValue={module.guardians.search}
       />
 
       <GuardianTable
@@ -385,7 +386,6 @@ interface ArchiveTarget {
   name: string;
   reactivate: boolean;
 }
-
 function ListToolbar({
   count,
   newLabel,
@@ -419,16 +419,30 @@ function ListToolbar({
             onSearch(searchValue);
           }}
         >
-          <input
-            aria-label={t('students.list.search')}
-            className="h-9 w-44 min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] text-slate-700 focus:border-teal-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-400/40 sm:w-56"
-            onChange={(event) => {
-              onSearchValueChange(event.target.value);
-            }}
-            placeholder={searchPlaceholder}
-            type="search"
-            value={searchValue}
-          />
+          <div className="relative">
+            <input
+              aria-label={t('students.list.search')}
+              className="h-9 w-44 min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-3 pr-8 text-[13px] text-slate-700 focus:border-teal-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-400/40 sm:w-56"
+              onChange={(event) => {
+                onSearchValueChange(event.target.value);
+              }}
+              placeholder={searchPlaceholder}
+              type="text"
+              value={searchValue}
+            />
+            {searchValue ? (
+              <button
+                aria-label={t('students.list.clearSearch')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-full p-0.5 text-[13px] font-bold leading-none text-slate-400 hover:bg-slate-200 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+                onClick={() => {
+                  onSearchValueChange('');
+                }}
+                type="button"
+              >
+                ✕
+              </button>
+            ) : null}
+          </div>
           <button
             className="h-9 cursor-pointer whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
             type="submit"
@@ -1109,10 +1123,15 @@ function StudentFormModal({
           name="dateOfBirth"
           type="date"
         />
-        <FormField
-          defaultValue={student?.nationality ?? ''}
+        <SelectField
+          defaultValue={
+            student?.nationality && AFRICAN_COUNTRIES.includes(student.nationality)
+              ? student.nationality
+              : DEFAULT_NATIONALITY
+          }
           label={t('students.form.nationality')}
           name="nationality"
+          options={AFRICAN_COUNTRIES.map((country) => ({ label: country, value: country }))}
         />
         <FormField
           defaultValue={student?.phone ?? ''}
