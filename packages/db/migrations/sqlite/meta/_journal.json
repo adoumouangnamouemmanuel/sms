@@ -78,6 +78,20 @@
       "when": 1786815184679,
       "tag": "0010_slippery_mother_askani",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1787200000000,
+      "tag": "0011_classes_import_kinds",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1787210000000,
+      "tag": "0012_classes_module",
+      "breakpoints": true
     }
   ]
 }
