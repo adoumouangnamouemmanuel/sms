@@ -195,6 +195,8 @@ SQLite migration files live in `packages/db/migrations/sqlite`.
 
 `0005_teachers_module.sql` follows the same pattern for `TEACHERS` (CHECK widening + per-school backfill), so already-setup schools surface the teachers module as well. The teacher `user_id` login link keeps its `ON DELETE RESTRICT` behavior, and teacher/student/guardian list repositories accept an optional `status` filter (`active` | `archived`) so archived people stay reachable.
 
+`0006_import_batch.sql` adds the `import_batch` table that records each confirmed Excel import (kind, import identifier, filename, row counts) with a unique `(school_id, import_identifier)` index — the backbone of import idempotency (Phase 3.4). Import previews themselves are never persisted; they live in an in-memory store on the sidecar with a 30-minute TTL.
+
 ## Seed Policy
 
 Foundation seed data is deterministic and idempotent. It uses synthetic demo schools only; real school or student data is forbidden in seeds and tests.
