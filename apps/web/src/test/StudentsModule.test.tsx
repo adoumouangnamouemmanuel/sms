@@ -138,6 +138,24 @@ describe('StudentsModule', () => {
     );
   });
 
+  it('renders the create-student modal with app-wide labels, a select placeholder, and DD/MM/YYYY date', async () => {
+    const userSession = userEvent.setup();
+    const client = createStudentsClient({
+      listStudents: vi.fn().mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 }),
+      listGuardians: vi.fn().mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 }),
+    });
+
+    render(<StudentsModule apiBaseUrl="http://127.0.0.1:49152" client={client} />);
+
+    await screen.findByText('Aucun élève trouvé.');
+    await userSession.click(screen.getByRole('button', { name: 'Nouvel élève' }));
+
+    expect(screen.getByRole('textbox', { name: 'Code' })).toBeInTheDocument();
+    expect(screen.queryByText(/optionnel/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Sexe' })).toHaveTextContent('Sélectionner');
+    expect(screen.getByRole('button', { name: 'JJ/MM/AAAA' })).toBeInTheDocument();
+  });
+
   it('requires a reason before archiving a student', async () => {
     const userSession = userEvent.setup();
     const archiveStudent = vi.fn().mockResolvedValue({ ...student, isActive: false });
