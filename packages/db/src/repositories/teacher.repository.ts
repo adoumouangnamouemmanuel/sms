@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull, like, or, sql } from 'drizzle-orm';
+import { and, asc, count, eq, isNotNull, isNull, like, or, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { RepositoryExecutor, TenantContext } from './base.js';
 import { TenantScopedRepository } from './base.js';
@@ -51,8 +51,15 @@ export interface TeacherRecord {
 
 export interface ListTeachersOptions {
   search?: string;
+  /** 'archived' lists archived records; omitted or 'active' lists active ones. */
+  status?: 'active' | 'archived';
   limit?: number;
   offset?: number;
+}
+
+export interface CountTeachersOptions {
+  search?: string;
+  status?: 'active' | 'archived';
 }
 
 /**
@@ -88,7 +95,16 @@ export class TeacherRepository extends TenantScopedRepository {
       .get();
   }
 
-  listActive(options: ListTeachersOptions = {}) {
+  /** Finds the teacher linked to a login account, regardless of record status. */
+  findByUserId(userId: string) {
+    return this.db
+      .select(teacherColumns)
+      .from(teacher)
+      .where(and(eq(teacher.userId, userId), eq(teacher.schoolId, this.schoolId)))
+      .get();
+  }
+
+  list(options: ListTeachersOptions = {}) {
     const search = options.search?.trim();
     const limit = options.limit ?? 50;
     const offset = options.offset ?? 0;
@@ -96,20 +112,41 @@ export class TeacherRepository extends TenantScopedRepository {
     return this.db
       .select(teacherColumns)
       .from(teacher)
-      .where(
-        and(
-          eq(teacher.schoolId, this.schoolId),
-          eq(teacher.isActive, true),
-          isNull(teacher.deletedAt),
-          search
-            ? or(like(teacher.firstName, `%${search}%`), like(teacher.lastName, `%${search}%`))
-            : undefined
-        )
-      )
+      .where(teacherWhere(this.schoolId, search, options.status))
       .orderBy(asc(teacher.lastName), asc(teacher.firstName), asc(teacher.code))
       .limit(limit)
       .offset(offset)
       .all();
+  }
+
+  /** Total teachers matching the list filters, used for stable pagination totals. */
+  count(options: CountTeachersOptions = {}) {
+    const search = options.search?.trim();
+    const row = this.db
+      .select({ value: count() })
+      .from(teacher)
+      .where(teacherWhere(this.schoolId, search, options.status))
+      .get();
+
+    return row?.value ?? 0;
+  }
+
+  /**
+   * Total teacher rows for the school including archived ones. Codes are
+   * durable and never reused, so this drives the sequential NNI fallback.
+   */
+  countAll() {
+    const row = this.db
+      .select({ value: count() })
+      .from(teacher)
+      .where(eq(teacher.schoolId, this.schoolId))
+      .get();
+
+    return row?.value ?? 0;
+  }
+
+  listActive(options: ListTeachersOptions = {}) {
+    return this.list({ ...options, status: 'active' });
   }
 
   update(id: string, input: UpdateTeacherInput, updatedAt: string) {
@@ -156,6 +193,27 @@ export class TeacherRepository extends TenantScopedRepository {
 
 export function createTeacherRepository(db: RepositoryExecutor, tenant: TenantContext) {
   return new TeacherRepository(db, tenant);
+}
+
+function teacherWhere(
+  schoolId: string,
+  search: string | undefined,
+  status: 'active' | 'archived' | undefined
+) {
+  const archived = status === 'archived';
+
+  return and(
+    eq(teacher.schoolId, schoolId),
+    eq(teacher.isActive, !archived),
+    archived ? isNotNull(teacher.deletedAt) : isNull(teacher.deletedAt),
+    search
+      ? or(
+          like(teacher.firstName, `%${search}%`),
+          like(teacher.lastName, `%${search}%`),
+          like(teacher.code, `%${search}%`)
+        )
+      : undefined
+  );
 }
 
 function normalizeTeacherCreate(input: CreateTeacherInput) {
