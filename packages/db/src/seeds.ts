@@ -2,9 +2,21 @@ import { eq } from 'drizzle-orm';
 import type { EduTrackDatabase } from './client.js';
 import { schemaMetadata, school, user, type UserRole } from './schema.sqlite.js';
 
-const seedPasswordHash = '$2b$12$C6UzMDM.H6dfI/f/IKcEeOq8GmUiZ6ztp7Z8VsYzHf5fQK1x6ZVdW';
+/**
+ * Demo credentials for the synthetic foundation schools (NDS-DEMO and MND-DEMO).
+ *
+ * - School code: `NDS-DEMO` (or `MND-DEMO`)
+ * - Username: `directeur`
+ * - Password: `Directeur2026!`
+ *
+ * Synthetic demo data only — never use in a real school. Change the password
+ * from the app after first login.
+ */
+export const foundationSeedDemoPassword = 'Directeur2026!';
 
-export const foundationSeedVersion = 'phase-1.3-foundation-2026-08-12';
+const seedPasswordHash = '$2b$12$qz2biC3Eg5TZABmiLpeyfOWBgqx.AB3wu6EL0Rb7JCY2M5XBcSdwy';
+
+export const foundationSeedVersion = 'phase-1.4-foundation-2026-08-15';
 
 export const foundationSeed = {
   schools: [
