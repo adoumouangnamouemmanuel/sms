@@ -32,12 +32,13 @@ export function StructureModule({
   onSessionExpired,
 }: StructureModuleProps) {
   const { t } = useTranslation();
-  const [draft, setDraft] = useState<SetupClassLevelInput[]>(() =>
+  const [draft, setDraft] = useState<(SetupClassLevelInput & { rowId: string })[]>(() =>
     setupState.classLevels.map((level) => ({
       code: level.code,
       name: level.name,
       displayOrder: level.displayOrder,
       isExamYear: level.isExamYear,
+      rowId: level.id, // safe to use DB id for existing rows
     }))
   );
   const [isEditing, setIsEditing] = useState(false);
@@ -53,18 +54,14 @@ export function StructureModule({
     }))
   );
 
-  const updateLevel = (displayOrder: number, patch: Partial<SetupClassLevelInput>) => {
+  const updateLevel = (rowId: string, patch: Partial<SetupClassLevelInput>) => {
     setDraft((current) =>
-      current.map((level) => (level.displayOrder === displayOrder ? { ...level, ...patch } : level))
+      current.map((level) => (level.rowId === rowId ? { ...level, ...patch } : level))
     );
   };
 
-  const removeLevel = (displayOrder: number) => {
-    setDraft((current) =>
-      current
-        .filter((level) => level.displayOrder !== displayOrder)
-        .map((level, index) => ({ ...level, displayOrder: index + 1 }))
-    );
+  const removeLevel = (rowId: string) => {
+    setDraft((current) => current.filter((level) => level.rowId !== rowId));
   };
 
   const addLevel = () => {
@@ -73,8 +70,9 @@ export function StructureModule({
       {
         code: `LVL-${String(current.length + 1).padStart(2, '0')}`,
         name: '',
-        displayOrder: current.length + 1,
+        displayOrder: 0, // Ignored; derived on save
         isExamYear: false,
+        rowId: crypto.randomUUID(),
       },
     ]);
   };
@@ -84,11 +82,18 @@ export function StructureModule({
       return;
     }
 
-    const valid = draft.filter((level) => level.name.trim().length >= 2);
-    if (valid.length === 0) {
-      setErrorKey('structure.errors.empty');
+    const hasInvalid = draft.some((level) => level.name.trim().length < 2);
+    if (hasInvalid || draft.length === 0) {
+      setErrorKey('structure.errors.invalidRows');
       return;
     }
+
+    const valid = draft.map((level, index) => ({
+      code: level.code,
+      name: level.name.trim(),
+      displayOrder: index + 1,
+      isExamYear: level.isExamYear,
+    }));
 
     setIsSaving(true);
     setErrorKey(null);
@@ -112,6 +117,7 @@ export function StructureModule({
           name: level.name,
           displayOrder: level.displayOrder,
           isExamYear: level.isExamYear,
+          rowId: level.id,
         }))
       );
       setIsEditing(false);
@@ -200,16 +206,16 @@ export function StructureModule({
             {draft.map((level, index) => (
               <div
                 className="group flex flex-wrap items-center gap-4 rounded-3xl border border-slate-200/60 bg-slate-50/50 p-4 transition-all hover:border-slate-300/80 hover:bg-slate-50"
-                key={level.displayOrder}
+                key={level.rowId}
               >
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-[13px] font-black text-slate-400 shadow-sm ring-1 ring-slate-200/80">
-                  {level.displayOrder}
+                  {index + 1}
                 </div>
                 <input
-                  aria-label={`${t('structure.levels.name')} ${String(level.displayOrder)}`}
+                  aria-label={`${t('structure.levels.name')} ${String(index + 1)}`}
                   className={`${formInputClassName} h-12 flex-1 min-w-[160px] rounded-2xl border-slate-200/80 bg-white text-sm font-bold placeholder:text-slate-400 focus:border-teal-500 focus:ring-teal-500`}
                   onChange={(event) => {
-                    updateLevel(level.displayOrder, { name: event.target.value });
+                    updateLevel(level.rowId, { name: event.target.value });
                   }}
                   placeholder={t('structure.levels.namePlaceholder')}
                   value={level.name}
@@ -219,7 +225,7 @@ export function StructureModule({
                     checked={level.isExamYear}
                     className="h-4 w-4 cursor-pointer rounded text-teal-600 focus:ring-teal-500"
                     onChange={(event) => {
-                      updateLevel(level.displayOrder, { isExamYear: event.target.checked });
+                      updateLevel(level.rowId, { isExamYear: event.target.checked });
                     }}
                     type="checkbox"
                   />
@@ -228,10 +234,10 @@ export function StructureModule({
                   </span>
                 </label>
                 <button
-                  aria-label={`${t('structure.levels.remove')} ${String(level.displayOrder)}`}
+                  aria-label={`${t('structure.levels.remove')} ${String(index + 1)}`}
                   className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
                   onClick={() => {
-                    removeLevel(level.displayOrder);
+                    removeLevel(level.rowId);
                   }}
                   type="button"
                 >
@@ -279,6 +285,7 @@ export function StructureModule({
                       name: level.name,
                       displayOrder: level.displayOrder,
                       isExamYear: level.isExamYear,
+                      rowId: level.id,
                     }))
                   );
                   setIsEditing(false);
