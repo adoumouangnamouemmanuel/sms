@@ -93,3 +93,28 @@ identifiant **différent** pour chaque fichier réellement nouveau.
    sont dans la liste (aucune ligne en erreur), et que le compte d'un
    **enseignant** ne peut pas ouvrir la fenêtre d'import (bouton absent ou
    refus `403`).
+
+## 6. Imports des classes (Phase 4.2)
+
+Le module **Classes & programmes** propose trois nouveaux imports, accessibles
+par le bouton **Importer** de chaque onglet :
+
+- **Matières** (`matieres_modele.xlsx`) — colonnes `Code`, `Nom`, `Catégorie`,
+  `Abréviation`. Le code (ex. `MATH`) est l'identité : un code déjà présent est
+  signalé comme doublon possible mais jamais créé en double. Catégories
+  acceptées : `LANGUES`, `SCIENCES`, `MATHEMATIQUES`, `SCIENCES_SOCIALES`,
+  `ARTS`, `SPORTS`, `AUTRE`.
+- **Classes** (`classes_modele.xlsx`) — colonnes `Année scolaire`, `Code
+niveau`, `Code`, `Nom`, `Capacité`. L'année scolaire doit exister (sinon une
+  ligne en erreur l'indique) ; le code de classe est unique par école et par
+  année (`6E-A`, `3E-B`…).
+- **Affectations** (`affectations_modele.xlsx`) — colonnes `Code classe`, `Code
+matière`, `Coefficient`, `Obligatoire`, `Code professeur`. La classe et la
+  matière sont résolues dans l'année active de l'école ; un professeur inconnu
+  rejette la ligne. Le coefficient doit être ≥ 1 (max. 20).
+
+Exemples de test rapide : **Classes** → **Importer** → `classes_exemple.xlsx`
+→ analyser (2 valides) → identifiant `test-classes-1` → confirmer → 2
+importées ; même logique pour `matieres_exemple.xlsx` et
+`affectations_exemple.xlsx`. La règle d'idempotence du §4 s'applique aussi : le
+même identifiant ne peut être confirmé qu'une seule fois.
