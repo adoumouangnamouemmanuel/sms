@@ -1,5 +1,5 @@
-import type { EduTrackDatabase } from './client';
-import { withTransaction } from './client';
+import type { EduTrackDatabase } from '../client';
+import { withTransaction } from '../client';
 
 export function assertWithTransactionCallbackTypes(db: EduTrackDatabase) {
   withTransaction(db, () => 'committed');

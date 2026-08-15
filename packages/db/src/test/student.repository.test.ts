@@ -4,14 +4,14 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { EduTrackDatabase } from './client';
-import { createTenantContext } from './repositories/base';
-import { createStudentRepository } from './repositories/student.repository';
-import * as schema from './schema.sqlite';
-import { foundationSeed, seedFoundation } from './seeds';
+import type { EduTrackDatabase } from '../client';
+import { createTenantContext } from '../repositories/base';
+import { createStudentRepository } from '../repositories/student.repository';
+import * as schema from '../schema.sqlite';
+import { foundationSeed, seedFoundation } from '../seeds';
 import type { PersonSex } from '@edutrack/shared';
 
-const migrationsDir = fileURLToPath(new URL('../migrations/sqlite/', import.meta.url));
+const migrationsDir = fileURLToPath(new URL('../../migrations/sqlite/', import.meta.url));
 
 describe('student repository', () => {
   let sqlite: Database.Database;
