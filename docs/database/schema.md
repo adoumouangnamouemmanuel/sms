@@ -197,6 +197,8 @@ SQLite migration files live in `packages/db/migrations/sqlite`.
 
 `0006_import_batch.sql` adds the `import_batch` table that records each confirmed Excel import (kind, import identifier, filename, row counts) with a unique `(school_id, import_identifier)` index — the backbone of import idempotency (Phase 3.4). Import previews themselves are never persisted; they live in an in-memory store on the sidecar with a 30-minute TTL.
 
+`0009_gifted_kronos.sql` and `0010_slippery_mother_askani.sql` add the Phase 4 classes and curriculum data model (roadmap §10.1): five new tenant-scoped tables with composite `(school_id, id)` foreign keys and partial unique indexes — `subject` (school catalogue with code, localized names, category), `classroom` (cohort/section within an academic year and class level, year-local code), `class_subject` (subject/coefficient/teacher assignment per classroom, required/optional policy), `class_enrollment` (student ↔ classroom for a year with a controlled status; the partial unique index enforces at most one `ACTIVE` enrollment per student/year), and `student_subject_enrollment` (explicit links to optional class-subjects). `0010` adds the `(school_id, id)` unique index on `class_level` that SQLite requires for the composite tenant foreign keys from `classroom`. Domain CHECK constraints (subject category, coefficient ≥ 1, enrollment status, capacity ≥ 1) are enforced in both the migration and the source schema.
+
 ## Seed Policy
 
 Foundation seed data is deterministic and idempotent. It uses synthetic demo schools only; real school or student data is forbidden in seeds and tests.
