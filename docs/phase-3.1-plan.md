@@ -14,12 +14,12 @@ specific configuration screen yet — those are 3.2 (profile), 3.3 (year/periods
 
 ## 1. Scope (roadmap §9.1 checklist)
 
-| Roadmap item | What we build here | Where |
-|---|---|---|
-| Configuration module boundaries + one permanent `Configuration` area, reused by onboarding | `CONFIGURATION` school module; permanent web area (readiness overview for V1); onboarding continues to reuse the same services later (3.11) | shared, db migration, web |
-| Readiness/capability-gate model, backend-enforced | Capability catalog + pure readiness evaluator + `GET /configuration/readiness` + `assertCapability` enforcement helper | shared, domain, api |
-| Versioning primitives + `DRAFT -> PUBLISHED -> SUPERSEDED` lifecycle | Lifecycle enum + pure transition validation (used by 9.7/9.10 tables) | shared, domain |
-| Shared validation/error patterns + configuration audit events; French-first UX | `configuration` API module with typed errors; every future config mutation writes audit events via the existing audit repository (`CONFIG_*` actions) | api, docs |
+| Roadmap item                                                                               | What we build here                                                                                                                                    | Where                     |
+| ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| Configuration module boundaries + one permanent `Configuration` area, reused by onboarding | `CONFIGURATION` school module; permanent web area (readiness overview for V1); onboarding continues to reuse the same services later (3.11)           | shared, db migration, web |
+| Readiness/capability-gate model, backend-enforced                                          | Capability catalog + pure readiness evaluator + `GET /configuration/readiness` + `assertCapability` enforcement helper                                | shared, domain, api       |
+| Versioning primitives + `DRAFT -> PUBLISHED -> SUPERSEDED` lifecycle                       | Lifecycle enum + pure transition validation (used by 9.7/9.10 tables)                                                                                 | shared, domain            |
+| Shared validation/error patterns + configuration audit events; French-first UX             | `configuration` API module with typed errors; every future config mutation writes audit events via the existing audit repository (`CONFIG_*` actions) | api, docs                 |
 
 **Explicitly out of scope (later Phase 3 sections):** school profile editor (3.2),
 academic year/period lifecycle (3.3), levels/classrooms (3.4), subjects/curriculum (3.5),
@@ -30,7 +30,7 @@ appreciation (3.10), onboarding wizard (3.11), full readiness dashboard UI (3.12
 
 ## 2. Data model
 
-**No new tables in 3.1.** Readiness is *computed* from live configuration data, never
+**No new tables in 3.1.** Readiness is _computed_ from live configuration data, never
 cached (it must never go stale). The versioned tables (`grading_policy`,
 `appreciation_scale`, …) land with their owning sections (9.7, 9.10) and will reuse the
 lifecycle primitives defined here.
@@ -103,7 +103,7 @@ into the schema CHECK through the existing `schoolModuleNames` re-export.
 ```ts
 export function evaluateConfigurationReadiness(
   snapshot: ConfigurationSnapshot
-): ConfigurationReadiness
+): ConfigurationReadiness;
 // Deterministic. A capability is READY only when every requirement it needs is met.
 // Areas derive from capabilities:
 //   SCHOOL_PROFILE  <- SCHOOL_PROFILE_COMPLETE
@@ -112,39 +112,39 @@ export function evaluateConfigurationReadiness(
 //   APPRECIATION    <- APPRECIATION_CONFIGURED
 //   BULLETIN        <- BULLETIN_CONFIGURED
 
-export function canTransitionConfigLifecycle(from, to): boolean
+export function canTransitionConfigLifecycle(from, to): boolean;
 // DRAFT->PUBLISHED ok; PUBLISHED->SUPERSEDED ok; DRAFT->SUPERSEDED ok (abandon);
 // PUBLISHED->DRAFT / SUPERSEDED->* rejected.
-export function assertConfigLifecycleTransition(from, to): void  // throws typed error
+export function assertConfigLifecycleTransition(from, to): void; // throws typed error
 ```
 
 Snapshot shape (all booleans/counts the service can read from existing tables):
 
 ```ts
 interface ConfigurationSnapshot {
-  schoolProfileComplete: boolean;  // school.setup_status == 'COMPLETED' (or profile fields set)
-  activeAcademicYear: boolean;     // academic_year.is_current == true
-  levelCount: number;              // active, non-deleted class_level rows
-  subjectCount: number;            // active, non-deleted subject rows
-  curriculumClassCount: number;    // active class_subject rows in the current year
-  publishedGradingPolicies: number;// 0 until 9.7 lands
+  schoolProfileComplete: boolean; // school.setup_status == 'COMPLETED' (or profile fields set)
+  activeAcademicYear: boolean; // academic_year.is_current == true
+  levelCount: number; // active, non-deleted class_level rows
+  subjectCount: number; // active, non-deleted subject rows
+  curriculumClassCount: number; // active class_subject rows in the current year
+  publishedGradingPolicies: number; // 0 until 9.7 lands
   appreciationConfigured: boolean; // false until 9.10 lands
-  validatedSubmissions: number;    // 0 until Phase 5 lands
-  bulletinConfigured: boolean;     // false until 9.6/Phase 6 layout config lands
+  validatedSubmissions: number; // 0 until Phase 5 lands
+  bulletinConfigured: boolean; // false until 9.6/Phase 6 layout config lands
 }
 ```
 
 Capability → requirement mapping (from §23):
 
-| Capability | Requirements |
-|---|---|
-| `CLASSROOM_MANAGEMENT` | SCHOOL_PROFILE_COMPLETE, ACTIVE_ACADEMIC_YEAR, LEVELS_DEFINED |
-| `CURRICULUM_CONFIGURATION` | LEVELS_DEFINED, SUBJECTS_DEFINED |
-| `GRADE_ENTRY` | ACTIVE_ACADEMIC_YEAR, CURRICULUM_DEFINED, GRADING_POLICY_PUBLISHED |
-| `GRADE_SUBMISSION` | GRADING_POLICY_PUBLISHED |
-| `GRADE_VALIDATION` | GRADING_POLICY_PUBLISHED |
-| `TRANSCRIPT_CALCULATION` | GRADING_POLICY_PUBLISHED, APPRECIATION_CONFIGURED, VALIDATED_SUBMISSIONS |
-| `PDF_GENERATION` | TRANSCRIPT_CALCULATION ready, BULLETIN_CONFIGURED |
+| Capability                 | Requirements                                                             |
+| -------------------------- | ------------------------------------------------------------------------ |
+| `CLASSROOM_MANAGEMENT`     | SCHOOL_PROFILE_COMPLETE, ACTIVE_ACADEMIC_YEAR, LEVELS_DEFINED            |
+| `CURRICULUM_CONFIGURATION` | LEVELS_DEFINED, SUBJECTS_DEFINED                                         |
+| `GRADE_ENTRY`              | ACTIVE_ACADEMIC_YEAR, CURRICULUM_DEFINED, GRADING_POLICY_PUBLISHED       |
+| `GRADE_SUBMISSION`         | GRADING_POLICY_PUBLISHED                                                 |
+| `GRADE_VALIDATION`         | GRADING_POLICY_PUBLISHED                                                 |
+| `TRANSCRIPT_CALCULATION`   | GRADING_POLICY_PUBLISHED, APPRECIATION_CONFIGURED, VALIDATED_SUBMISSIONS |
+| `PDF_GENERATION`           | TRANSCRIPT_CALCULATION ready, BULLETIN_CONFIGURED                        |
 
 ---
 
@@ -193,12 +193,12 @@ GET /configuration/readiness        -> { success, data: ConfigurationReadiness, 
 
 ## 7. Tests
 
-| Layer | Coverage |
-|---|---|
+| Layer                  | Coverage                                                                                                                                                                   |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Domain (via API suite) | readiness matrix (every capability/area across full/partial/empty snapshots, zero-count edges); lifecycle transitions (valid + every rejected transition); no NaN/infinite |
-| DB repository | snapshot queries return correct booleans/counts per school; tenant isolation (school B's data never affects school A) |
-| API routes | 200 envelope shape; teacher and SchoolMaster both reachable; malformed query rejected; two-school isolation |
-| Web component | French labels render; READY vs NOT_READY states; error state shows the French retry message; accessibility roles |
+| DB repository          | snapshot queries return correct booleans/counts per school; tenant isolation (school B's data never affects school A)                                                      |
+| API routes             | 200 envelope shape; teacher and SchoolMaster both reachable; malformed query rejected; two-school isolation                                                                |
+| Web component          | French labels render; READY vs NOT_READY states; error state shows the French retry message; accessibility roles                                                           |
 
 ---
 
