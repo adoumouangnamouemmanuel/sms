@@ -18,6 +18,7 @@ export const IMPLEMENTED_SCHOOL_MODULES = [
   'STUDENTS',
   'TEACHERS',
   'CLASSES',
+  'CONFIGURATION',
 ] as const;
 export type SchoolModuleName = (typeof IMPLEMENTED_SCHOOL_MODULES)[number];
 
