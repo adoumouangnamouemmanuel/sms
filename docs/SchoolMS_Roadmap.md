@@ -410,38 +410,38 @@ Do not freeze the grade schema until all of these are true:
 
 ### 9.1 Configuration foundation
 
-- [ ] Configuration module boundaries and one permanent `Configuration` area, also used by onboarding (no separate onboarding-only implementation).
-- [ ] Readiness/capability-gate model, enforced by the backend (UI gating alone is insufficient).
-- [ ] Versioning primitives and `DRAFT -> PUBLISHED -> SUPERSEDED` lifecycle where applicable.
-- [ ] Shared validation/error patterns and configuration audit events; French-first UX foundation.
+- [x] Configuration module boundaries and one permanent `Configuration` area, also used by onboarding (no separate onboarding-only implementation).
+- [x] Readiness/capability-gate model, enforced by the backend (UI gating alone is insufficient).
+- [x] Versioning primitives and `DRAFT -> PUBLISHED -> SUPERSEDED` lifecycle where applicable.
+- [x] Shared validation/error patterns and configuration audit events; French-first UX foundation.
 
 ### 9.2 School profile
 
-- [ ] Official name, short name, logo reference, contact/address and display language, reconciled with the setup-wizard profile step (§8.2).
-- [ ] The profile fields bulletins need (header lines, school identity) are available here; the bulletin designer itself is Phase 6.
+- [x] Official name, short name, logo reference, contact/address and display language, reconciled with the setup-wizard profile step (§8.2).
+- [x] The profile fields bulletins need (header lines, school identity) are available here; the bulletin designer itself is Phase 6.
 
 ### 9.3 Academic year and periods
 
-- [ ] Academic-year lifecycle (`DRAFT -> ACTIVE -> CLOSED`), one active academic year per school.
-- [ ] School-defined period labels (1er/2e/3e Trimestre, Semestre 1/2, ...) with explicit ordering and configurable dates; reconcile the existing trimester/semester wizard step.
+- [x] Academic-year lifecycle (`DRAFT -> ACTIVE -> CLOSED`), one active academic year per school.
+- [x] School-defined period labels (1er/2e/3e Trimestre, Semestre 1/2, ...) with explicit ordering and configurable dates; reconcile the existing trimester/semester wizard step.
 
 ### 9.4 Levels and classrooms
 
-- [ ] Level as academic-structure scope (6ème, Terminale, ...); classroom as operational cohort (6ème A, Terminale C).
-- [ ] Curriculum, coefficients and grading policy inherit from the level rather than being duplicated per classroom.
-- [ ] Reconcile the existing level/classroom tables and UI from the former Phase 4 with this model.
+- [x] Level as academic-structure scope (6ème, Terminale, ...); classroom as operational cohort (6ème A, Terminale C).
+- [x] Curriculum and coefficients inherit from the level (level curriculum matrix, §9.5) rather than being duplicated per classroom; grading-policy inheritance lands with the policy scope resolution in §9.9.
+- [x] Reconcile the existing level/classroom tables and UI from the former Phase 4 with this model.
 
 ### 9.5 Subjects and level curriculum
 
-- [ ] School-scoped subject catalogue: display name, short name, optional stable code, localization labels, active/archive state.
-- [ ] Level-subject applicability matrix (coefficient, required/optional, active) with backend validation of positive coefficients.
-- [ ] Reconcile existing `subject`/`class_subject`/coefficient work and the curriculum-copy flow.
+- [x] School-scoped subject catalogue: display name, short name, optional stable code, localization labels, active/archive state.
+- [x] Level-subject applicability matrix (coefficient, required/optional, active) with backend validation of positive coefficients.
+- [x] Reconcile existing `subject`/`class_subject`/coefficient work and the curriculum-copy flow.
 
 ### 9.6 Subject groups / sections
 
-- [ ] School-defined subject groups (Matières littéraires, Matières scientifiques, Formation humaine, ...).
-- [ ] Membership, display order and the admission/promotion flag where enabled; intuitive assignment UX.
-- [ ] Membership is school configuration - never inferred permanently from a universal subject category.
+- [x] School-defined subject groups (Matières littéraires, Matières scientifiques, Formation humaine, ...).
+- [x] Membership, display order and the admission/promotion flag where enabled; intuitive assignment UX.
+- [x] Membership is school configuration - never inferred permanently from a universal subject category.
 
 ### 9.7 Grading policy domain model
 

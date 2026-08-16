@@ -27,15 +27,16 @@ Indexes:
 
 ### `academic_year`
 
-Tracks academic years for one school.
+Tracks academic years for one school. Since migration `0018` the year carries an explicit lifecycle `status` (`DRAFT | ACTIVE | CLOSED`); exactly one ACTIVE year per school is enforced by the partial unique index and by the transactional rollover in the service layer.
 
-Key columns: `id`, `school_id`, `label`, `start_date`, `end_date`, `is_current`, lifecycle metadata.
+Key columns: `id`, `school_id`, `label`, `start_date`, `end_date`, `status`, `is_current`, lifecycle metadata.
 
 Indexes:
 
 - `academic_year_school_id_idx`
 - `academic_year_school_current_unique`
 - `academic_year_school_label_unique`
+- `academic_year_school_active_unique` (partial: one ACTIVE row per school)
 
 ### `term`
 
@@ -183,6 +184,51 @@ Indexes and constraints:
 - `student_guardian_relationship_type_check` (`PERE`, `MERE`, `TUTEUR`, `AUTRE`)
 - composite FKs `(school_id, student_id)` → `student(school_id, id)` and `(school_id, guardian_id)` → `guardian(school_id, id)`
 
+## Phase 3 Configuration Tables (level curriculum, subject groups)
+
+### `level_subject`
+
+Level-scope curriculum matrix (roadmap §9.5): coefficient and required/optional flag per subject per level, inherited by every classroom of that level. Saving replaces the matrix atomically; removed entries are soft-deactivated, never hard-deleted.
+
+Key columns: `id`, `school_id`, `class_level_id`, `subject_id`, `coefficient`, `is_required`, `is_active`, lifecycle metadata.
+
+Indexes and constraints:
+
+- `level_subject_school_id_idx`
+- `level_subject_class_level_id_idx`
+- `level_subject_subject_id_idx`
+- `level_subject_school_level_subject_unique` (one row per level + subject, soft-delete aware)
+- `level_subject_coefficient_check` (`coefficient >= 1`)
+- composite FKs `(school_id, class_level_id)` → `class_level(school_id, id)` and `(school_id, subject_id)` → `subject(school_id, id)`
+
+### `subject_group`
+
+School-defined subject groups / sections (roadmap §9.6), e.g. Matières littéraires, Matières scientifiques. Pure configuration: name (+ optional EN/AR), display order, active state.
+
+Key columns: `id`, `school_id`, `name`, `name_en`, `name_ar`, `display_order`, `is_active`, lifecycle metadata.
+
+Indexes and constraints:
+
+- `subject_group_school_id_idx`
+- `subject_group_school_name_unique`
+- `subject_group_display_order_check` (`display_order >= 1`)
+- composite FK `(school_id, id)` → `school(school_id, id)`
+
+### `subject_group_member`
+
+Ordered membership of a subject group. Replacing membership is atomic: the array order sent by the client becomes the display order, and removed members are soft-deactivated.
+
+Key columns: `id`, `school_id`, `subject_group_id`, `subject_id`, `display_order`, `is_active`, lifecycle metadata.
+
+Indexes and constraints:
+
+- `subject_group_member_school_id_idx`
+- `subject_group_member_group_id_idx`
+- `subject_group_member_subject_id_idx`
+- `subject_group_member_group_subject_unique` (one member per group + subject, soft-delete aware)
+- `subject_group_member_display_order_check` (`display_order >= 1`)
+- composite FKs `(school_id, subject_group_id)` → `subject_group(school_id, id)` and `(school_id, subject_id)` → `subject(school_id, id)`
+
 ## Migrations
 
 SQLite migration files live in `packages/db/migrations/sqlite`.
@@ -214,6 +260,12 @@ SQLite migration files live in `packages/db/migrations/sqlite`.
 These three were renumbered (`0008`/`0009`/`0010` → `0013`/`0014`/`0015`) because their original journal `when` timestamps were lower than migrations already applied on pre-existing databases; drizzle's migrator compares each journal entry against the last-applied `created_at` and would have permanently skipped them on such databases (fresh databases applied everything in order and were unaffected). The renumbering gives them later `when` timestamps so already-set-up databases receive the DDL on the next boot, while fresh databases still run every entry in order.
 
 `0016_class_enrollment_consistency.sql` (CodeRabbit, PR 19) closes two Phase 4 enrolment integrity gaps: it enforces through BEFORE INSERT/UPDATE triggers that a `class_enrollment` row's `academic_year_id` always matches its classroom's academic year (SQLite cannot add composite foreign keys to an existing table), and it narrows `class_enrollment_school_classroom_student_unique` to `ACTIVE` rows only, so a transfer back to a previous classroom no longer collides with the retained `TRANSFERRED` history row.
+
+`0017_configuration_module.sql` registers the `CONFIGURATION` school module (roadmap §9.1): it rebuilds `school_module_config` so the `module_name` CHECK accepts `CONFIGURATION` and backfills an enabled `CONFIGURATION` row for every school that lacks one, so already-setup schools surface the permanent Configuration area as well.
+
+`0018_academic_year_status.sql` adds the academic-year lifecycle (roadmap §9.3): a `status` column (`DRAFT | ACTIVE | CLOSED`) with a CHECK, a partial unique index enforcing at most one ACTIVE year per school, and a backfill that marks the existing current year ACTIVE (and any other years CLOSED). All existing rows are preserved; the backfill is safe on non-empty databases.
+
+`0019_structure_configuration.sql` adds the Phase 3 structure-configuration tables (roadmap §9.5/§9.6): `level_subject` (level-scope curriculum matrix with coefficient ≥ 1 CHECK and a soft-delete-aware per level+subject unique index), `subject_group` (school-defined groups with a school-scoped unique name) and `subject_group_member` (ordered, soft-delete-aware membership). All three are additive and safe for non-empty databases.
 
 ## Seed Policy
 
