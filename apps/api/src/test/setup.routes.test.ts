@@ -172,11 +172,18 @@ describe('school setup routes', () => {
       expect(completedState.data.school.setupStatus).toBe('COMPLETED');
       expect(
         completedState.data.enabledModules.map((moduleConfig) => moduleConfig.moduleName)
-      ).toEqual(['ACADEMIC_STRUCTURE', 'CLASSES', 'SCHOOL_SETUP', 'STUDENTS', 'TEACHERS']);
+      ).toEqual([
+        'ACADEMIC_STRUCTURE',
+        'CLASSES',
+        'CONFIGURATION',
+        'SCHOOL_SETUP',
+        'STUDENTS',
+        'TEACHERS',
+      ]);
 
       expect(readCount('academic_year', 'is_current = 1')).toBe(1);
       expect(readCount('term', 'is_current = 1')).toBe(1);
-      expect(readCount('school_module_config', 'is_enabled = 1')).toBe(5);
+      expect(readCount('school_module_config', 'is_enabled = 1')).toBe(6);
       expect(readLatestAuditAction()).toBe('SETUP_COMPLETE');
 
       // Simulate application restart
