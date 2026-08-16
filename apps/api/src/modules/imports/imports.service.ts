@@ -593,7 +593,7 @@ export class ImportsService {
       readmeRows.push(['- Code matiere : matiere deja creee (ex. MATH).']);
       readmeRows.push(['- Obligatoire : OUI ou NON (par defaut OUI).']);
       readmeRows.push([
-        '- Code professeur : optionnel. Le professeur doit deja exister dans lec cole.',
+        "- Code professeur : optionnel. Le professeur doit deja exister dans l'ecole.",
       ]);
     }
 

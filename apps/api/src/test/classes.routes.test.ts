@@ -375,7 +375,7 @@ describe('classes routes', () => {
       subjectCode: 'MATH',
       subjectName: 'Mathématiques',
       subjectCategory: 'MATHEMATIQUES',
-      teacherName: 'Jean Nguet',
+      teacherName: 'Nguet Jean',
     });
     expect(findLatestAuditAction()).toBe('CLASS_SUBJECT_ASSIGN');
   });

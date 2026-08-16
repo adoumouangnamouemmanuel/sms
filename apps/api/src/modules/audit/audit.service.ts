@@ -1,6 +1,7 @@
 import { createAuditLogRepository, createTenantContext, type EduTrackDatabase } from '@edutrack/db';
 import type { RecentAuditEvent, RecentAuditEventsResponse } from '@edutrack/shared';
 import type { AuthenticatedUser } from '../auth/index.js';
+import { auditForbidden } from './audit.errors.js';
 
 const MAX_RECENT_EVENTS = 20;
 
@@ -12,6 +13,12 @@ export class AuditService {
   constructor(private readonly db: EduTrackDatabase) {}
 
   listRecent(actor: AuthenticatedUser, limit: number): RecentAuditEventsResponse {
+    // The audit trail exposes every actor's actions for the school: read access
+    // is restricted to the school master (CodeRabbit, PR 19).
+    if (actor.role !== 'SCHOOL_MASTER') {
+      throw auditForbidden();
+    }
+
     const tenant = createTenantContext(actor.schoolId);
     const repository = createAuditLogRepository(this.db, tenant);
     const items = repository.listRecent(Math.min(Math.max(limit, 1), MAX_RECENT_EVENTS));

@@ -76,14 +76,14 @@ const PILOT_CURRICULUM = [
 
 /** Reference bulletin rows for 3E-A, ordered by subject code. */
 const REFERENCE_BULLETIN_ROWS = [
-  ['ANG', 'Anglais', 3, true, 'Paul Djasrangar'],
-  ['EC', 'Éducation Civique et Morale', 1, true, 'Claudine Mbai'],
-  ['EPS', 'Éducation Physique et Sportive', 1, false, 'Claudine Mbai'],
-  ['FR', 'Français', 4, true, 'Jean Nguet'],
-  ['HG', 'Histoire-Géographie', 3, true, 'Jean Nguet'],
-  ['MATH', 'Mathématiques', 4, true, 'Mariam Abakar'],
-  ['PC', 'Physique-Chimie', 2, true, 'Paul Djasrangar'],
-  ['SVT', 'Sciences de la Vie et de la Terre', 2, true, 'Mariam Abakar'],
+  ['ANG', 'Anglais', 3, true, 'Djasrangar Paul'],
+  ['EC', 'Éducation Civique et Morale', 1, true, 'Mbai Claudine'],
+  ['EPS', 'Éducation Physique et Sportive', 1, false, 'Mbai Claudine'],
+  ['FR', 'Français', 4, true, 'Nguet Jean'],
+  ['HG', 'Histoire-Géographie', 3, true, 'Nguet Jean'],
+  ['MATH', 'Mathématiques', 4, true, 'Abakar Mariam'],
+  ['PC', 'Physique-Chimie', 2, true, 'Djasrangar Paul'],
+  ['SVT', 'Sciences de la Vie et de la Terre', 2, true, 'Abakar Mariam'],
 ] as const;
 
 let passwordHash: string;

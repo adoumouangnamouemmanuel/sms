@@ -28,6 +28,7 @@ import {
   classSubjectRequiredLink,
   enrollmentNotFound,
   studentNotFound,
+  transferSameClassroom,
 } from './classes.errors.js';
 import {
   toEnrollmentResponse,
@@ -143,7 +144,7 @@ export class ClassEnrollmentsService {
           studentId,
           classroomId: classroom.id,
           academicYearId: classroom.academicYearId,
-          enrollmentDate: this.now().toISOString().slice(0, 10),
+          enrollmentDate: formatSchoolDate(this.now()),
         });
 
         // Auto-enrol required class-subjects for the new student.
@@ -217,7 +218,7 @@ export class ClassEnrollmentsService {
       }
 
       if (current.classroomId === target.id) {
-        throw enrollmentNotFound();
+        throw transferSameClassroom();
       }
 
       if (target.capacity !== null) {
@@ -295,10 +296,18 @@ export class ClassEnrollmentsService {
       throw classroomNotFound();
     }
 
-    const entries = createClassEnrollmentRepository(this.db, tenant)
-      .list({ classroomId, status: 'ACTIVE', limit: 500 })
+    const enrollmentRepository = createClassEnrollmentRepository(this.db, tenant);
+    const enrollments = listAllPages((offset, limit) =>
+      enrollmentRepository.list({ classroomId, status: 'ACTIVE', limit, offset })
+    );
+    const studentsById = new Map(
+      createStudentRepository(this.db, tenant)
+        .findByIds(enrollments.map((enrollment) => enrollment.studentId))
+        .map((student) => [student.id, student])
+    );
+    const entries = enrollments
       .map((enrollment) => {
-        const student = createStudentRepository(this.db, tenant).findById(enrollment.studentId);
+        const student = studentsById.get(enrollment.studentId);
 
         return student
           ? {
@@ -328,11 +337,13 @@ export class ClassEnrollmentsService {
     }
 
     const enrollmentRepository = createClassEnrollmentRepository(this.db, tenant);
-    const students = createStudentRepository(this.db, tenant)
-      .listActive({ limit: 1000 })
-      .filter(
-        (student) => !enrollmentRepository.findActiveByStudentYear(student.id, academicYear.id)
-      )
+    const enrolledStudentIds = new Set(
+      enrollmentRepository.listActiveStudentIdsByYear(academicYear.id)
+    );
+    const students = listAllPages((offset, limit) =>
+      createStudentRepository(this.db, tenant).listActive({ limit, offset })
+    )
+      .filter((student) => !enrolledStudentIds.has(student.id))
       .map((student) => ({
         id: student.id,
         code: student.code,
@@ -449,15 +460,50 @@ export class ClassEnrollmentsService {
   }
 }
 
-/** Escapes cells beginning with spreadsheet formula characters (= + - @ \t \r). */
+/**
+ * Pages through a repository listing until it is exhausted so aggregate reads
+ * are never silently truncated by a single page cap.
+ */
+function listAllPages<T>(
+  fetchPage: (offset: number, limit: number) => T[],
+  pageSize = 200
+): T[] {
+  const collected: T[] = [];
+  let offset = 0;
+
+  for (;;) {
+    const page = fetchPage(offset, pageSize);
+    collected.push(...page);
+
+    if (page.length < pageSize) {
+      return collected;
+    }
+
+    offset += pageSize;
+  }
+}
+
+/** Formats an instant as YYYY-MM-DD in the school timezone (Africa/Ndjamena default). */
+function formatSchoolDate(instant: Date, timeZone = 'Africa/Ndjamena') {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(instant);
+}
+
+/**
+ * Escapes cells for the ;-separated register CSV. Formula-guard characters get
+ * an apostrophe prefix FIRST, then the cell is always run through the quoting
+ * rules so a value like "=A;B" cannot split the register layout.
+ */
 function escapeCsvCell(value: string) {
-  if (/^[=+\-@\t\r]/.test(value)) {
-    return `'${value}`;
+  const guarded = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+
+  if (guarded.includes(';') || guarded.includes('"') || guarded.includes('\n')) {
+    return `"${guarded.replace(/"/g, '""')}"`;
   }
 
-  if (value.includes(';') || value.includes('"') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-
-  return value;
+  return guarded;
 }

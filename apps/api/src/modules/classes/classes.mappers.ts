@@ -87,7 +87,7 @@ export function toClassSubjectView(
     subjectName: context.subject.name,
     subjectCategory: context.subject.category,
     teacherName: context.teacher
-      ? `${context.teacher.firstName} ${context.teacher.lastName}`
+      ? `${context.teacher.lastName} ${context.teacher.firstName}`
       : null,
   };
 }

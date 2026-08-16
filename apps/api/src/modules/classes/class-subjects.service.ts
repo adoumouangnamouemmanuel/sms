@@ -94,13 +94,25 @@ export class ClassSubjectsService {
         throw classSubjectPairAlreadyExists();
       }
 
-      const classSubject = repository.create({
-        classroomId: input.classroomId,
-        subjectId: input.subjectId,
-        coefficient: input.coefficient,
-        isRequired: input.isRequired,
-        teacherId: input.teacherId ?? null,
-      });
+      let classSubject;
+
+      try {
+        classSubject = repository.create({
+          classroomId: input.classroomId,
+          subjectId: input.subjectId,
+          coefficient: input.coefficient,
+          isRequired: input.isRequired,
+          teacherId: input.teacherId ?? null,
+        });
+      } catch (error) {
+        // A concurrent assign can race the pre-check above: map the unique
+        // violation to the stable domain error instead of a raw 500.
+        if (isUniqueConstraintViolation(error)) {
+          throw classSubjectPairAlreadyExists();
+        }
+
+        throw error;
+      }
 
       createAuditLogRepository(transaction, tenant).createEvent({
         actorUserId: actor.id,
@@ -256,6 +268,15 @@ function assertTeacherExists(
   if (!createTeacherRepository(executor, tenant).findById(teacherId)) {
     throw teacherNotFound();
   }
+}
+
+function isUniqueConstraintViolation(error: unknown) {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: unknown }).code === 'SQLITE_CONSTRAINT_UNIQUE'
+  );
 }
 
 function normalizeClassSubjectUpdate(input: UpdateClassSubjectRequest): UpdateClassSubjectInput {

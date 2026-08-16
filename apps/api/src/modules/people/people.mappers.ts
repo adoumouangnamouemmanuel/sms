@@ -33,7 +33,8 @@ export function toStudentResponse(
     address: student.address,
     isActive: student.isActive,
     recordVersion: student.recordVersion,
-    currentClassroom: student.currentClassroom,
+    // Stable shape: mutation responses (no join) default to null like list rows.
+    currentClassroom: student.currentClassroom ?? null,
   };
 }
 
@@ -81,7 +82,8 @@ export function toTeacherResponse(
     userId: teacher.userId,
     isActive: teacher.isActive,
     recordVersion: teacher.recordVersion,
-    assignedClassrooms: teacher.assignedClassrooms,
+    // Stable shape: mutation responses (no join) default to an empty array.
+    assignedClassrooms: teacher.assignedClassrooms ?? [],
   };
 }
 

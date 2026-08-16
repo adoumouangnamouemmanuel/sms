@@ -70,7 +70,7 @@ export class CurriculumService {
         coefficient: classSubject.coefficient,
         isRequired: classSubject.isRequired,
         teacherId: classSubject.teacherId,
-        teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : null,
+        teacherName: teacher ? `${teacher.lastName} ${teacher.firstName}` : null,
         alreadyAssigned: targetPairs.has(classSubject.subjectId),
       };
     });

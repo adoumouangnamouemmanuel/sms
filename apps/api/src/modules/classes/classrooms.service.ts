@@ -280,7 +280,7 @@ export class ClassroomsService {
     tenant: TenantContext,
     input: CreateClassroomRequest
   ) {
-    const academicYear = createAcademicYearRepository(executor, tenant).findById(
+    const academicYear = createAcademicYearRepository(executor, tenant).findActiveById(
       input.academicYearId
     );
 

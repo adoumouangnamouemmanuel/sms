@@ -1,4 +1,4 @@
-export type AuditErrorCode = 'AUDIT_FAILED';
+export type AuditErrorCode = 'AUDIT_FAILED' | 'AUDIT_FORBIDDEN';
 
 /** Public-safe audit error with a stable API code. */
 export class AuditServiceError extends Error {
@@ -17,5 +17,13 @@ export function auditFailed() {
     'AUDIT_FAILED',
     500,
     "Le journal d'activite est temporairement indisponible."
+  );
+}
+
+export function auditForbidden() {
+  return new AuditServiceError(
+    'AUDIT_FORBIDDEN',
+    403,
+    "L'acces au journal d'activite est reserve au chef d'etablissement."
   );
 }

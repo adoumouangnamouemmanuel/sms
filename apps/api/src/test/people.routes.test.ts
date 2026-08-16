@@ -247,7 +247,7 @@ describe('people routes', () => {
         );
     }
 
-    // By class level (Troisième): only the two students of 3e A.
+    // By class level (Sixième): only the single student of 6e A.
     const byLevel = await server.inject({
       method: 'GET',
       url: `/students?classLevelId=${sixLevelId}`,
