@@ -8,3 +8,5 @@ export const VERSION_ONE_DOMAIN_MODULES = [
 ] as const;
 
 export type VersionOneDomainModule = (typeof VERSION_ONE_DOMAIN_MODULES)[number];
+
+export * from './configuration.js';
