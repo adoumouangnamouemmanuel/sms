@@ -513,7 +513,7 @@ describe('imports routes', () => {
     });
 
     // Same name under a new identifier: warned, but never blocked (names are
-    // not identity — two real people can share an exact name).
+    // not identity - two real people can share an exact name).
     const secondPreview = await preview(accessToken, payload, contentType, 'GUARDIANS');
     expect(secondPreview.rows[0]?.possibleDuplicate).toBe(true);
     expect(secondPreview.rows[0]?.errors).toEqual([]);
@@ -632,7 +632,9 @@ describe('imports routes', () => {
     expect(response.statusCode).toBe(200);
     expect(response.headers['content-type']).toContain('text/csv');
     const csv = response.body;
-    expect(csv).toContain('Ligne;Code;Prénom;Nom;Erreurs');
+    expect(csv).toContain(
+      'Ligne;Code;Prénom;Nom;Sexe;Date de naissance;Nationalité;Téléphone;Email;Adresse;Erreurs'
+    );
     // The formula-looking code is neutralized so Excel cannot execute it.
     expect(csv).toContain("'=2+2");
     expect(csv).toContain('Prénom requis.');

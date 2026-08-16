@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { PublicAuthUser, SetupStateResponse } from '@edutrack/shared';
+import type { PublicAuthUser, RecentAuditEvent, SetupStateResponse } from '@edutrack/shared';
 import { describe, expect, it, vi } from 'vitest';
 import '../i18n';
 import type { DashboardCounts } from '../modules/dashboard/dashboardApi';
@@ -23,9 +23,26 @@ const user: PublicAuthUser = {
   role: 'SCHOOL_MASTER',
 };
 
+const recentActivity: RecentAuditEvent[] = [
+  {
+    id: '00000000-0000-4000-8000-000000000801',
+    action: 'STUDENT_CREATE',
+    targetType: 'student',
+    targetId: '00000000-0000-4000-8000-000000000802',
+    occurredAt: '2026-08-15T09:30:00.000Z',
+    actorUsername: 'directeur.demo',
+  },
+];
+
 function createDashboardClient(overrides: Partial<DashboardClient> = {}): DashboardClient {
   return {
     fetchCounts: () => Promise.resolve(counts),
+    fetchClassDistribution: () =>
+      Promise.resolve([
+        { levelCode: '6E', levelName: 'Sixième', classes: 2, students: 64 },
+        { levelCode: '3E', levelName: 'Troisième', classes: 1, students: 38 },
+      ]),
+    fetchRecentActivity: () => Promise.resolve(recentActivity),
     ...overrides,
   };
 }
@@ -50,7 +67,7 @@ describe('DashboardModule', () => {
     expect(screen.getByText('5')).toBeInTheDocument();
   });
 
-  it('marks simulated widgets and quick-actions navigate', async () => {
+  it('shows the real class distribution and audit activity, without simulation badges', async () => {
     const onNavigate = vi.fn();
     render(
       <DashboardModule
@@ -62,12 +79,20 @@ describe('DashboardModule', () => {
       />
     );
 
-    // Real level names drive the simulated distribution.
+    // Real per-level effectifs from the enrollment relationship.
     expect(await screen.findByText('Sixième')).toBeInTheDocument();
-    // Simulated activity timeline.
-    expect(screen.getByText('Import de 6 élèves confirmé')).toBeInTheDocument();
-    // Every simulated section carries the badge.
-    expect(screen.getAllByText('Simulation')).toHaveLength(2);
+    expect(screen.getByText('64')).toBeInTheDocument();
+    expect(screen.getByText('Troisième')).toBeInTheDocument();
+    expect(screen.getByText('38')).toBeInTheDocument();
+    // 2 + 1 = 3 real classes across levels.
+    expect(screen.getByText('3 classes')).toBeInTheDocument();
+
+    // Real audit event with its translated action and actor.
+    expect(screen.getByText(/Élève créé/)).toBeInTheDocument();
+    expect(screen.getByText(/directeur\.demo/)).toBeInTheDocument();
+
+    // No simulated-data badge anywhere.
+    expect(screen.queryByText('Simulation')).not.toBeInTheDocument();
 
     const userSession = userEvent.setup();
     await userSession.click(screen.getByRole('button', { name: 'Voir les élèves' }));

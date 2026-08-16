@@ -1,2 +1,0 @@
-DROP INDEX IF EXISTS `student_guardian_student_primary_unique`;--> statement-breakpoint
-CREATE UNIQUE INDEX `student_guardian_student_primary_unique` ON `student_guardian` (`school_id`,`student_id`) WHERE "student_guardian"."is_primary" = true AND "student_guardian"."deleted_at" is null;

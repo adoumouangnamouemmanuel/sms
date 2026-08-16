@@ -68,6 +68,44 @@ const GUARDIAN_DESCRIPTIONS = [
   'Optionnel.',
   "Optionnel. Lie automatiquement le responsable à l'élève portant ce code (importé avant ou déjà présent dans l'école).",
 ];
+const SUBJECT_COLUMNS = [
+  'Code',
+  'Nom',
+  'Nom (anglais)',
+  'Nom (arabe)',
+  'Libellé court',
+  'Catégorie',
+];
+const SUBJECT_DESCRIPTIONS = [
+  'Requis. Ex. MATH.',
+  'Requis. Nom affiché de la matière.',
+  'Optionnel.',
+  'Optionnel.',
+  'Optionnel.',
+  'Requis. LANGUES, SCIENCES, MATHEMATIQUES, SCIENCES_SOCIALES, ARTS, SPORTS ou AUTRE.',
+];
+const CLASSROOM_COLUMNS = ['Année scolaire', 'Code niveau', 'Code classe', 'Nom', 'Capacité'];
+const CLASSROOM_DESCRIPTIONS = [
+  "Requis. Libellé exact de l'année (ex. 2026-2027).",
+  'Requis. Code du niveau (ex. 6E, 3E, TLE).',
+  'Requis. Ex. 3E-A.',
+  'Optionnel.',
+  'Optionnel. Nombre entier ≥ 1.',
+];
+const CLASS_SUBJECT_COLUMNS = [
+  'Code classe',
+  'Code matière',
+  'Coefficient',
+  'Obligatoire',
+  'Code professeur',
+];
+const CLASS_SUBJECT_DESCRIPTIONS = [
+  "Requis. Code de la classe déjà créée (ex. 3E-A) dans l'année active.",
+  'Requis. Code de la matière déjà créée (ex. MATH).',
+  'Requis. Entier ≥ 1 et ≤ 20.',
+  'OUI ou NON (par défaut OUI).',
+  'Optionnel. Code du professeur déjà créé (ex. NDS-DEMO-2026-...).',
+];
 
 mkdirSync(outputDir, { recursive: true });
 
@@ -137,6 +175,37 @@ function writeModeles() {
     [],
     teacherExampleRows,
     TEACHER_DESCRIPTIONS
+  );
+  writeWorkbook(
+    'matieres_modele.xlsx',
+    SUBJECT_COLUMNS,
+    [],
+    [
+      ['MATH', 'Mathématiques', 'Mathematics', 'Riyadiyat', 'Maths', 'MATHEMATIQUES'],
+      ['FR', 'Français', 'French', null, null, 'LANGUES'],
+      ['EPS', 'Éducation physique', null, null, null, 'SPORTS'],
+    ],
+    SUBJECT_DESCRIPTIONS
+  );
+  writeWorkbook(
+    'classes_modele.xlsx',
+    CLASSROOM_COLUMNS,
+    [],
+    [
+      ['2026-2027', '6E', '6E-A', '6e A', 45],
+      ['2026-2027', '3E', '3E-B', null, 35],
+    ],
+    CLASSROOM_DESCRIPTIONS
+  );
+  writeWorkbook(
+    'affectations_modele.xlsx',
+    CLASS_SUBJECT_COLUMNS,
+    [],
+    [
+      ['6E-A', 'MATH', 4, 'OUI', 'NDS-DEMO-2026-T00001'],
+      ['3E-B', 'FR', 3, 'NON', null],
+    ],
+    CLASS_SUBJECT_DESCRIPTIONS
   );
 
   const guardianExampleRows = [
@@ -262,6 +331,51 @@ function writeExemples() {
     ],
     [],
     GUARDIAN_DESCRIPTIONS
+  );
+
+  writeWorkbook(
+    'matieres_exemple.xlsx',
+    SUBJECT_COLUMNS,
+    [
+      ['MATH', 'Mathématiques', 'Mathematics', null, 'Maths', 'MATHEMATIQUES'],
+      ['FR', 'Français', 'French', null, null, 'LANGUES'],
+      ['PC', 'Physique-Chimie', 'Physics-Chemistry', null, null, 'SCIENCES'],
+      ['SVT', 'Sciences de la vie et de la Terre', null, null, null, 'SCIENCES'],
+      ['HG', 'Histoire-Géographie', null, null, null, 'SCIENCES_SOCIALES'],
+      ['EPS', 'Éducation physique et sportive', null, null, null, 'SPORTS'],
+    ],
+    [],
+    SUBJECT_DESCRIPTIONS
+  );
+
+  writeWorkbook(
+    'classes_exemple.xlsx',
+    CLASSROOM_COLUMNS,
+    [
+      ['2026-2027', '6E', '6E-A', '6e A', 45],
+      ['2026-2027', '6E', '6E-B', null, 42],
+      ['2026-2027', '5E', '5E-A', null, 40],
+      ['2026-2027', '3E', '3E-A', '3e A', 35],
+      ['2026-2027', '3E', '3E-B', null, 35],
+      ['2026-2027', 'TLE', 'TLE-S', 'Terminale S', 30],
+    ],
+    [],
+    CLASSROOM_DESCRIPTIONS
+  );
+
+  writeWorkbook(
+    'affectations_exemple.xlsx',
+    CLASS_SUBJECT_COLUMNS,
+    [
+      ['3E-A', 'MATH', 4, 'OUI', 'NDS-DEMO-2026-T00001'],
+      ['3E-A', 'FR', 3, 'OUI', null],
+      ['3E-A', 'PC', 3, 'OUI', null],
+      ['3E-A', 'SVT', 2, 'OUI', null],
+      ['3E-A', 'HG', 2, 'OUI', null],
+      ['3E-A', 'EPS', 1, 'NON', null],
+    ],
+    [],
+    CLASS_SUBJECT_DESCRIPTIONS
   );
 }
 

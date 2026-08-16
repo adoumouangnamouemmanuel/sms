@@ -1,9 +1,14 @@
 import {
+  createAcademicYearRepository,
   createAuditLogRepository,
+  createClassLevelRepository,
+  createClassroomRepository,
+  createClassSubjectRepository,
   createGuardianRepository,
   createImportBatchRepository,
   createStudentGuardianRepository,
   createStudentRepository,
+  createSubjectRepository,
   createTeacherRepository,
   createTenantContext,
   withTransaction,
@@ -17,6 +22,7 @@ import {
   type ImportKind,
   type ImportPreviewResponse,
   type ImportPreviewRow,
+  type SubjectCategory,
 } from '@edutrack/shared';
 import * as XLSX from 'xlsx';
 import type { AuthenticatedUser, RequestAuditContext } from '../auth/index.js';
@@ -80,8 +86,8 @@ export class ImportsService {
       throw emptyImportFile();
     }
 
-    // Advisory duplicate warnings (never blocking): a row whose code — or, for
-    // uncoded rows, whose exact full name — already exists in the school. Names
+    // Advisory duplicate warnings (never blocking): a row whose code - or, for
+    // uncoded rows, whose exact full name - already exists in the school. Names
     // are deliberately NOT treated as identity: two real people can share an
     // exact name, so this only flags the row for the admin to double-check.
     const tenant = createTenantContext(actor.schoolId);
@@ -102,7 +108,7 @@ export class ImportsService {
 
         // Optional student code: when present, the guardian is auto-linked to
         // the matching student at confirm. An unknown code is a hard row error
-        // — the admin explicitly asked for a link that cannot exist.
+        // - the admin explicitly asked for a link that cannot exist.
         const studentCode = row.values.studentCode?.trim();
 
         if (studentCode) {
@@ -120,13 +126,93 @@ export class ImportsService {
         continue;
       }
 
-      const repository =
-        kind === 'STUDENTS'
-          ? createStudentRepository(this.db, tenant)
-          : createTeacherRepository(this.db, tenant);
-      row.possibleDuplicate = explicitCode
-        ? Boolean(repository.findByCode(normalizePeopleCode(explicitCode)))
-        : Boolean(repository.findByName(row.values.firstName ?? '', row.values.lastName ?? ''));
+      if (kind === 'STUDENTS' || kind === 'TEACHERS') {
+        const repository =
+          kind === 'STUDENTS'
+            ? createStudentRepository(this.db, tenant)
+            : createTeacherRepository(this.db, tenant);
+        row.possibleDuplicate = explicitCode
+          ? Boolean(repository.findByCode(normalizePeopleCode(explicitCode)))
+          : Boolean(repository.findByName(row.values.firstName ?? '', row.values.lastName ?? ''));
+        continue;
+      }
+
+      if (kind === 'SUBJECTS') {
+        row.possibleDuplicate = Boolean(
+          createSubjectRepository(this.db, tenant).findByCode((explicitCode ?? '').toUpperCase())
+        );
+        continue;
+      }
+
+      if (kind === 'CLASSROOMS') {
+        const yearLabel = row.values.academicYearLabel?.trim();
+        const levelCode = row.values.classLevelCode?.trim();
+        const year = yearLabel
+          ? createAcademicYearRepository(this.db, tenant).findActiveByLabel(yearLabel)
+          : null;
+        const level = levelCode
+          ? createClassLevelRepository(this.db, tenant)
+              .listActive()
+              .find((item) => item.code.toUpperCase() === levelCode.toUpperCase())
+          : null;
+
+        if (yearLabel && !year) {
+          row.errors.push('Année scolaire inconnue dans cette école.');
+        } else if (levelCode && !level) {
+          row.errors.push('Code niveau inconnu dans cette école.');
+        } else if (year && level) {
+          row.linkedAcademicYearId = year.id;
+          row.linkedClassLevelId = level.id;
+          row.possibleDuplicate = Boolean(
+            createClassroomRepository(this.db, tenant).findByYearCode(
+              year.id,
+              (explicitCode ?? '').toUpperCase()
+            )
+          );
+        }
+
+        continue;
+      }
+
+      // All earlier guards continued, so `kind` is CLASS_SUBJECTS here.
+      {
+        const currentYear = createAcademicYearRepository(this.db, tenant).findCurrent();
+        const classroom = currentYear
+          ? createClassroomRepository(this.db, tenant).findByYearCode(
+              currentYear.id,
+              (row.values.classroomCode?.trim() ?? '').toUpperCase()
+            )
+          : null;
+        const subject = createSubjectRepository(this.db, tenant).findByCode(
+          (row.values.subjectCode?.trim() ?? '').toUpperCase()
+        );
+        const teacherCode = row.values.teacherCode?.trim();
+        const teacher = teacherCode
+          ? createTeacherRepository(this.db, tenant).findByCode(normalizePeopleCode(teacherCode))
+          : null;
+
+        if (!currentYear) {
+          row.errors.push('Aucune année scolaire active dans cette école.');
+        } else if (!classroom) {
+          row.errors.push("Code classe inconnu dans l'année active.");
+        } else if (!subject) {
+          row.errors.push('Code matière inconnu dans cette école.');
+        } else if (teacherCode && !teacher) {
+          row.errors.push('Code professeur inconnu dans cette école.');
+        } else {
+          row.linkedClassroomId = classroom.id;
+          row.linkedSubjectId = subject.id;
+          row.linkedTeacherId = teacher?.id ?? null;
+          row.possibleDuplicate = Boolean(
+            createClassSubjectRepository(this.db, tenant).findByClassroomSubject(
+              classroom.id,
+              subject.id
+            )
+          );
+        }
+
+        continue;
+      }
     }
 
     const stored = importPreviewStore.create({
@@ -220,6 +306,110 @@ export class ImportsService {
               }
             }
           }
+        } else if (preview.kind === 'SUBJECTS') {
+          const repository = createSubjectRepository(transaction, tenant);
+
+          for (const row of validRows) {
+            const code = (row.values.code ?? '').trim().toUpperCase();
+            const alreadyPresent = Boolean(repository.findByCode(code));
+
+            if (alreadyPresent) {
+              skippedExisting += 1;
+              continue;
+            }
+
+            try {
+              repository.create({
+                code,
+                name: row.values.name ?? '',
+                nameEn: row.values.nameEn ?? null,
+                nameAr: row.values.nameAr ?? null,
+                shortLabel: row.values.shortLabel ?? null,
+                category: (row.values.category ?? 'AUTRE') as SubjectCategory,
+              });
+              imported += 1;
+            } catch (error) {
+              if (isUniqueConstraintViolation(error)) {
+                skippedExisting += 1;
+              } else {
+                console.error('Unexpected error importing subject row:', error);
+                throw error;
+              }
+            }
+          }
+        } else if (preview.kind === 'CLASSROOMS') {
+          const repository = createClassroomRepository(transaction, tenant);
+
+          for (const row of validRows) {
+            if (!row.linkedAcademicYearId || !row.linkedClassLevelId) {
+              skippedExisting += 1;
+              continue;
+            }
+
+            const code = (row.values.code ?? '').trim().toUpperCase();
+            const alreadyPresent = Boolean(
+              repository.findByYearCode(row.linkedAcademicYearId, code)
+            );
+
+            if (alreadyPresent) {
+              skippedExisting += 1;
+              continue;
+            }
+
+            try {
+              repository.create({
+                academicYearId: row.linkedAcademicYearId,
+                classLevelId: row.linkedClassLevelId,
+                code,
+                name: row.values.name ?? null,
+                capacity: row.values.capacity?.trim() ? Number(row.values.capacity) : null,
+              });
+              imported += 1;
+            } catch (error) {
+              if (isUniqueConstraintViolation(error)) {
+                skippedExisting += 1;
+              } else {
+                console.error('Unexpected error importing classroom row:', error);
+                throw error;
+              }
+            }
+          }
+        } else if (preview.kind === 'CLASS_SUBJECTS') {
+          const repository = createClassSubjectRepository(transaction, tenant);
+
+          for (const row of validRows) {
+            if (!row.linkedClassroomId || !row.linkedSubjectId) {
+              skippedExisting += 1;
+              continue;
+            }
+
+            const alreadyPresent = Boolean(
+              repository.findByClassroomSubject(row.linkedClassroomId, row.linkedSubjectId)
+            );
+
+            if (alreadyPresent) {
+              skippedExisting += 1;
+              continue;
+            }
+
+            try {
+              repository.create({
+                classroomId: row.linkedClassroomId,
+                subjectId: row.linkedSubjectId,
+                coefficient: Number(row.values.coefficient ?? 1),
+                isRequired: (row.values.isRequired ?? '').trim().toUpperCase() !== 'NON',
+                teacherId: row.linkedTeacherId ?? null,
+              });
+              imported += 1;
+            } catch (error) {
+              if (isUniqueConstraintViolation(error)) {
+                skippedExisting += 1;
+              } else {
+                console.error('Unexpected error importing class-subject row:', error);
+                throw error;
+              }
+            }
+          }
         } else {
           const repository =
             preview.kind === 'STUDENTS'
@@ -231,7 +421,7 @@ export class ImportsService {
 
             // Codes are the ONLY identity: a code already present in the school
             // (including archived rows) is skipped. Uncoded rows are always
-            // imported — the preview already warned the admin about possible
+            // imported - the preview already warned the admin about possible
             // name matches, because two real people can share an exact name.
             const alreadyPresent = explicitCode
               ? Boolean(repository.findByCode(normalizePeopleCode(explicitCode)))
@@ -335,7 +525,17 @@ export class ImportsService {
     XLSX.utils.book_append_sheet(workbook, dataSheet, 'Donnees');
 
     const personLabel =
-      kind === 'GUARDIANS' ? 'responsable' : kind === 'STUDENTS' ? 'eleve' : 'professeur';
+      kind === 'GUARDIANS'
+        ? 'responsable'
+        : kind === 'STUDENTS'
+          ? 'eleve'
+          : kind === 'TEACHERS'
+            ? 'professeur'
+            : kind === 'SUBJECTS'
+              ? 'matiere'
+              : kind === 'CLASSROOMS'
+                ? 'classe'
+                : 'affectation';
     const readmeRows: (string | number)[][] = [
       ['Colonne', 'Requis', 'Description'],
       ...columns.map((column) => [
@@ -351,7 +551,7 @@ export class ImportsService {
       ],
     ];
 
-    if (kind !== 'GUARDIANS') {
+    if (kind === 'STUDENTS' || kind === 'TEACHERS') {
       readmeRows.push([
         "- Les dates s'ecrivent JJ/MM/AAAA (ex. 14/03/2012) ou AAAA-MM-JJ (ex. 2012-03-14).",
       ]);
@@ -367,10 +567,33 @@ export class ImportsService {
       ]);
     }
 
-    if (kind !== 'GUARDIANS') {
+    if (kind === 'STUDENTS' || kind === 'TEACHERS') {
       readmeRows.push(['- Code : optionnel. Laisses vide, un code est genere automatiquement.']);
       readmeRows.push([
         "- Un code utilise deux fois dans le fichier (ou deja present dans l'ecole) est refuse.",
+      ]);
+    }
+
+    if (kind === 'SUBJECTS') {
+      readmeRows.push(['- Codes et categories : les codes sont ecrits en majuscules.']);
+      readmeRows.push([
+        '- Categories : LANGUES, SCIENCES, MATHEMATIQUES, SCIENCES_SOCIALES, ARTS, SPORTS ou AUTRE.',
+      ]);
+    }
+
+    if (kind === 'CLASSROOMS') {
+      readmeRows.push(["- Annee scolaire : libelle exact d'une annee deja creee (ex. 2026-2027)."]);
+      readmeRows.push(['- Code niveau : code exact d un niveau deja cree (ex. 6E, 3E, TLE).']);
+    }
+
+    if (kind === 'CLASS_SUBJECTS') {
+      readmeRows.push([
+        "- Code classe : classe deja creee dans l'annee scolaire active (ex. 3E-A).",
+      ]);
+      readmeRows.push(['- Code matiere : matiere deja creee (ex. MATH).']);
+      readmeRows.push(['- Obligatoire : OUI ou NON (par defaut OUI).']);
+      readmeRows.push([
+        "- Code professeur : optionnel. Le professeur doit deja exister dans l'ecole.",
       ]);
     }
 
@@ -417,28 +640,44 @@ export class ImportsService {
               ],
               ['Mahamat', 'Ousmane', '+23566000021', null, null, null],
             ]
-          : [
-              [
-                null,
-                'Jean',
-                'Nguet',
-                'Mathematiques',
-                '01/09/2015',
-                '+23566000010',
-                'j.nguet@exemple.td',
-                null,
-              ],
-              [
-                'NDS-DEMO-2026-T00001',
-                'Fatime',
-                'Abakar',
-                'Physique',
-                '2016-10-01',
-                '+23566000011',
-                null,
-                null,
-              ],
-            ];
+          : kind === 'TEACHERS'
+            ? [
+                [
+                  null,
+                  'Jean',
+                  'Nguet',
+                  'Mathematiques',
+                  '01/09/2015',
+                  '+23566000010',
+                  'j.nguet@exemple.td',
+                  null,
+                ],
+                [
+                  'NDS-DEMO-2026-T00001',
+                  'Fatime',
+                  'Abakar',
+                  'Physique',
+                  '2016-10-01',
+                  '+23566000011',
+                  null,
+                  null,
+                ],
+              ]
+            : kind === 'SUBJECTS'
+              ? [
+                  ['MATH', 'Mathématiques', 'Mathematics', 'Riyadiyat', 'Maths', 'MATHEMATIQUES'],
+                  ['FR', 'Français', 'French', null, null, 'LANGUES'],
+                  ['EPS', 'Éducation physique', null, null, null, 'SPORTS'],
+                ]
+              : kind === 'CLASSROOMS'
+                ? [
+                    ['2026-2027', '6E', '6E-A', '6e A', 45],
+                    ['2026-2027', '3E', '3E-B', null, 35],
+                  ]
+                : [
+                    ['6E-A', 'MATH', 4, 'OUI', 'NDS-DEMO-2026-T00001'],
+                    ['3E-B', 'FR', 3, 'NON', null],
+                  ];
     const examplesSheet = XLSX.utils.aoa_to_sheet([
       columns.map((column) => column.label),
       ...examplesRows,
@@ -459,14 +698,13 @@ export class ImportsService {
     }
 
     const errorRows = preview.rows.filter((row) => row.errors.length > 0);
-    const header = ['Ligne', 'Code', 'Prénom', 'Nom', 'Erreurs'];
+    const columns = IMPORT_COLUMNS_BY_KIND[preview.kind];
+    const header = ['Ligne', ...columns.map((column) => column.label), 'Erreurs'];
     const lines = [
       header,
       ...errorRows.map((row) => [
-        row.rowNumber,
-        row.values.code ?? '',
-        row.values.firstName ?? '',
-        row.values.lastName ?? '',
+        String(row.rowNumber),
+        ...columns.map((column) => row.values[column.key] ?? ''),
         row.errors.join(' ; '),
       ]),
     ];

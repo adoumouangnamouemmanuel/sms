@@ -1,4 +1,4 @@
-# ADR-011: Phase 3 gate strategy — load tests inside the API test suite
+# ADR-011: Phase 3 gate strategy - load tests inside the API test suite
 
 - **Status**: Accepted
 - **Date**: 2026-08-15
@@ -21,13 +21,13 @@ tooling (k6, artillery, locust) is introduced for this gate.
 
 ## Consequences
 
-- The gate evidence runs in CI as part of `pnpm test:unit` — no separate
+- The gate evidence runs in CI as part of `pnpm test:unit` - no separate
   harness to maintain or version-skew to chase.
 - The full 1,000-row round-trip executes in ~1 second on a developer machine,
   fast enough to keep the unit gate responsive.
 - Deterministic fixtures mean failures are reproducible; the assertions check
   invariants (code uniqueness, no empty names, list-total agreement) rather
   than fuzzy performance thresholds.
-- The remaining 9.5 criterion — a non-developer finds, edits and archives a
-  record — is inherently manual and is documented as a walkthrough in the
+- The remaining 9.5 criterion - a non-developer finds, edits and archives a
+  record - is inherently manual and is documented as a walkthrough in the
   roadmap implementation note rather than automated.

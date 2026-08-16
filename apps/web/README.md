@@ -24,5 +24,5 @@ All user-visible text must use i18n keys. French is the default locale.
 
 ## Structure
 
-- `src/modules/` — feature modules (auth, setup, app shell, ...)
-- `src/test/` — component and unit tests, plus the shared test setup (`setup.ts`)
+- `src/modules/` - feature modules (auth, setup, app shell, ...)
+- `src/test/` - component and unit tests, plus the shared test setup (`setup.ts`)

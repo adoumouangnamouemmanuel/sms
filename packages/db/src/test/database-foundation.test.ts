@@ -25,6 +25,17 @@ import {
 } from '../seeds.js';
 
 const migrationsDir = fileURLToPath(new URL('../../migrations/sqlite/', import.meta.url));
+
+interface JournalEntry {
+  idx: number;
+  tag: string;
+  when: number;
+}
+
+function readJournal() {
+  const raw = readFileSync(join(migrationsDir, 'meta', '_journal.json'), 'utf8');
+  return JSON.parse(raw) as { entries: JournalEntry[] };
+}
 const legacySchoolId = '11111111-1111-4111-8111-111111111111';
 const legacyUserId = '22222222-2222-4222-8222-222222222222';
 
@@ -38,6 +49,195 @@ describe('database foundation migrations', () => {
 
   afterEach(() => {
     sqlite.close();
+  });
+
+  it('adds the Phase 4 tables to a non-empty Phase 3 database', () => {
+    sqlite = new Database(':memory:');
+    sqlite.pragma('foreign_keys = ON');
+
+    // Phase 1-3 schema only (the Phase 4 classes data model was renumbered
+    // from 0009/0010 to 0014/0015, so those are the ones to exclude here, and
+    // 0016 builds on top of 0014).
+    const phase3Migrations = readdirSync(migrationsDir)
+      .filter(
+        (file) =>
+          file.endsWith('.sql') &&
+          !file.startsWith('0014') &&
+          !file.startsWith('0015') &&
+          !file.startsWith('0016')
+      )
+      .sort();
+    for (const migrationFile of phase3Migrations) {
+      applyMigration(sqlite, migrationFile);
+    }
+
+    // Existing Phase 3 data that must survive and stay referenceable.
+    sqlite
+      .prepare(`INSERT INTO school (id, code, name) VALUES (?, ?, ?)`)
+      .run(legacySchoolId, 'LEGACY', 'Legacy School');
+    sqlite
+      .prepare(`INSERT INTO academic_year (id, school_id, label, is_current) VALUES (?, ?, ?, 1)`)
+      .run('00000000-0000-4000-8000-000000000401', legacySchoolId, '2026-2027');
+    sqlite
+      .prepare(
+        `INSERT INTO class_level (id, school_id, code, name, display_order) VALUES (?, ?, ?, ?, 1)`
+      )
+      .run('00000000-0000-4000-8000-000000000601', legacySchoolId, '3E', 'Troisième');
+    sqlite
+      .prepare(
+        `INSERT INTO student (id, school_id, code, first_name, last_name) VALUES (?, ?, ?, ?, ?)`
+      )
+      .run(
+        '00000000-0000-4000-8000-000000000701',
+        legacySchoolId,
+        'LEGACY-2026-001',
+        'Aminata',
+        'Mahamat'
+      );
+    sqlite
+      .prepare(
+        `INSERT INTO teacher (id, school_id, code, first_name, last_name) VALUES (?, ?, ?, ?, ?)`
+      )
+      .run(
+        '00000000-0000-4000-8000-000000000801',
+        legacySchoolId,
+        'LEGACY-2026-001',
+        'Ibrahim',
+        'Ousmane'
+      );
+
+    applyMigration(sqlite, '0014_classes_data_model.sql');
+    applyMigration(sqlite, '0015_class_level_id_unique.sql');
+    applyMigration(sqlite, '0016_class_enrollment_consistency.sql');
+
+    // The five new tables accept tenant-scoped rows referencing existing data.
+    sqlite
+      .prepare(`INSERT INTO subject (id, school_id, code, name, category) VALUES (?, ?, ?, ?, ?)`)
+      .run(
+        '00000000-0000-4000-8000-000000000901',
+        legacySchoolId,
+        'MATH',
+        'Mathématiques',
+        'MATHEMATIQUES'
+      );
+    sqlite
+      .prepare(
+        `INSERT INTO classroom
+           (id, school_id, academic_year_id, class_level_id, code)
+         VALUES (?, ?, ?, ?, ?)`
+      )
+      .run(
+        '00000000-0000-4000-8000-000000000a01',
+        legacySchoolId,
+        '00000000-0000-4000-8000-000000000401',
+        '00000000-0000-4000-8000-000000000601',
+        '3E-A'
+      );
+    sqlite
+      .prepare(
+        `INSERT INTO class_subject
+           (id, school_id, classroom_id, subject_id, coefficient)
+         VALUES (?, ?, ?, ?, ?)`
+      )
+      .run(
+        '00000000-0000-4000-8000-000000000b01',
+        legacySchoolId,
+        '00000000-0000-4000-8000-000000000a01',
+        '00000000-0000-4000-8000-000000000901',
+        4
+      );
+    sqlite
+      .prepare(
+        `INSERT INTO class_enrollment
+           (id, school_id, student_id, classroom_id, academic_year_id, enrollment_date)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        '00000000-0000-4000-8000-000000000c01',
+        legacySchoolId,
+        '00000000-0000-4000-8000-000000000701',
+        '00000000-0000-4000-8000-000000000a01',
+        '00000000-0000-4000-8000-000000000401',
+        '2026-09-01'
+      );
+    sqlite
+      .prepare(
+        `INSERT INTO student_subject_enrollment
+           (id, school_id, class_enrollment_id, class_subject_id)
+         VALUES (?, ?, ?, ?)`
+      )
+      .run(
+        '00000000-0000-4000-8000-000000000d01',
+        legacySchoolId,
+        '00000000-0000-4000-8000-000000000c01',
+        '00000000-0000-4000-8000-000000000b01'
+      );
+
+    // The domain CHECK constraints are live on the migrated tables.
+    expect(() =>
+      sqlite
+        .prepare(
+          `INSERT INTO class_subject
+             (id, school_id, classroom_id, subject_id, coefficient)
+           VALUES (?, ?, ?, ?, 0)`
+        )
+        .run(
+          '00000000-0000-4000-8000-000000000b02',
+          legacySchoolId,
+          '00000000-0000-4000-8000-000000000a01',
+          '00000000-0000-4000-8000-000000000901'
+        )
+    ).toThrow(/CHECK/i);
+
+    // 0016: an enrollment can never reference a classroom from a different
+    // academic year (trigger-enforced, since SQLite cannot add FKs to an
+    // existing table).
+    sqlite
+      .prepare(`INSERT INTO academic_year (id, school_id, label, is_current) VALUES (?, ?, ?, 0)`)
+      .run('00000000-0000-4000-8000-000000000402', legacySchoolId, '2027-2028');
+    sqlite
+      .prepare(
+        `INSERT INTO classroom
+           (id, school_id, academic_year_id, class_level_id, code)
+         VALUES (?, ?, ?, ?, ?)`
+      )
+      .run(
+        '00000000-0000-4000-8000-000000000a02',
+        legacySchoolId,
+        '00000000-0000-4000-8000-000000000402',
+        '00000000-0000-4000-8000-000000000601',
+        '3E-B'
+      );
+    expect(() =>
+      sqlite
+        .prepare(
+          `INSERT INTO class_enrollment
+             (id, school_id, student_id, classroom_id, academic_year_id, enrollment_date)
+           VALUES (?, ?, ?, ?, ?, ?)`
+        )
+        .run(
+          '00000000-0000-4000-8000-000000000c02',
+          legacySchoolId,
+          '00000000-0000-4000-8000-000000000701',
+          '00000000-0000-4000-8000-000000000a02',
+          '00000000-0000-4000-8000-000000000401',
+          '2026-09-01'
+        )
+    ).toThrow(/classroom academic year/i);
+    sqlite
+      .prepare(
+        `INSERT INTO class_enrollment
+           (id, school_id, student_id, classroom_id, academic_year_id, enrollment_date)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        '00000000-0000-4000-8000-000000000c02',
+        legacySchoolId,
+        '00000000-0000-4000-8000-000000000701',
+        '00000000-0000-4000-8000-000000000a02',
+        '00000000-0000-4000-8000-000000000402',
+        '2027-09-01'
+      );
   });
 
   it('applies the 7.3 migration to a non-empty scaffold database', () => {
@@ -379,6 +579,38 @@ describe('Phase 3 people migration', () => {
           'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
         )
     ).toThrow();
+  });
+});
+
+describe('migration journal integrity', () => {
+  it('keeps the journal when timestamps strictly increasing so drizzle never skips entries', () => {
+    const journal = readJournal();
+
+    expect(journal.entries.length).toBeGreaterThan(0);
+
+    for (let index = 1; index < journal.entries.length; index += 1) {
+      const previous = journal.entries[index - 1];
+      const current = journal.entries[index];
+
+      if (current === undefined || previous === undefined) {
+        continue;
+      }
+
+      expect(
+        current.when,
+        `journal entry ${String(current.idx)} (${current.tag}) must have a when greater than entry ${String(previous.idx)} (${previous.tag})`
+      ).toBeGreaterThan(previous.when);
+    }
+  });
+
+  it('keeps one committed sql file per journal entry and nothing more', () => {
+    const journal = readJournal();
+    const sqlFiles = readdirSync(migrationsDir).filter((file) => file.endsWith('.sql'));
+    const expectedSqlFiles = journal.entries.map((entry) => `${entry.tag}.sql`);
+
+    // Duplicate tags would let two entries share one file and hide an untracked one.
+    expect(new Set(expectedSqlFiles).size).toBe(expectedSqlFiles.length);
+    expect(new Set(sqlFiles)).toEqual(new Set(expectedSqlFiles));
   });
 });
 

@@ -5,6 +5,7 @@ import {
   type SetupSchoolProfileRequest,
   type SetupStateResponse,
 } from '@edutrack/shared';
+import { fetchWithTimeout } from '../../httpClient';
 import { createAuthHeaders } from '../auth';
 import { SetupApiError } from './setupErrors';
 
@@ -79,7 +80,7 @@ async function requestJson<T>(
   let response: Response;
 
   try {
-    response = await fetcher(`${apiBaseUrl}${path}`, {
+    response = await fetchWithTimeout(fetcher, `${apiBaseUrl}${path}`, {
       method: request.method,
       credentials: 'include',
       headers: {

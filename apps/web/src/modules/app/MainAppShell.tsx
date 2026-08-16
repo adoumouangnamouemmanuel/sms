@@ -4,11 +4,26 @@ import { useTranslation } from 'react-i18next';
 import type { DesktopDeploymentStatus } from '../../desktopStatus';
 import { clearAccessToken, useLogoutAction, type LogoutClient } from '../auth';
 import type { SetupStateResponse } from '@edutrack/shared';
-import { DashboardModule } from '../dashboard';
-import { SettingsModule } from '../settings';
-import { StudentsModule } from '../students';
-import { StructureModule } from '../structure';
-import { TeachersModule } from '../teachers';
+import { lazy, Suspense } from 'react';
+
+// Each school module is its own lazy chunk (audit F2): the initial load only
+// carries the shell + dashboard, and the heavier screens (students, classes,
+// imports) stream in when first opened.
+const DashboardModule = lazy(() =>
+  import('../dashboard/DashboardModule').then((m) => ({ default: m.DashboardModule }))
+);
+const SettingsModule = lazy(() =>
+  import('../settings/SettingsModule').then((m) => ({ default: m.SettingsModule }))
+);
+const ClassesModule = lazy(() =>
+  import('../classes/ClassesModule').then((m) => ({ default: m.ClassesModule }))
+);
+const StudentsModule = lazy(() =>
+  import('../students/StudentsModule').then((m) => ({ default: m.StudentsModule }))
+);
+const TeachersModule = lazy(() =>
+  import('../teachers/TeachersModule').then((m) => ({ default: m.TeachersModule }))
+);
 
 // ---------------------------------------------------------------------------
 // Types
@@ -34,7 +49,7 @@ interface LogoutActionState {
 }
 
 // ---------------------------------------------------------------------------
-// Icons — 2px stroke, round caps/joins, 24×24 viewBox
+// Icons - 2px stroke, round caps/joins, 24×24 viewBox
 // ---------------------------------------------------------------------------
 
 /**
@@ -55,23 +70,6 @@ function GearIcon() {
     >
       <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
       <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
-
-function AcademicIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="h-5 w-5 shrink-0"
-      fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      viewBox="0 0 24 24"
-    >
-      <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
     </svg>
   );
 }
@@ -117,6 +115,25 @@ function PeopleIcon() {
 }
 
 function TeacherIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      viewBox="0 0 24 24"
+    >
+      <path d="M21.42 10.922a2 2 0 0 1-.019 3.838L12.83 19.818a2 2 0 0 1-1.66 0L2.6 14.76a2 2 0 0 1-.019-3.838l8.57-4.505a2 2 0 0 1 1.7 0z" />
+      <path d="M22 10v6" />
+      <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
+    </svg>
+  );
+}
+
+function ClassesIcon() {
   return (
     <svg
       aria-hidden="true"
@@ -201,11 +218,11 @@ interface NavItem {
 }
 
 const MODULE_NAV_CONFIG: Partial<Record<SchoolModuleName, Omit<NavItem, 'moduleName'>>> = {
-  // Gear icon — configuration/settings, not "home"
+  // Gear icon - configuration/settings, not "home"
   SCHOOL_SETUP: { labelKey: 'setup.modules.SCHOOL_SETUP', icon: <GearIcon /> },
-  ACADEMIC_STRUCTURE: { labelKey: 'setup.modules.ACADEMIC_STRUCTURE', icon: <AcademicIcon /> },
   STUDENTS: { labelKey: 'setup.modules.STUDENTS', icon: <PeopleIcon /> },
   TEACHERS: { labelKey: 'setup.modules.TEACHERS', icon: <TeacherIcon /> },
+  CLASSES: { labelKey: 'setup.modules.CLASSES', icon: <ClassesIcon /> },
 };
 
 // ---------------------------------------------------------------------------
@@ -271,19 +288,19 @@ export function MainAppShell({
           isSidebarExpanded ? 'w-[240px]' : 'w-[64px]'
         }`}
       >
-        {/* Layer 1 — Base gradient: user-preferred deep navy (the old values read better). */}
+        {/* Layer 1 - Base gradient: user-preferred deep navy (the old values read better). */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#0f172a] via-[#0a1628] to-[#061020] pointer-events-none" />
         {/*
-         * Layer 2 — Teal radial glow: anchored at the top-left corner,
+         * Layer 2 - Teal radial glow: anchored at the top-left corner,
          * INSIDE the sidebar (no negative offsets that push it off-screen).
          * Opacity 0.22 so it's visible on dark backgrounds.
          */}
         <div className="absolute top-0 left-0 w-64 h-64 bg-teal-400/[0.22] rounded-full blur-[80px] pointer-events-none" />
-        {/* Layer 3 — Faint teal glow at bottom for colour continuity */}
+        {/* Layer 3 - Faint teal glow at bottom for colour continuity */}
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-teal-600/[0.09] blur-[40px] pointer-events-none" />
-        {/* Layer 4 — Left-edge highlight strip: 1px gradient line gives a "lit" edge */}
+        {/* Layer 4 - Left-edge highlight strip: 1px gradient line gives a "lit" edge */}
         <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-teal-400/30 via-teal-500/15 to-transparent pointer-events-none" />
-        {/* Layer 5 — Grain/noise texture at a just-perceptible opacity */}
+        {/* Layer 5 - Grain/noise texture at a just-perceptible opacity */}
         <div
           aria-hidden="true"
           className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSIvPjwvc3ZnPg==')]"
@@ -337,7 +354,7 @@ export function MainAppShell({
             aria-label={t('app.shell.navigation')}
             className="flex-1 overflow-y-auto px-2 py-4 space-y-0.5"
           >
-            {/* Dashboard — always shown above the module group */}
+            {/* Dashboard - always shown above the module group */}
             <NavButton
               icon={<DashboardIcon />}
               isActive={activeModule === null}
@@ -355,29 +372,31 @@ export function MainAppShell({
               </p>
             )}
 
-            {enabledModuleNames.map((moduleName) => {
-              const config = MODULE_NAV_CONFIG[moduleName];
-              if (!config) return null;
-              return (
-                <NavButton
-                  key={moduleName}
-                  icon={config.icon}
-                  isActive={activeModule === moduleName}
-                  isExpanded={isSidebarExpanded}
-                  label={t(config.labelKey)}
-                  onClick={() => {
-                    setActiveModule(moduleName);
-                  }}
-                />
-              );
-            })}
+            {(Object.keys(MODULE_NAV_CONFIG) as SchoolModuleName[])
+              .filter((moduleName) => enabledModuleNames.includes(moduleName))
+              .map((moduleName) => {
+                const config = MODULE_NAV_CONFIG[moduleName];
+                if (!config) return null;
+                return (
+                  <NavButton
+                    key={moduleName}
+                    icon={config.icon}
+                    isActive={activeModule === moduleName}
+                    isExpanded={isSidebarExpanded}
+                    label={t(config.labelKey)}
+                    onClick={() => {
+                      setActiveModule(moduleName);
+                    }}
+                  />
+                );
+              })}
 
             {/* ── "Bientôt disponible" section ──────────────────────────────────── */}
             {/* Previews the app's full scope so the nav doesn't look sparse       */}
             {/* while modules are still shipping. Remove entries as they go live.  */}
             {isSidebarExpanded && (
               <p className="px-3 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-600/60 select-none">
-                Bientôt {/* TODO: i18n — app.shell.comingSoonLabel */}
+                {t('app.shell.comingSoonLabel')}
               </p>
             )}
             {COMING_SOON_NAV_ITEMS.map(({ label, icon }) => (
@@ -390,7 +409,7 @@ export function MainAppShell({
             ))}
           </nav>
 
-          {/* Account chip — menu works in both expanded and collapsed states */}
+          {/* Account chip - menu works in both expanded and collapsed states */}
           <div className="border-t border-white/[0.14] px-2 py-3">
             <AccountChip
               apiBaseUrl={apiBaseUrl}
@@ -417,7 +436,7 @@ export function MainAppShell({
       {/* Main content column                                                  */}
       {/* ------------------------------------------------------------------ */}
       <div className="flex flex-1 flex-col min-w-0 min-h-0">
-        {/* Top header — 1px slate-300 border + explicit shadow make it unambiguously chrome */}
+        {/* Top header - 1px slate-300 border + explicit shadow make it unambiguously chrome */}
         <header className="flex h-14 shrink-0 items-center justify-between border-b-2 border-slate-100 bg-white px-5 z-20 gap-4 shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
           {/* Left: school name + term */}
           <div className="flex flex-col justify-center min-w-0 shrink-0">
@@ -433,20 +452,19 @@ export function MainAppShell({
           {/* Center: search / command-bar placeholder */}
           {/* TODO: wire up real search / ⌘K command palette (future roadmap item) */}
           <button
-            aria-label="Rechercher" // TODO: i18n key — app.shell.header.search
+            aria-label={t('app.shell.header.search')}
             className="hidden md:flex flex-1 max-w-xs items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-[13px] text-slate-400 hover:border-slate-300 hover:bg-white transition-colors cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
             tabIndex={-1}
             type="button"
           >
             <SearchIcon />
-            <span className="flex-1 text-left">Rechercher…</span>
-            {/* TODO: i18n */}
+            <span className="flex-1 text-left">{t('app.shell.header.searchPlaceholder')}</span>
             <kbd className="hidden sm:inline-flex items-center rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-400 leading-none">
               ⌘K
             </kbd>
           </button>
 
-          {/* Right cluster — two distinct sub-groups separated by a hairline divider */}
+          {/* Right cluster - two distinct sub-groups separated by a hairline divider */}
           <div className="flex items-center gap-3 shrink-0">
             {/* ── System status ── */}
             <AppStatusPill
@@ -458,22 +476,22 @@ export function MainAppShell({
             <div aria-hidden="true" className="h-5 w-px bg-slate-200" />
 
             {/* ── Personal cluster ── */}
-            {/* Notification bell — placeholder; wire up when notifications module lands */}
+            {/* Notification bell - placeholder; wire up when notifications module lands */}
             {/* TODO: connect to notifications module (future roadmap item) */}
             <button
-              aria-label="Notifications" // TODO: i18n key — app.shell.header.notifications
+              aria-label={t('app.shell.header.notifications')}
               className="relative flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
               type="button"
             >
               <BellIcon />
-              {/* Unread dot — teal with glow, consistent with brand accent */}
+              {/* Unread dot - teal with glow, consistent with brand accent */}
               <span
                 aria-hidden="true"
                 className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-teal-500 shadow-[0_0_6px_rgba(20,184,166,0.8)]"
               />
             </button>
 
-            {/* Header avatar — always visible regardless of sidebar collapse state */}
+            {/* Header avatar - always visible regardless of sidebar collapse state */}
             <button
               aria-label={user.username}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-500 text-[11px] font-black text-white shadow-sm hover:bg-teal-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
@@ -486,53 +504,69 @@ export function MainAppShell({
 
         {/* Content area */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          {activeModule === null ? (
-            <DashboardModule
-              apiBaseUrl={apiBaseUrl}
-              {...(capabilityToken ? { capabilityToken } : {})}
-              onNavigate={setActiveModule}
-              onSessionExpired={handleSessionExpired}
-              setupState={setupState}
-              user={user}
-            />
-          ) : activeModule === 'SCHOOL_SETUP' ? (
-            <SettingsModule
-              apiBaseUrl={apiBaseUrl}
-              {...(capabilityToken ? { capabilityToken } : {})}
-              onSessionExpired={handleSessionExpired}
-              {...(onSetupStateChange ? { onSetupStateChange } : {})}
-              setupState={setupState}
-              user={user}
-            />
-          ) : activeModule === 'ACADEMIC_STRUCTURE' ? (
-            <StructureModule
-              apiBaseUrl={apiBaseUrl}
-              {...(capabilityToken ? { capabilityToken } : {})}
-              onSessionExpired={handleSessionExpired}
-              {...(onSetupStateChange ? { onSetupStateChange } : {})}
-              setupState={setupState}
-            />
-          ) : activeModule === 'STUDENTS' ? (
-            <StudentsModule
-              apiBaseUrl={apiBaseUrl}
-              {...(capabilityToken ? { capabilityToken } : {})}
-              onSessionExpired={handleSessionExpired}
-            />
-          ) : (
-            <TeachersModule
-              apiBaseUrl={apiBaseUrl}
-              {...(capabilityToken ? { capabilityToken } : {})}
-              onSessionExpired={handleSessionExpired}
-            />
-          )}
+          <Suspense fallback={<ModuleLoadingFallback />}>
+            {activeModule === null ? (
+              <DashboardModule
+                apiBaseUrl={apiBaseUrl}
+                {...(capabilityToken ? { capabilityToken } : {})}
+                onNavigate={setActiveModule}
+                onSessionExpired={handleSessionExpired}
+                setupState={setupState}
+                user={user}
+              />
+            ) : activeModule === 'SCHOOL_SETUP' ? (
+              <SettingsModule
+                apiBaseUrl={apiBaseUrl}
+                {...(capabilityToken ? { capabilityToken } : {})}
+                onSessionExpired={handleSessionExpired}
+                {...(onSetupStateChange ? { onSetupStateChange } : {})}
+                setupState={setupState}
+                user={user}
+              />
+            ) : activeModule === 'CLASSES' ? (
+              <ClassesModule
+                apiBaseUrl={apiBaseUrl}
+                {...(capabilityToken ? { capabilityToken } : {})}
+                onSessionExpired={handleSessionExpired}
+                {...(onSetupStateChange ? { onSetupStateChange } : {})}
+                setupState={setupState}
+              />
+            ) : activeModule === 'STUDENTS' ? (
+              <StudentsModule
+                apiBaseUrl={apiBaseUrl}
+                {...(capabilityToken ? { capabilityToken } : {})}
+                onSessionExpired={handleSessionExpired}
+                setupState={setupState}
+              />
+            ) : (
+              <TeachersModule
+                apiBaseUrl={apiBaseUrl}
+                {...(capabilityToken ? { capabilityToken } : {})}
+                onSessionExpired={handleSessionExpired}
+              />
+            )}
+          </Suspense>
         </main>
       </div>
     </div>
   );
 }
 
+function ModuleLoadingFallback() {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex h-40 w-full items-center justify-center" role="status" aria-live="polite">
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-teal-200 border-t-teal-600" />
+        <p className="text-xs font-bold text-slate-400">{t('app.shell.loading')}</p>
+      </div>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
-// NavButton — left-edge active bar + visible hover/focus states
+// NavButton - left-edge active bar + visible hover/focus states
 // ---------------------------------------------------------------------------
 
 interface NavButtonProps {
@@ -637,7 +671,7 @@ function AccountChip({
 
   return (
     <div ref={chipRef} className="relative">
-      {/* Floating account menu — above chip when expanded, right of chip when collapsed */}
+      {/* Floating account menu - above chip when expanded, right of chip when collapsed */}
       {isMenuOpen && (
         <div
           className={`absolute z-50 w-52 rounded-2xl border border-white/10 bg-slate-800 shadow-xl shadow-black/50 overflow-hidden ${
@@ -684,7 +718,7 @@ function AccountChip({
         onClick={onToggleMenu}
         type="button"
       >
-        {/* Circular avatar — teal background, white initials */}
+        {/* Circular avatar - teal background, white initials */}
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-500 text-[11px] font-black text-white shadow-sm">
           {initials}
         </div>
@@ -718,7 +752,7 @@ function AccountChip({
 }
 
 // ---------------------------------------------------------------------------
-// CollapseTab — compact icon button sitting inside the brand header row.
+// CollapseTab - compact icon button sitting inside the brand header row.
 // Anchored to the top of the sidebar, always visible, clearly purposeful.
 // ---------------------------------------------------------------------------
 
@@ -777,7 +811,7 @@ function AppStatusPill({ label, tone }: { label: string; tone: 'green' | 'red' }
 }
 
 // ---------------------------------------------------------------------------
-// ComingSoonNavButton — greyed-out nav item previewing upcoming modules.
+// ComingSoonNavButton - greyed-out nav item previewing upcoming modules.
 // Deliberately non-interactive (aria-disabled) so it reads as "placeholder".
 // Remove each entry from COMING_SOON_NAV_ITEMS as the real module ships.
 // ---------------------------------------------------------------------------
@@ -791,6 +825,8 @@ function ComingSoonNavButton({
   isExpanded: boolean;
   label: string;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div
       aria-disabled="true"
@@ -803,7 +839,7 @@ function ComingSoonNavButton({
       {isExpanded && <span className="truncate flex-1">{label}</span>}
       {isExpanded && (
         <span className="text-[9px] font-bold uppercase tracking-wider text-slate-600/40 shrink-0">
-          bientôt
+          {t('app.shell.comingSoonLabel')}
         </span>
       )}
     </div>
@@ -813,7 +849,7 @@ function ComingSoonNavButton({
 /**
  * Sidebar preview of upcoming modules.
  * Icons reuse the same 24×24 / 2px-stroke pattern as active nav items.
- * Labels are hardcoded French — same rationale as COMING_SOON_MODULES above.
+ * Labels are hardcoded French - same rationale as COMING_SOON_MODULES above.
  * Remove an entry here when the matching module ships.
  */
 const COMING_SOON_NAV_ITEMS: { label: string; icon: React.ReactNode }[] = [

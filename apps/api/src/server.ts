@@ -13,7 +13,16 @@ import {
   SIDECAR_CAPABILITY_HEADER,
 } from '@edutrack/shared';
 import Fastify, { type FastifyReply, type FastifyServerOptions } from 'fastify';
+import { registerAuditRoutes, AuditService } from './modules/audit/index.js';
 import { AuthService, registerAuthRoutes, type AuthServiceOptions } from './modules/auth/index.js';
+import {
+  ClassEnrollmentsService,
+  ClassroomsService,
+  ClassSubjectsService,
+  CurriculumService,
+  registerClassesRoutes,
+  SubjectsService,
+} from './modules/classes/index.js';
 import { ImportsService, registerImportsRoutes } from './modules/imports/index.js';
 import {
   GuardiansService,
@@ -118,6 +127,37 @@ export function buildServer(options: BuildServerOptions = {}) {
   const authEnabled =
     options.auth?.enabled ?? (Boolean(options.database) || process.env.NODE_ENV !== 'test');
 
+  server.setNotFoundHandler((_request, reply) => {
+    return reply.code(404).send({
+      success: false,
+      error: {
+        code: 'ROUTE_NOT_FOUND',
+        message: 'La route demandee est introuvable.',
+      },
+    });
+  });
+
+  server.setErrorHandler((error, request, reply) => {
+    // Requests that already sent a response must not be answered twice.
+    if (reply.sent) {
+      request.log.error({ err: error }, 'Unhandled error after response started');
+      return;
+    }
+
+    request.log.error(
+      { err: error, method: request.method, url: request.url },
+      'Unhandled error during request handling'
+    );
+
+    return reply.code(500).send({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Une erreur interne est survenue. Réessayez.',
+      },
+    });
+  });
+
   server.addHook('onRequest', async (request, reply) => {
     const origin = readSingleHeader(request.headers.origin);
 
@@ -158,6 +198,10 @@ export function buildServer(options: BuildServerOptions = {}) {
   if (authEnabled && database) {
     const authService = new AuthService(database, resolveAuthOptions(options.auth, process.env));
 
+    registerAuditRoutes(server, {
+      authService,
+      auditService: new AuditService(database),
+    });
     registerAuthRoutes(server, {
       authService,
     });
@@ -184,6 +228,22 @@ export function buildServer(options: BuildServerOptions = {}) {
       importsService: new ImportsService(database, {
         ...(options.auth?.now ? { now: options.auth.now } : {}),
       }),
+    });
+    registerClassesRoutes(server, {
+      authService,
+      subjectsService: new SubjectsService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+      classroomsService: new ClassroomsService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+      classSubjectsService: new ClassSubjectsService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+      classEnrollmentsService: new ClassEnrollmentsService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+      curriculumService: new CurriculumService(database),
     });
   }
 

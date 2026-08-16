@@ -151,7 +151,7 @@ describe('AuthenticatedSetupApp', () => {
     );
 
     expect(await screen.findByText('Le socle de l’école est prêt')).toBeInTheDocument();
-    expect(screen.getByText(/Configuration et Structure académique/)).toBeInTheDocument();
+    expect(screen.getByText(/Établissement et Structure académique/)).toBeInTheDocument();
     expect(screen.queryByText(/Élèves/)).not.toBeInTheDocument();
   });
 });

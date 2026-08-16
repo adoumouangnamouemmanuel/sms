@@ -18,6 +18,7 @@ import {
   type UpdateStudentGuardianLinkRequest,
   type UpdateStudentRequest,
 } from '@edutrack/shared';
+import { fetchWithTimeout } from '../../httpClient';
 import { createAuthHeaders } from '../auth';
 import { StudentsApiError } from './studentsErrors';
 
@@ -47,6 +48,18 @@ export async function listStudents(
 
   if (query.status) {
     params.set('status', query.status);
+  }
+
+  if (query.classLevelId) {
+    params.set('classLevelId', query.classLevelId);
+  }
+
+  if (query.classroomId) {
+    params.set('classroomId', query.classroomId);
+  }
+
+  if (query.sex) {
+    params.set('sex', query.sex);
   }
 
   return requestJson<PaginatedStudentsResponse>(apiBaseUrl, `/students?${params.toString()}`, {
@@ -264,7 +277,7 @@ async function requestJson<T>(
   let response: Response;
 
   try {
-    response = await fetcher(`${apiBaseUrl}${path}`, {
+    response = await fetchWithTimeout(fetcher, `${apiBaseUrl}${path}`, {
       method: request.method,
       credentials: 'include',
       headers: {

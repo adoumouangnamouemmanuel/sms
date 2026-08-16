@@ -59,10 +59,13 @@ export class StudentsService {
     const listOptions = {
       ...(query.search !== undefined ? { search: query.search } : {}),
       ...(query.status !== undefined ? { status: query.status } : {}),
+      ...(query.classLevelId !== undefined ? { classLevelId: query.classLevelId } : {}),
+      ...(query.classroomId !== undefined ? { classroomId: query.classroomId } : {}),
+      ...(query.sex !== undefined ? { sex: query.sex } : {}),
       limit: query.limit,
       offset: query.offset,
     };
-    const items = repository.list(listOptions);
+    const items = repository.listWithClassrooms(listOptions);
 
     return {
       items: items.map(toStudentResponse),
@@ -75,7 +78,7 @@ export class StudentsService {
   getProfile(actor: AuthenticatedUser, studentId: string): StudentProfileResponse {
     this.assertSchoolMaster(actor);
     const tenant = createTenantContext(actor.schoolId);
-    const student = createStudentRepository(this.db, tenant).findById(studentId);
+    const student = createStudentRepository(this.db, tenant).findByIdWithClassroom(studentId);
 
     if (!student) {
       throw studentNotFound();

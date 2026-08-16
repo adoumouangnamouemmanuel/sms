@@ -70,7 +70,7 @@ export class GuardianRepository extends TenantScopedRepository {
 
   /**
    * Case- and whitespace-insensitive exact full-name lookup, used by the import
-   * preview to warn about possible duplicates. Names are never identity — this
+   * preview to warn about possible duplicates. Names are never identity - this
    * only flags rows for the admin to double-check.
    */
   findByName(firstName: string, lastName: string) {

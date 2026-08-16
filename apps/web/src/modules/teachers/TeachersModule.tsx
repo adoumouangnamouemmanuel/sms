@@ -322,7 +322,7 @@ function TeacherTable({
               </button>
             </td>
             <td className="px-3 py-3 text-[13px] font-semibold text-slate-500">
-              {teacher.specialization ?? '—'}
+              {teacher.specialization ?? '-'}
             </td>
             <td className="px-3 py-3">
               <StatusBadge
@@ -444,16 +444,42 @@ function TeacherDetail({
       <dl className="mb-6 grid grid-cols-2 gap-x-6 gap-y-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-3">
         <DetailField
           label={t('teachers.detail.specialization')}
-          value={teacher.specialization ?? '—'}
+          value={teacher.specialization ?? '-'}
         />
         <DetailField
           label={t('teachers.detail.hireDate')}
-          value={teacher.hireDate ? formatISODate(teacher.hireDate) : '—'}
+          value={teacher.hireDate ? formatISODate(teacher.hireDate) : '-'}
         />
-        <DetailField label={t('teachers.detail.phone')} value={teacher.phone ?? '—'} />
-        <DetailField label={t('teachers.detail.email')} value={teacher.email ?? '—'} />
-        <DetailField label={t('teachers.detail.address')} value={teacher.address ?? '—'} />
+        <DetailField label={t('teachers.detail.phone')} value={teacher.phone ?? '-'} />
+        <DetailField label={t('teachers.detail.email')} value={teacher.email ?? '-'} />
+        <DetailField label={t('teachers.detail.address')} value={teacher.address ?? '-'} />
       </dl>
+
+      <div className="mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-3">
+          <h3 className="text-[13px] font-black uppercase tracking-widest text-slate-500">
+            {t('teachers.detail.assignedClassrooms', 'Classes assignées')}
+          </h3>
+        </div>
+        <ul className="space-y-2">
+          {teacher.assignedClassrooms && teacher.assignedClassrooms.length > 0 ? (
+            teacher.assignedClassrooms.map((classroom) => (
+              <li
+                className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 bg-white px-4 py-3"
+                key={classroom.id}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-black text-slate-800">{classroom.name}</p>
+                </div>
+              </li>
+            ))
+          ) : (
+            <li className="rounded-xl border border-dashed border-slate-200 px-4 py-4 text-center text-[13px] font-bold text-slate-400">
+              {t('teachers.detail.noAssignedClassrooms', 'Aucune classe assignée')}
+            </li>
+          )}
+        </ul>
+      </div>
 
       <LoginSection
         login={login}
@@ -699,7 +725,7 @@ function CredentialsModal({
         setCopied(false);
       }, 1500);
     } catch {
-      // Clipboard unavailable (e.g. non-secure context) — the user can still
+      // Clipboard unavailable (e.g. non-secure context) - the user can still
       // read and type the credentials manually.
     }
   };

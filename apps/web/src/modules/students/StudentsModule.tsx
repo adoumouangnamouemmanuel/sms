@@ -1,3 +1,6 @@
+import type { SetupStateResponse } from '@edutrack/shared';
+import { useEffect, useState } from 'react';
+import { listClassrooms } from '../classes/classesApi';
 import type {
   CreateGuardianRequest,
   CreateStudentRequest,
@@ -5,7 +8,6 @@ import type {
   GuardianResponse,
   StudentResponse,
 } from '@edutrack/shared';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatISODate } from '../../components/dateFormat';
 import type { ImportKind } from '@edutrack/shared';
@@ -21,6 +23,7 @@ import {
   Pagination,
   SelectField,
   StatusBadge,
+  type ClassFilterOption,
   formSelectClassName,
 } from '../people/ui';
 import { AFRICAN_COUNTRIES, DEFAULT_NATIONALITY } from './countries';
@@ -36,6 +39,8 @@ export interface StudentsModuleProps {
   client?: StudentsClient;
   /** Session expiry (e.g. during an import) bubbles up so the app can reconnect. */
   onSessionExpired?: () => void;
+  /** Setup context (levels and current year) powering the Niveau/Classe filters. */
+  setupState: SetupStateResponse;
 }
 
 export function StudentsModule({
@@ -43,6 +48,7 @@ export function StudentsModule({
   capabilityToken,
   client,
   onSessionExpired,
+  setupState,
 }: StudentsModuleProps) {
   const { t } = useTranslation();
   const module = useStudentsModule({
@@ -50,6 +56,8 @@ export function StudentsModule({
     ...(capabilityToken ? { capabilityToken } : {}),
     ...(client ? { client } : {}),
   });
+  // Classrooms of the selected Niveau (current year), for the Classe filter.
+  const [classrooms, setClassrooms] = useState<ClassFilterOption[]>([]);
   const [studentFormOpen, setStudentFormOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<StudentResponse | null>(null);
   const [guardianFormOpen, setGuardianFormOpen] = useState(false);
@@ -62,6 +70,54 @@ export function StudentsModule({
     name: string;
     reactivate: boolean;
   } | null>(null);
+
+  const classLevelId = module.students.classLevelId;
+  const academicYearId = setupState.academicYear?.id;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadClassrooms = async () => {
+      if (!apiBaseUrl) {
+        if (!cancelled) {
+          setClassrooms([]);
+        }
+        return;
+      }
+
+      try {
+        const response = await listClassrooms(
+          apiBaseUrl,
+          {
+            limit: 100,
+            offset: 0,
+            status: 'active',
+            ...(classLevelId ? { classLevelId } : {}),
+            ...(academicYearId ? { academicYearId } : {}),
+          },
+          capabilityToken ? { capabilityToken } : {}
+        );
+        if (!cancelled) {
+          setClassrooms(
+            response.items.map((view) => ({
+              id: view.classroom.id,
+              label: view.classroom.code,
+            }))
+          );
+        }
+      } catch {
+        if (!cancelled) {
+          setClassrooms([]);
+        }
+      }
+    };
+
+    void loadClassrooms();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [academicYearId, apiBaseUrl, capabilityToken, classLevelId]);
 
   const errorKey = module.mutationErrorKey ?? module.profileErrorKey;
 
@@ -110,6 +166,11 @@ export function StudentsModule({
 
       {module.tab === 'students' ? (
         <StudentsTab
+          classLevels={setupState.classLevels.map((level) => ({
+            id: level.id,
+            label: level.name,
+          }))}
+          classrooms={classrooms}
           module={module}
           onEditStudent={(student) => {
             setEditingStudent(student);
@@ -290,6 +351,8 @@ function TabButton({
 }
 
 interface StudentsTabProps {
+  classLevels: ClassFilterOption[];
+  classrooms: ClassFilterOption[];
   module: ReturnType<typeof useStudentsModule>;
   onEditStudent: (student: StudentResponse) => void;
   onLinkOpen: () => void;
@@ -299,6 +362,8 @@ interface StudentsTabProps {
 }
 
 function StudentsTab({
+  classLevels,
+  classrooms,
   module,
   onEditStudent,
   onLinkOpen,
@@ -326,7 +391,15 @@ function StudentsTab({
       style={{ animation: 'sms-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both' }}
     >
       <ListToolbar
+        classLevelId={module.students.classLevelId}
+        classroomId={module.students.classroomId}
+        classLevels={classLevels}
+        classrooms={classrooms}
         labels={{
+          allClassrooms: t('students.list.allClassrooms'),
+          allLevels: t('students.list.allLevels'),
+          classLevel: t('students.list.classLevel'),
+          classroom: t('students.list.classroom'),
           clearSearch: t('students.list.clearSearch'),
           count: t('students.list.total', { count: module.students.total }),
           filter: t('students.list.filter'),
@@ -337,6 +410,19 @@ function StudentsTab({
           status: t('students.list.status'),
           statusActive: t('students.list.statusActive'),
           statusArchived: t('students.list.statusArchived'),
+          sex: t('students.columns.sex'),
+          allSexes: t('students.list.allSexes', 'Tous'),
+          sexMale: t('students.sex.M'),
+          sexFemale: t('students.sex.F'),
+        }}
+        onClassLevelChange={(classLevelId) => {
+          // A classroom belongs to a level: reset the dependent filter so the
+          // query can never combine an old classroom with the new level.
+          module.setStudentsClassroom(null);
+          module.setStudentsClassLevel(classLevelId);
+        }}
+        onClassroomChange={(classroomId) => {
+          module.setStudentsClassroom(classroomId);
         }}
         onImport={() => {
           onOpenImport();
@@ -351,8 +437,12 @@ function StudentsTab({
         onStatusChange={(status) => {
           module.setStudentsStatus(status);
         }}
+        onSexChange={(sex) => {
+          module.setStudentsSex(sex);
+        }}
         searchValue={module.students.search}
         status={module.students.status}
+        sex={module.students.sex}
       />
 
       <StudentTable
@@ -532,6 +622,9 @@ function StudentTable({
             {t('students.columns.name')}
           </th>
           <th className="px-3 py-2 text-[11px] font-black uppercase tracking-wide text-slate-400">
+            {t('students.list.classroom')}
+          </th>
+          <th className="px-3 py-2 text-[11px] font-black uppercase tracking-wide text-slate-400">
             {t('students.columns.sex')}
           </th>
           <th className="px-3 py-2 text-[11px] font-black uppercase tracking-wide text-slate-400">
@@ -558,7 +651,14 @@ function StudentTable({
               </button>
             </td>
             <td className="px-3 py-3 text-[13px] font-semibold text-slate-500">
-              {student.sex ? t(`students.sex.${student.sex}`) : '—'}
+              {student.currentClassroom?.name ?? (
+                <span className="italic text-slate-400">
+                  {t('students.status.notEnrolled', 'Non inscrit(e)')}
+                </span>
+              )}
+            </td>
+            <td className="px-3 py-3 text-[13px] font-semibold text-slate-500">
+              {student.sex ? t(`students.sex.${student.sex}`) : '-'}
             </td>
             <td className="px-3 py-3">
               <StatusBadge
@@ -639,7 +739,7 @@ function GuardianTable({
               </button>
             </td>
             <td className="px-3 py-3 text-[13px] font-semibold text-slate-500">
-              {guardian.phone ?? '—'}
+              {guardian.phone ?? '-'}
             </td>
             <td className="px-3 py-3">
               <StatusBadge
@@ -760,20 +860,27 @@ function StudentDetail({
 
       <dl className="mb-6 grid grid-cols-2 gap-x-6 gap-y-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-3">
         <DetailField
+          label={t('students.list.classroom', 'Classe')}
+          value={
+            profile.student.currentClassroom?.name ??
+            t('students.status.notEnrolled', 'Non inscrit(e)')
+          }
+        />
+        <DetailField
           label={t('students.columns.sex')}
-          value={profile.student.sex ? t(`students.sex.${profile.student.sex}`) : '—'}
+          value={profile.student.sex ? t(`students.sex.${profile.student.sex}`) : '-'}
         />
         <DetailField
           label={t('students.detail.dateOfBirth')}
-          value={profile.student.dateOfBirth ? formatISODate(profile.student.dateOfBirth) : '—'}
+          value={profile.student.dateOfBirth ? formatISODate(profile.student.dateOfBirth) : '-'}
         />
         <DetailField
           label={t('students.detail.nationality')}
-          value={profile.student.nationality ?? '—'}
+          value={profile.student.nationality ?? '-'}
         />
-        <DetailField label={t('students.detail.phone')} value={profile.student.phone ?? '—'} />
-        <DetailField label={t('students.detail.email')} value={profile.student.email ?? '—'} />
-        <DetailField label={t('students.detail.address')} value={profile.student.address ?? '—'} />
+        <DetailField label={t('students.detail.phone')} value={profile.student.phone ?? '-'} />
+        <DetailField label={t('students.detail.email')} value={profile.student.email ?? '-'} />
+        <DetailField label={t('students.detail.address')} value={profile.student.address ?? '-'} />
       </dl>
 
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -935,9 +1042,9 @@ function GuardianDetail({
       </div>
 
       <dl className="mb-6 grid grid-cols-2 gap-x-6 gap-y-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-3">
-        <DetailField label={t('students.detail.phone')} value={profile.guardian.phone ?? '—'} />
-        <DetailField label={t('students.detail.email')} value={profile.guardian.email ?? '—'} />
-        <DetailField label={t('students.detail.address')} value={profile.guardian.address ?? '—'} />
+        <DetailField label={t('students.detail.phone')} value={profile.guardian.phone ?? '-'} />
+        <DetailField label={t('students.detail.email')} value={profile.guardian.email ?? '-'} />
+        <DetailField label={t('students.detail.address')} value={profile.guardian.address ?? '-'} />
       </dl>
 
       <h3 className="text-[13px] font-black uppercase tracking-wide text-slate-500">

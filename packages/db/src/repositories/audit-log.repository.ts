@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
+import { asc, desc, eq } from 'drizzle-orm';
 import type { RepositoryExecutor, TenantContext } from './base.js';
 import { TenantScopedRepository } from './base.js';
-import { auditLog, type AuditOutcome } from '../schema.sqlite.js';
+import { auditLog, user, type AuditOutcome } from '../schema.sqlite.js';
 
 export interface CreateAuditLogInput {
   id?: string;
@@ -32,6 +33,25 @@ export class AuditLogRepository extends TenantScopedRepository {
       })
       .returning()
       .get();
+  }
+
+  /** Latest tenant events for the dashboard activity timeline, newest first. */
+  listRecent(limit: number) {
+    return this.db
+      .select({
+        id: auditLog.id,
+        action: auditLog.action,
+        targetType: auditLog.targetType,
+        targetId: auditLog.targetId,
+        occurredAt: auditLog.occurredAt,
+        actorUsername: user.username,
+      })
+      .from(auditLog)
+      .leftJoin(user, eq(user.id, auditLog.actorUserId))
+      .where(eq(auditLog.schoolId, this.schoolId))
+      .orderBy(desc(auditLog.occurredAt), asc(auditLog.id))
+      .limit(limit)
+      .all();
   }
 }
 

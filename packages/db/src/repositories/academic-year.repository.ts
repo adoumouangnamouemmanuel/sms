@@ -21,6 +21,30 @@ export interface SaveAcademicYearInput {
 
 /** Persists tenant-scoped academic years and current-year selection. */
 export class AcademicYearRepository extends TenantScopedRepository {
+  findById(id: string) {
+    return this.db
+      .select(academicYearColumns)
+      .from(academicYear)
+      .where(and(eq(academicYear.id, id), eq(academicYear.schoolId, this.schoolId)))
+      .get();
+  }
+
+  /** Like findById but excludes archived years: validation paths must not
+   * accept a soft-deleted academic year as a reference target. */
+  findActiveById(id: string) {
+    return this.db
+      .select(academicYearColumns)
+      .from(academicYear)
+      .where(
+        and(
+          eq(academicYear.id, id),
+          eq(academicYear.schoolId, this.schoolId),
+          isNull(academicYear.deletedAt)
+        )
+      )
+      .get();
+  }
+
   findCurrent() {
     return this.db
       .select(academicYearColumns)

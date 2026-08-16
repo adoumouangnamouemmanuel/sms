@@ -1,7 +1,11 @@
-import type { PublicAuthUser, SchoolModuleName, SetupStateResponse } from '@edutrack/shared';
+import type {
+  PublicAuthUser,
+  RecentAuditEvent,
+  SchoolModuleName,
+  SetupStateResponse,
+} from '@edutrack/shared';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { buildMockClassDistribution, MOCK_RECENT_ACTIVITY } from './dashboardMock';
 import { useDashboardState, type DashboardClient } from './useDashboardState';
 
 export interface DashboardModuleProps {
@@ -23,11 +27,12 @@ export function DashboardModule({
   onNavigate,
   onSessionExpired,
 }: DashboardModuleProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const dashboard = useDashboardState({
     apiBaseUrl,
     ...(capabilityToken ? { capabilityToken } : {}),
     ...(client ? { client } : {}),
+    academicYearId: setupState.academicYear?.id ?? undefined,
   });
 
   useEffect(() => {
@@ -41,10 +46,11 @@ export function DashboardModule({
     (counts?.studentsArchived ?? 0) +
     (counts?.teachersArchived ?? 0) +
     (counts?.guardiansArchived ?? 0);
-  const distribution = buildMockClassDistribution(setupState.classLevels);
+  const distribution = dashboard.classDistribution;
   const currentTerm = setupState.terms.find((term) => term.isCurrent);
-  const mockClassesTotal = distribution.reduce((sum, level) => sum + level.classes, 0);
-  const mockStudentsTotal = distribution.reduce((sum, level) => sum + level.students, 0);
+  const classesTotal = distribution.reduce((sum, level) => sum + level.classes, 0);
+  const studentsTotal = distribution.reduce((sum, level) => sum + level.students, 0);
+  const hasStructure = distribution.length > 0;
 
   return (
     <div className="space-y-6">
@@ -120,7 +126,7 @@ export function DashboardModule({
         </div>
       ) : null}
 
-      {/* ── KPI cards — real headcounts ──────────────────────────────────── */}
+      {/* ── KPI cards - real headcounts ──────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
           icon={<UsersIcon />}
@@ -157,7 +163,7 @@ export function DashboardModule({
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* ── Structure académique — real levels, simulated effectifs ────── */}
+        {/* ── Structure académique - real levels and effectifs ───────────── */}
         <section className="flex flex-col rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] lg:col-span-2 lg:p-8">
           <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -173,13 +179,12 @@ export function DashboardModule({
                 {t('dashboard.structure.levelsCount', { count: distribution.length })}
               </span>
               <span className="inline-flex items-center rounded-xl bg-slate-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-600 ring-1 ring-inset ring-slate-200">
-                {t('dashboard.structure.classesCount', { count: mockClassesTotal })}
+                {t('dashboard.structure.classesCount', { count: classesTotal })}
               </span>
-              <SimulationBadge />
             </div>
           </div>
 
-          {distribution.length === 0 ? (
+          {!hasStructure ? (
             <div className="flex flex-1 items-center justify-center rounded-3xl border-2 border-dashed border-slate-100 bg-slate-50/50 p-8">
               <p className="text-sm font-bold text-slate-400">{t('dashboard.structure.empty')}</p>
             </div>
@@ -188,7 +193,7 @@ export function DashboardModule({
               {distribution.map((level) => {
                 const max = Math.max(...distribution.map((item) => item.students), 1);
                 return (
-                  <li key={level.levelId} className="group">
+                  <li key={level.levelCode} className="group">
                     <div className="mb-2 flex items-end justify-between gap-4">
                       <p className="text-[13px] font-bold text-slate-700">{level.levelName}</p>
                       <div className="text-right">
@@ -215,14 +220,12 @@ export function DashboardModule({
           <div className="mt-auto pt-6">
             <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-4 py-3 text-xs font-bold text-slate-500">
               <div className="h-1.5 w-1.5 rounded-full bg-teal-500" />
-              {t('dashboard.structure.studentsSim', { count: mockStudentsTotal })}
+              {t('dashboard.structure.studentsEnrolled', { count: studentsTotal })}
             </div>
-            {/* TODO(roadmap §Classes): replace simulated effectifs with real
-                enrollment counts once the Classes module ships. */}
           </div>
         </section>
 
-        {/* ── Activité récente — simulated timeline ──────────────────────── */}
+        {/* ── Activité récente - real audit events ───────────────────────── */}
         <section className="flex flex-col rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] lg:p-8">
           <div className="mb-8 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -233,35 +236,71 @@ export function DashboardModule({
                 {t('dashboard.activity.title')}
               </h2>
             </div>
-            <SimulationBadge />
           </div>
 
-          <ol className="relative space-y-6 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
-            {MOCK_RECENT_ACTIVITY.map((event, index) => {
-              const tone = ACTIVITY_TONES[index % ACTIVITY_TONES.length] ?? ACTIVITY_TONES[0];
-              return (
-                <li className="group relative flex gap-4" key={event.id}>
-                  <div
-                    className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-4 ring-white transition-transform duration-300 group-hover:scale-110 ${tone}`}
-                  >
-                    <ActivityDot />
-                  </div>
-                  <div className="flex-1 pt-1">
-                    <p className="text-[13px] font-bold leading-relaxed text-slate-700 transition-colors group-hover:text-slate-900">
-                      {t(event.labelKey)}
-                    </p>
-                    <p className="mt-0.5 text-xs font-semibold text-slate-400">
-                      {t(event.timeKey)}
-                    </p>
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
+          {dashboard.recentActivity.length === 0 ? (
+            <div className="flex flex-1 items-center justify-center rounded-3xl border-2 border-dashed border-slate-100 bg-slate-50/50 p-8">
+              <p className="text-sm font-bold text-slate-400">{t('dashboard.activity.empty')}</p>
+            </div>
+          ) : (
+            <ol className="relative space-y-6 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
+              {dashboard.recentActivity.map((event, index) => {
+                const tone = ACTIVITY_TONES[index % ACTIVITY_TONES.length] ?? ACTIVITY_TONES[0];
+                return (
+                  <li className="group relative flex gap-4" key={event.id}>
+                    <div
+                      className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-4 ring-white transition-transform duration-300 group-hover:scale-110 ${tone}`}
+                    >
+                      <ActivityDot />
+                    </div>
+                    <div className="flex-1 pt-1">
+                      <p className="text-[13px] font-bold leading-relaxed text-slate-700 transition-colors group-hover:text-slate-900">
+                        {t(activityLabelKey(event.action))}
+                        {event.actorUsername ? ` · ${event.actorUsername}` : ''}
+                      </p>
+                      <p className="mt-0.5 text-xs font-semibold text-slate-400">
+                        {formatActivityTime(event, i18n.language)}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
         </section>
       </div>
     </div>
   );
+}
+
+function activityLabelKey(action: string): string {
+  const normalized = action.toLowerCase().replaceAll('_', '.');
+  return `dashboard.activity.events.${normalized}`;
+}
+
+function formatActivityTime(event: RecentAuditEvent, language: string): string {
+  const occurredAt = new Date(event.occurredAt);
+  const now = new Date();
+
+  if (Number.isNaN(occurredAt.getTime())) {
+    return event.occurredAt;
+  }
+
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfEventDay = new Date(
+    occurredAt.getFullYear(),
+    occurredAt.getMonth(),
+    occurredAt.getDate()
+  );
+  const dayDiff = Math.round(
+    (startOfToday.getTime() - startOfEventDay.getTime()) / (24 * 60 * 60 * 1000)
+  );
+
+  if (dayDiff === 0) {
+    return occurredAt.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' });
+  }
+
+  return occurredAt.toLocaleDateString(language, { day: 'numeric', month: 'short' });
 }
 
 // ---------------------------------------------------------------------------
@@ -379,20 +418,7 @@ function ActivityDot() {
   );
 }
 
-function SimulationBadge() {
-  const { t } = useTranslation();
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/50 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700">
-      <span className="relative flex h-1.5 w-1.5">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75"></span>
-        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-      </span>
-      {t('dashboard.simulation')}
-    </span>
-  );
-}
-
-// Icons — 24×24, 2px stroke
+// Icons - 24×24, 2px stroke
 
 function UsersIcon() {
   return (

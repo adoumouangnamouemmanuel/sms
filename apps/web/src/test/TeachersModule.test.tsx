@@ -79,7 +79,6 @@ describe('TeachersModule', () => {
     render(<TeachersModule apiBaseUrl="http://127.0.0.1:49152" client={client} />);
 
     await screen.findByText('Nguet Jean');
-    await userSession.click(screen.getByRole('button', { name: /Filtres/ }));
     await userSession.selectOptions(screen.getByRole('combobox', { name: 'Statut' }), 'archived');
 
     expect(await screen.findByText('Archivé')).toBeInTheDocument();

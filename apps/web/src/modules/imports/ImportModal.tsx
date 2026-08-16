@@ -120,7 +120,7 @@ function ImportErrorBanner({
 }
 
 // ---------------------------------------------------------------------------
-// Step 1 — choose a file
+// Step 1 - choose a file
 // ---------------------------------------------------------------------------
 
 function ChooseStep({
@@ -261,7 +261,7 @@ function ChooseStep({
 }
 
 // ---------------------------------------------------------------------------
-// Step 2 — preview and confirm
+// Step 2 - preview and confirm
 // ---------------------------------------------------------------------------
 
 function PreviewStep({
@@ -355,7 +355,7 @@ function PreviewStep({
                         {t('imports.preview.autoCode')}
                       </span>
                     ) : (
-                      (row.values[column.key] ?? '—')
+                      (row.values[column.key] ?? '-')
                     )}
                   </td>
                 ))}
@@ -433,7 +433,7 @@ function PreviewStep({
 }
 
 // ---------------------------------------------------------------------------
-// Step 3 — report
+// Step 3 - report
 // ---------------------------------------------------------------------------
 
 function ReportStep({

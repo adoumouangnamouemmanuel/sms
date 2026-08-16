@@ -10,6 +10,7 @@ import type {
   PaginatedGuardiansResponse,
   PaginatedStudentsResponse,
   RecordStatus,
+  PersonSex,
   StudentGuardianLinkResponse,
   StudentListQuery,
   StudentProfileResponse,
@@ -18,7 +19,7 @@ import type {
   UpdateStudentGuardianLinkRequest,
   UpdateStudentRequest,
 } from '@edutrack/shared';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   archiveGuardian as archiveGuardianRequest,
   archiveStudent as archiveStudentRequest,
@@ -127,6 +128,10 @@ export interface PaginatedListState<T> {
   pageCount: number;
   search: string;
   status: RecordStatus;
+  classLevelId: string | null;
+  /** ACTIVE-enrollment classroom filter (current year), null = all. */
+  classroomId: string | null;
+  sex: PersonSex | null;
   total: number;
 }
 
@@ -156,25 +161,57 @@ export function useStudentsModule({
     [capabilityToken]
   );
 
+  const latestStudentsRequest = useRef(0);
+
   const loadStudents = useCallback(
-    async (search: string, offset: number, status: RecordStatus) => {
+    async (
+      search: string,
+      offset: number,
+      status: RecordStatus,
+      classLevelId: string | null,
+      classroomId: string | null,
+      sex: PersonSex | null
+    ) => {
       if (!apiBaseUrl && !client) {
         return;
       }
 
+      // Guard against out-of-order responses: only the latest request may
+      // update the list, so rows always match the active filters.
+      const requestId = ++latestStudentsRequest.current;
       setStudentsList((previous) => ({ ...previous, isLoading: true, errorKey: null }));
 
       try {
         const page = client
           ? await client.listStudents(
-              { search, status, limit: PAGE_SIZE, offset },
+              {
+                search,
+                status,
+                limit: PAGE_SIZE,
+                offset,
+                ...(classLevelId ? { classLevelId } : {}),
+                ...(classroomId ? { classroomId } : {}),
+                ...(sex ? { sex } : {}),
+              },
               requestOptions()
             )
           : await listStudents(
               apiBaseUrl ?? '',
-              { search, status, limit: PAGE_SIZE, offset },
+              {
+                search,
+                status,
+                limit: PAGE_SIZE,
+                offset,
+                ...(classLevelId ? { classLevelId } : {}),
+                ...(classroomId ? { classroomId } : {}),
+                ...(sex ? { sex } : {}),
+              },
               requestOptions()
             );
+
+        if (latestStudentsRequest.current !== requestId) {
+          return;
+        }
 
         setStudentsList({
           items: page.items,
@@ -185,9 +222,16 @@ export function useStudentsModule({
           pageCount: Math.max(1, Math.ceil(page.total / page.limit)),
           search,
           status,
+          classLevelId,
+          classroomId,
+          sex,
           total: page.total,
         });
       } catch (error) {
+        if (latestStudentsRequest.current !== requestId) {
+          return;
+        }
+
         setStudentsList((previous) => ({
           ...previous,
           errorKey: resolveStudentsErrorMessageKey(error),
@@ -227,6 +271,9 @@ export function useStudentsModule({
           pageCount: Math.max(1, Math.ceil(page.total / page.limit)),
           search,
           status,
+          classLevelId: null,
+          classroomId: null,
+          sex: null,
           total: page.total,
         });
       } catch (error) {
@@ -246,7 +293,7 @@ export function useStudentsModule({
     }
 
     const loadHandle = window.setTimeout(() => {
-      void loadStudents('', 0, 'active');
+      void loadStudents('', 0, 'active', null, null, null);
       void loadGuardians('', 0, 'active');
     }, 0);
 
@@ -257,9 +304,16 @@ export function useStudentsModule({
 
   const searchStudents = useCallback(
     (search: string) => {
-      void loadStudents(search.trim(), 0, studentsList.status);
+      void loadStudents(
+        search.trim(),
+        0,
+        studentsList.status,
+        studentsList.classLevelId,
+        studentsList.classroomId,
+        studentsList.sex
+      );
     },
-    [loadStudents, studentsList.status]
+    [loadStudents, studentsList]
   );
 
   const searchGuardians = useCallback(
@@ -271,9 +325,59 @@ export function useStudentsModule({
 
   const setStudentsStatus = useCallback(
     (status: RecordStatus) => {
-      void loadStudents(studentsList.search, 0, status);
+      void loadStudents(
+        studentsList.search,
+        0,
+        status,
+        studentsList.classLevelId,
+        studentsList.classroomId,
+        studentsList.sex
+      );
     },
-    [loadStudents, studentsList.search]
+    [loadStudents, studentsList]
+  );
+
+  const setStudentsClassLevel = useCallback(
+    (classLevelId: string | null) => {
+      // Changing the level invalidates any classroom selection from another level.
+      void loadStudents(
+        studentsList.search,
+        0,
+        studentsList.status,
+        classLevelId,
+        null,
+        studentsList.sex
+      );
+    },
+    [loadStudents, studentsList]
+  );
+
+  const setStudentsClassroom = useCallback(
+    (classroomId: string | null) => {
+      void loadStudents(
+        studentsList.search,
+        0,
+        studentsList.status,
+        studentsList.classLevelId,
+        classroomId,
+        studentsList.sex
+      );
+    },
+    [loadStudents, studentsList]
+  );
+
+  const setStudentsSex = useCallback(
+    (sex: PersonSex | null) => {
+      void loadStudents(
+        studentsList.search,
+        0,
+        studentsList.status,
+        studentsList.classLevelId,
+        studentsList.classroomId,
+        sex
+      );
+    },
+    [loadStudents, studentsList]
   );
 
   const setGuardiansStatus = useCallback(
@@ -287,7 +391,14 @@ export function useStudentsModule({
     const nextOffset = studentsList.offset + studentsList.limit;
 
     if (nextOffset < studentsList.total) {
-      void loadStudents(studentsList.search, nextOffset, studentsList.status);
+      void loadStudents(
+        studentsList.search,
+        nextOffset,
+        studentsList.status,
+        studentsList.classLevelId,
+        studentsList.classroomId,
+        studentsList.sex
+      );
     }
   }, [loadStudents, studentsList]);
 
@@ -295,7 +406,14 @@ export function useStudentsModule({
     const previousOffset = Math.max(0, studentsList.offset - studentsList.limit);
 
     if (previousOffset !== studentsList.offset) {
-      void loadStudents(studentsList.search, previousOffset, studentsList.status);
+      void loadStudents(
+        studentsList.search,
+        previousOffset,
+        studentsList.status,
+        studentsList.classLevelId,
+        studentsList.classroomId,
+        studentsList.sex
+      );
     }
   }, [loadStudents, studentsList]);
 
@@ -385,7 +503,14 @@ export function useStudentsModule({
   );
 
   const refreshStudents = useCallback(() => {
-    return loadStudents(studentsList.search, studentsList.offset, studentsList.status);
+    return loadStudents(
+      studentsList.search,
+      studentsList.offset,
+      studentsList.status,
+      studentsList.classLevelId,
+      studentsList.classroomId,
+      studentsList.sex
+    );
   }, [loadStudents, studentsList]);
 
   const refreshGuardians = useCallback(() => {
@@ -591,6 +716,9 @@ export function useStudentsModule({
     searchGuardians,
     searchStudents,
     setGuardiansStatus,
+    setStudentsClassLevel,
+    setStudentsClassroom,
+    setStudentsSex,
     setStudentsStatus,
     studentProfile,
     students: studentsList,
@@ -613,6 +741,9 @@ function emptyListState<T>(): PaginatedListState<T> {
     pageCount: 1,
     search: '',
     status: 'active',
+    classLevelId: null,
+    classroomId: null,
+    sex: null,
     total: 0,
   };
 }

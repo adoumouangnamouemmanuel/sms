@@ -14,7 +14,9 @@ import type {
 } from '@edutrack/shared';
 
 /** Drops repository-only columns (e.g. deletedAt) from the public student shape. */
-export function toStudentResponse(student: StudentRecord): StudentResponse {
+export function toStudentResponse(
+  student: StudentRecord & { currentClassroom?: { id: string; name: string } | null }
+): StudentResponse {
   return {
     id: student.id,
     schoolId: student.schoolId,
@@ -31,6 +33,8 @@ export function toStudentResponse(student: StudentRecord): StudentResponse {
     address: student.address,
     isActive: student.isActive,
     recordVersion: student.recordVersion,
+    // Stable shape: mutation responses (no join) default to null like list rows.
+    currentClassroom: student.currentClassroom ?? null,
   };
 }
 
@@ -61,7 +65,9 @@ export function toLinkResponse(link: StudentGuardianLinkRecord): StudentGuardian
   };
 }
 
-export function toTeacherResponse(teacher: TeacherRecord): TeacherResponse {
+export function toTeacherResponse(
+  teacher: TeacherRecord & { assignedClassrooms?: { id: string; name: string }[] }
+): TeacherResponse {
   return {
     id: teacher.id,
     schoolId: teacher.schoolId,
@@ -76,6 +82,8 @@ export function toTeacherResponse(teacher: TeacherRecord): TeacherResponse {
     userId: teacher.userId,
     isActive: teacher.isActive,
     recordVersion: teacher.recordVersion,
+    // Stable shape: mutation responses (no join) default to an empty array.
+    assignedClassrooms: teacher.assignedClassrooms ?? [],
   };
 }
 

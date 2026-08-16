@@ -1,10 +1,12 @@
 import {
   AUTH_USER_ROLES,
+  ENROLLMENT_STATUSES,
   GUARDIAN_RELATIONSHIP_TYPES,
   IMPLEMENTED_SCHOOL_MODULES,
   IMPORT_KINDS,
   PERSON_SEX_VALUES,
   SCHOOL_SETUP_STATUSES,
+  SUBJECT_CATEGORIES,
   type AuthUserRole,
   type ImportKind,
   type SchoolModuleName,
@@ -35,6 +37,10 @@ export const importKinds = IMPORT_KINDS;
 export type { ImportKind };
 export const guardianRelationshipTypes = GUARDIAN_RELATIONSHIP_TYPES;
 export type GuardianRelationshipType = (typeof guardianRelationshipTypes)[number];
+export const subjectCategories = SUBJECT_CATEGORIES;
+export type SubjectCategory = (typeof subjectCategories)[number];
+export const enrollmentStatuses = ENROLLMENT_STATUSES;
+export type EnrollmentStatus = (typeof enrollmentStatuses)[number];
 
 export const auditOutcomes = ['SUCCESS', 'FAILURE'] as const;
 export type AuditOutcome = (typeof auditOutcomes)[number];
@@ -60,9 +66,7 @@ export const school = sqliteTable(
     setupStatus: text('setup_status').$type<SchoolSetupStatus>().notNull().default('PENDING'),
     ...recordLifecycleColumns(),
   },
-  (table) => ({
-    codeUnique: uniqueIndex('school_code_unique').on(table.code),
-  })
+  (table) => [uniqueIndex('school_code_unique').on(table.code)]
 );
 
 export const academicYear = sqliteTable(
@@ -76,16 +80,16 @@ export const academicYear = sqliteTable(
     isCurrent: integer('is_current', { mode: 'boolean' }).notNull().default(false),
     ...recordLifecycleColumns(),
   },
-  (table) => ({
-    schoolIdIdx: index('academic_year_school_id_idx').on(table.schoolId),
-    schoolCurrentUnique: uniqueIndex('academic_year_school_current_unique')
+  (table) => [
+    index('academic_year_school_id_idx').on(table.schoolId),
+    uniqueIndex('academic_year_school_current_unique')
       .on(table.schoolId)
       .where(sql`${table.isCurrent} = true`),
-    schoolLabelUnique: uniqueIndex('academic_year_school_label_unique')
+    uniqueIndex('academic_year_school_label_unique')
       .on(table.schoolId, table.label)
       .where(sql`${table.deletedAt} is null`),
-    schoolIdIdUnique: uniqueIndex('academic_year_school_id_id_unique').on(table.schoolId, table.id),
-  })
+    uniqueIndex('academic_year_school_id_id_unique').on(table.schoolId, table.id),
+  ]
 );
 
 export const term = sqliteTable(
@@ -101,30 +105,30 @@ export const term = sqliteTable(
     isCurrent: integer('is_current', { mode: 'boolean' }).notNull().default(false),
     ...recordLifecycleColumns(),
   },
-  (table) => ({
-    schoolIdIdx: index('term_school_id_idx').on(table.schoolId),
-    academicYearIdIdx: index('term_academic_year_id_idx').on(table.academicYearId),
-    academicYearCurrentUnique: uniqueIndex('term_academic_year_current_unique')
+  (table) => [
+    index('term_school_id_idx').on(table.schoolId),
+    index('term_academic_year_id_idx').on(table.academicYearId),
+    uniqueIndex('term_academic_year_current_unique')
       .on(table.academicYearId)
       .where(sql`${table.isCurrent} = true`),
-    schoolCurrentUnique: uniqueIndex('term_school_current_unique')
+    uniqueIndex('term_school_current_unique')
       .on(table.schoolId)
       .where(sql`${table.isCurrent} = true`),
-    academicYearLabelUnique: uniqueIndex('term_academic_year_label_unique')
+    uniqueIndex('term_academic_year_label_unique')
       .on(table.academicYearId, table.label)
       .where(sql`${table.deletedAt} is null`),
-    academicYearNumberUnique: uniqueIndex('term_academic_year_number_unique')
+    uniqueIndex('term_academic_year_number_unique')
       .on(table.academicYearId, table.termNumber)
       .where(sql`${table.deletedAt} is null`),
-    numberCheck: check('term_number_check', sql`${table.termNumber} >= 1`),
-    dateRangeCheck: check('term_date_range_check', sql`${table.startDate} <= ${table.endDate}`),
-    academicYearFk: foreignKey({
+    check('term_number_check', sql`${table.termNumber} >= 1`),
+    check('term_date_range_check', sql`${table.startDate} <= ${table.endDate}`),
+    foreignKey({
       columns: [table.schoolId, table.academicYearId],
       foreignColumns: [academicYear.schoolId, academicYear.id],
     })
       .onDelete('restrict')
       .onUpdate('cascade'),
-  })
+  ]
 );
 
 export const classLevel = sqliteTable(
@@ -139,19 +143,21 @@ export const classLevel = sqliteTable(
     isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
     ...recordLifecycleColumns(),
   },
-  (table) => ({
-    schoolIdIdx: index('class_level_school_id_idx').on(table.schoolId),
-    schoolCodeUnique: uniqueIndex('class_level_school_code_unique')
+  (table) => [
+    index('class_level_school_id_idx').on(table.schoolId),
+    // Referenced by the composite tenant FKs from `classroom` (school_id, id).
+    uniqueIndex('class_level_school_id_id_unique').on(table.schoolId, table.id),
+    uniqueIndex('class_level_school_code_unique')
       .on(table.schoolId, table.code)
       .where(sql`${table.deletedAt} is null`),
-    schoolNameUnique: uniqueIndex('class_level_school_name_unique')
+    uniqueIndex('class_level_school_name_unique')
       .on(table.schoolId, table.name)
       .where(sql`${table.deletedAt} is null`),
-    schoolOrderUnique: uniqueIndex('class_level_school_order_unique')
+    uniqueIndex('class_level_school_order_unique')
       .on(table.schoolId, table.displayOrder)
       .where(sql`${table.deletedAt} is null`),
-    displayOrderCheck: check('class_level_display_order_check', sql`${table.displayOrder} >= 1`),
-  })
+    check('class_level_display_order_check', sql`${table.displayOrder} >= 1`),
+  ]
 );
 
 export const schoolModuleConfig = sqliteTable(
@@ -164,17 +170,14 @@ export const schoolModuleConfig = sqliteTable(
     configJson: text('config_json').notNull().default('{}'),
     ...recordLifecycleColumns(),
   },
-  (table) => ({
-    schoolIdIdx: index('school_module_config_school_id_idx').on(table.schoolId),
-    schoolModuleUnique: uniqueIndex('school_module_config_school_module_unique').on(
-      table.schoolId,
-      table.moduleName
-    ),
-    moduleNameCheck: check(
+  (table) => [
+    index('school_module_config_school_id_idx').on(table.schoolId),
+    uniqueIndex('school_module_config_school_module_unique').on(table.schoolId, table.moduleName),
+    check(
       'school_module_config_module_name_check',
-      sql`${table.moduleName} in ('SCHOOL_SETUP', 'ACADEMIC_STRUCTURE')`
+      sql`${table.moduleName} in ('SCHOOL_SETUP', 'ACADEMIC_STRUCTURE', 'STUDENTS', 'TEACHERS', 'CLASSES')`
     ),
-  })
+  ]
 );
 
 export const user = sqliteTable(
@@ -191,15 +194,12 @@ export const user = sqliteTable(
     lastLoginAt: text('last_login_at'),
     ...recordLifecycleColumns(),
   },
-  (table) => ({
-    schoolIdIdx: index('user_school_id_idx').on(table.schoolId),
-    schoolIdIdUnique: uniqueIndex('user_school_id_id_unique').on(table.schoolId, table.id),
-    schoolUsernameUnique: uniqueIndex('user_school_username_unique').on(
-      table.schoolId,
-      table.username
-    ),
-    roleCheck: check('user_role_check', sql`${table.role} in ('SCHOOL_MASTER', 'TEACHER')`),
-  })
+  (table) => [
+    index('user_school_id_idx').on(table.schoolId),
+    uniqueIndex('user_school_id_id_unique').on(table.schoolId, table.id),
+    uniqueIndex('user_school_username_unique').on(table.schoolId, table.username),
+    check('user_role_check', sql`${table.role} in ('SCHOOL_MASTER', 'TEACHER')`),
+  ]
 );
 
 export const student = sqliteTable(
@@ -221,14 +221,14 @@ export const student = sqliteTable(
     isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
     ...recordLifecycleColumns(),
   },
-  (table) => ({
-    schoolIdIdx: index('student_school_id_idx').on(table.schoolId),
-    schoolLastNameIdx: index('student_school_last_name_idx').on(table.schoolId, table.lastName),
+  (table) => [
+    index('student_school_id_idx').on(table.schoolId),
+    index('student_school_last_name_idx').on(table.schoolId, table.lastName),
     // Codes are durable identity for official records: strictly unique per school, never reused.
-    schoolCodeUnique: uniqueIndex('student_school_code_unique').on(table.schoolId, table.code),
-    schoolIdIdUnique: uniqueIndex('student_school_id_id_unique').on(table.schoolId, table.id),
-    sexCheck: check('student_sex_check', sql`${table.sex} in ('M', 'F', 'AUTRE')`),
-  })
+    uniqueIndex('student_school_code_unique').on(table.schoolId, table.code),
+    uniqueIndex('student_school_id_id_unique').on(table.schoolId, table.id),
+    check('student_sex_check', sql`${table.sex} in ('M', 'F', 'AUTRE')`),
+  ]
 );
 
 export const teacher = sqliteTable(
@@ -249,19 +249,19 @@ export const teacher = sqliteTable(
     isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
     ...recordLifecycleColumns(),
   },
-  (table) => ({
-    schoolIdIdx: index('teacher_school_id_idx').on(table.schoolId),
-    schoolLastNameIdx: index('teacher_school_last_name_idx').on(table.schoolId, table.lastName),
+  (table) => [
+    index('teacher_school_id_idx').on(table.schoolId),
+    index('teacher_school_last_name_idx').on(table.schoolId, table.lastName),
     // Codes are durable identity: strictly unique per school, never reused.
-    schoolCodeUnique: uniqueIndex('teacher_school_code_unique').on(table.schoolId, table.code),
-    schoolIdIdUnique: uniqueIndex('teacher_school_id_id_unique').on(table.schoolId, table.id),
-    userFk: foreignKey({
+    uniqueIndex('teacher_school_code_unique').on(table.schoolId, table.code),
+    uniqueIndex('teacher_school_id_id_unique').on(table.schoolId, table.id),
+    foreignKey({
       columns: [table.schoolId, table.userId],
       foreignColumns: [user.schoolId, user.id],
     })
       .onDelete('restrict')
       .onUpdate('cascade'),
-  })
+  ]
 );
 
 export const guardian = sqliteTable(
@@ -277,11 +277,11 @@ export const guardian = sqliteTable(
     isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
     ...recordLifecycleColumns(),
   },
-  (table) => ({
-    schoolIdIdx: index('guardian_school_id_idx').on(table.schoolId),
-    schoolLastNameIdx: index('guardian_school_last_name_idx').on(table.schoolId, table.lastName),
-    schoolIdIdUnique: uniqueIndex('guardian_school_id_id_unique').on(table.schoolId, table.id),
-  })
+  (table) => [
+    index('guardian_school_id_idx').on(table.schoolId),
+    index('guardian_school_last_name_idx').on(table.schoolId, table.lastName),
+    uniqueIndex('guardian_school_id_id_unique').on(table.schoolId, table.id),
+  ]
 );
 
 export const studentGuardian = sqliteTable(
@@ -297,33 +297,33 @@ export const studentGuardian = sqliteTable(
     notes: text('notes'),
     ...recordLifecycleColumns(),
   },
-  (table) => ({
-    schoolIdIdx: index('student_guardian_school_id_idx').on(table.schoolId),
-    studentIdIdx: index('student_guardian_student_id_idx').on(table.studentId),
-    guardianIdIdx: index('student_guardian_guardian_id_idx').on(table.guardianId),
-    schoolStudentGuardianUnique: uniqueIndex('student_guardian_school_student_guardian_unique')
+  (table) => [
+    index('student_guardian_school_id_idx').on(table.schoolId),
+    index('student_guardian_student_id_idx').on(table.studentId),
+    index('student_guardian_guardian_id_idx').on(table.guardianId),
+    uniqueIndex('student_guardian_school_student_guardian_unique')
       .on(table.schoolId, table.studentId, table.guardianId)
       .where(sql`${table.deletedAt} is null`),
-    studentPrimaryUnique: uniqueIndex('student_guardian_student_primary_unique')
+    uniqueIndex('student_guardian_student_primary_unique')
       .on(table.schoolId, table.studentId)
       .where(sql`${table.isPrimary} = true AND ${table.deletedAt} is null`),
-    studentFk: foreignKey({
+    foreignKey({
       columns: [table.schoolId, table.studentId],
       foreignColumns: [student.schoolId, student.id],
     })
       .onDelete('restrict')
       .onUpdate('cascade'),
-    guardianFk: foreignKey({
+    foreignKey({
       columns: [table.schoolId, table.guardianId],
       foreignColumns: [guardian.schoolId, guardian.id],
     })
       .onDelete('restrict')
       .onUpdate('cascade'),
-    relationshipTypeCheck: check(
+    check(
       'student_guardian_relationship_type_check',
       sql`${table.relationshipType} in ('PERE', 'MERE', 'TUTEUR', 'AUTRE')`
     ),
-  })
+  ]
 );
 
 export const importBatch = sqliteTable(
@@ -339,18 +339,15 @@ export const importBatch = sqliteTable(
     errorRows: integer('error_rows').notNull(),
     ...recordLifecycleColumns(),
   },
-  (table) => ({
-    schoolIdIdx: index('import_batch_school_id_idx').on(table.schoolId),
+  (table) => [
+    index('import_batch_school_id_idx').on(table.schoolId),
     // Re-importing the same identifier is a no-op (idempotent confirmed imports).
-    schoolIdentifierUnique: uniqueIndex('import_batch_school_identifier_unique').on(
-      table.schoolId,
-      table.importIdentifier
-    ),
-    kindCheck: check(
+    uniqueIndex('import_batch_school_identifier_unique').on(table.schoolId, table.importIdentifier),
+    check(
       'import_batch_kind_check',
-      sql`${table.kind} in ('STUDENTS', 'TEACHERS', 'GUARDIANS')`
+      sql`${table.kind} in ('STUDENTS', 'TEACHERS', 'GUARDIANS', 'SUBJECTS', 'CLASSROOMS', 'CLASS_SUBJECTS')`
     ),
-  })
+  ]
 );
 
 export const refreshSession = sqliteTable(
@@ -376,13 +373,13 @@ export const refreshSession = sqliteTable(
     revokedAt: text('revoked_at'),
     ...recordLifecycleColumns(),
   },
-  (table) => ({
-    schoolIdIdx: index('refresh_session_school_id_idx').on(table.schoolId),
-    userIdIdx: index('refresh_session_user_id_idx').on(table.userId),
-    familyIdIdx: index('refresh_session_family_id_idx').on(table.familyId),
-    tokenHashUnique: uniqueIndex('refresh_session_token_hash_unique').on(table.tokenHash),
-    replacedBySessionFk: index('refresh_session_replaced_by_idx').on(table.replacedBySessionId),
-  })
+  (table) => [
+    index('refresh_session_school_id_idx').on(table.schoolId),
+    index('refresh_session_user_id_idx').on(table.userId),
+    index('refresh_session_family_id_idx').on(table.familyId),
+    uniqueIndex('refresh_session_token_hash_unique').on(table.tokenHash),
+    index('refresh_session_replaced_by_idx').on(table.replacedBySessionId),
+  ]
 );
 
 export const auditLog = sqliteTable(
@@ -402,12 +399,216 @@ export const auditLog = sqliteTable(
     outcome: text('outcome').$type<AuditOutcome>().notNull().default('SUCCESS'),
     occurredAt: text('occurred_at').notNull().default(currentTimestamp),
   },
-  (table) => ({
-    schoolIdIdx: index('audit_log_school_id_idx').on(table.schoolId),
-    actorUserIdIdx: index('audit_log_actor_user_id_idx').on(table.actorUserId),
-    targetIdx: index('audit_log_target_idx').on(table.targetType, table.targetId),
-    outcomeCheck: check('audit_log_outcome_check', sql`${table.outcome} in ('SUCCESS', 'FAILURE')`),
-  })
+  (table) => [
+    index('audit_log_school_id_idx').on(table.schoolId),
+    index('audit_log_actor_user_id_idx').on(table.actorUserId),
+    index('audit_log_target_idx').on(table.targetType, table.targetId),
+    check('audit_log_outcome_check', sql`${table.outcome} in ('SUCCESS', 'FAILURE')`),
+  ]
+);
+
+export const subject = sqliteTable(
+  'subject',
+  {
+    id: uuidPrimaryKey(),
+    ...tenantColumns(),
+    code: text('code').notNull(),
+    name: text('name').notNull(),
+    nameEn: text('name_en'),
+    nameAr: text('name_ar'),
+    shortLabel: text('short_label'),
+    category: text('category').$type<SubjectCategory>().notNull(),
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    ...recordLifecycleColumns(),
+  },
+  (table) => [
+    index('subject_school_id_idx').on(table.schoolId),
+    uniqueIndex('subject_school_code_unique')
+      .on(table.schoolId, table.code)
+      .where(sql`${table.deletedAt} is null`),
+    uniqueIndex('subject_school_id_id_unique').on(table.schoolId, table.id),
+    check(
+      'subject_category_check',
+      sql`${table.category} in ('LANGUES', 'SCIENCES', 'MATHEMATIQUES', 'SCIENCES_SOCIALES', 'ARTS', 'SPORTS', 'AUTRE')`
+    ),
+  ]
+);
+
+export const classroom = sqliteTable(
+  'classroom',
+  {
+    id: uuidPrimaryKey(),
+    ...tenantColumns(),
+    academicYearId: text('academic_year_id').notNull(),
+    classLevelId: text('class_level_id').notNull(),
+    code: text('code').notNull(),
+    name: text('name'),
+    capacity: integer('capacity'),
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    ...recordLifecycleColumns(),
+  },
+  (table) => [
+    index('classroom_school_id_idx').on(table.schoolId),
+    index('classroom_academic_year_id_idx').on(table.academicYearId),
+    index('classroom_class_level_id_idx').on(table.classLevelId),
+    // The tenant/year code identifies the cohort (e.g. 3E-A); a soft-deleted
+    // classroom frees its code for reuse.
+    uniqueIndex('classroom_school_year_code_unique')
+      .on(table.schoolId, table.academicYearId, table.code)
+      .where(sql`${table.deletedAt} is null`),
+    uniqueIndex('classroom_school_id_id_unique').on(table.schoolId, table.id),
+    check('classroom_capacity_check', sql`${table.capacity} is null OR ${table.capacity} >= 1`),
+    foreignKey({
+      columns: [table.schoolId, table.academicYearId],
+      foreignColumns: [academicYear.schoolId, academicYear.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+    foreignKey({
+      columns: [table.schoolId, table.classLevelId],
+      foreignColumns: [classLevel.schoolId, classLevel.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+  ]
+);
+
+export const classSubject = sqliteTable(
+  'class_subject',
+  {
+    id: uuidPrimaryKey(),
+    ...tenantColumns(),
+    classroomId: text('classroom_id').notNull(),
+    subjectId: text('subject_id').notNull(),
+    coefficient: integer('coefficient').notNull(),
+    isRequired: integer('is_required', { mode: 'boolean' }).notNull().default(true),
+    teacherId: text('teacher_id'),
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    ...recordLifecycleColumns(),
+  },
+  (table) => [
+    index('class_subject_school_id_idx').on(table.schoolId),
+    index('class_subject_classroom_id_idx').on(table.classroomId),
+    index('class_subject_subject_id_idx').on(table.subjectId),
+    index('class_subject_teacher_id_idx').on(table.teacherId),
+    // The classroom/subject pair is tenant-locally unique in the academic context.
+    uniqueIndex('class_subject_school_classroom_subject_unique')
+      .on(table.schoolId, table.classroomId, table.subjectId)
+      .where(sql`${table.deletedAt} is null`),
+    uniqueIndex('class_subject_school_id_id_unique').on(table.schoolId, table.id),
+    check('class_subject_coefficient_check', sql`${table.coefficient} >= 1`),
+    foreignKey({
+      columns: [table.schoolId, table.classroomId],
+      foreignColumns: [classroom.schoolId, classroom.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+    foreignKey({
+      columns: [table.schoolId, table.subjectId],
+      foreignColumns: [subject.schoolId, subject.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+    foreignKey({
+      columns: [table.schoolId, table.teacherId],
+      foreignColumns: [teacher.schoolId, teacher.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+  ]
+);
+
+export const classEnrollment = sqliteTable(
+  'class_enrollment',
+  {
+    id: uuidPrimaryKey(),
+    ...tenantColumns(),
+    studentId: text('student_id').notNull(),
+    classroomId: text('classroom_id').notNull(),
+    academicYearId: text('academic_year_id').notNull(),
+    status: text('status').$type<EnrollmentStatus>().notNull().default('ACTIVE'),
+    enrollmentDate: text('enrollment_date').notNull(),
+    exitDate: text('exit_date'),
+    reason: text('reason'),
+    ...recordLifecycleColumns(),
+  },
+  (table) => [
+    index('class_enrollment_school_id_idx').on(table.schoolId),
+    index('class_enrollment_student_id_idx').on(table.studentId),
+    index('class_enrollment_classroom_id_idx').on(table.classroomId),
+    index('class_enrollment_academic_year_id_idx').on(table.academicYearId),
+    // Only live rows count as duplicates: a transfer back to a previous
+    // classroom must not collide with the retained TRANSFERRED history row.
+    uniqueIndex('class_enrollment_school_classroom_student_unique')
+      .on(table.schoolId, table.classroomId, table.studentId)
+      .where(sql`${table.status} = 'ACTIVE' AND ${table.deletedAt} is null`),
+    // AGENTS.md §9.3: a student has at most one ACTIVE class enrollment per year.
+    uniqueIndex('class_enrollment_school_student_year_active_unique')
+      .on(table.schoolId, table.studentId, table.academicYearId)
+      .where(sql`${table.status} = 'ACTIVE' AND ${table.deletedAt} is null`),
+    uniqueIndex('class_enrollment_school_id_id_unique').on(table.schoolId, table.id),
+    check(
+      'class_enrollment_status_check',
+      sql`${table.status} in ('ACTIVE', 'TRANSFERRED', 'WITHDRAWN', 'GRADUATED', 'PROMOTED')`
+    ),
+    foreignKey({
+      columns: [table.schoolId, table.studentId],
+      foreignColumns: [student.schoolId, student.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+    foreignKey({
+      columns: [table.schoolId, table.classroomId],
+      foreignColumns: [classroom.schoolId, classroom.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+    foreignKey({
+      columns: [table.schoolId, table.academicYearId],
+      foreignColumns: [academicYear.schoolId, academicYear.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+    // Migration 0016 pins the enrollment to the classroom's actual academic
+    // year (a row can never reference a classroom from a different year) via
+    // BEFORE INSERT/UPDATE triggers, because SQLite cannot add a FOREIGN KEY
+    // to an existing table. Kept out of the schema so generated migrations
+    // stay aligned with the real database state.
+    // See 0016_class_enrollment_consistency.sql.
+  ]
+);
+
+export const studentSubjectEnrollment = sqliteTable(
+  'student_subject_enrollment',
+  {
+    id: uuidPrimaryKey(),
+    ...tenantColumns(),
+    classEnrollmentId: text('class_enrollment_id').notNull(),
+    classSubjectId: text('class_subject_id').notNull(),
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    ...recordLifecycleColumns(),
+  },
+  (table) => [
+    index('student_subject_enrollment_school_id_idx').on(table.schoolId),
+    index('student_subject_enrollment_class_enrollment_id_idx').on(table.classEnrollmentId),
+    index('student_subject_enrollment_class_subject_id_idx').on(table.classSubjectId),
+    uniqueIndex('student_subject_enrollment_school_enrollment_subject_unique')
+      .on(table.schoolId, table.classEnrollmentId, table.classSubjectId)
+      .where(sql`${table.deletedAt} is null`),
+    uniqueIndex('student_subject_enrollment_school_id_id_unique').on(table.schoolId, table.id),
+    foreignKey({
+      columns: [table.schoolId, table.classEnrollmentId],
+      foreignColumns: [classEnrollment.schoolId, classEnrollment.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+    foreignKey({
+      columns: [table.schoolId, table.classSubjectId],
+      foreignColumns: [classSubject.schoolId, classSubject.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+  ]
 );
 
 export const schemaMetadata = sqliteTable('schema_metadata', {

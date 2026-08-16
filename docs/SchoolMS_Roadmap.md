@@ -368,7 +368,7 @@ Do not freeze the grade schema until all of these are true:
 - [x] Separate record status from login-account status.
 - [x] Preserve audit metadata and prevent destructive deletion of referenced records.
 
-> Implementation note (9.1/9.2/9.3): the default student/teacher code is `{school.code}-{academicYearStart}-{NNI}` generated at the service layer (`POST /students` or `POST /teachers` without a `code`); an explicitly provided code — including from the Excel import (9.4) — overrides the default. Until a real NNI is available, the NNI segment falls back to a zero-padded per-school sequence (`NDS-DEMO-2026-001`, `002`, …) counting archived rows so codes are never reused. The exact NNI handling stays pending confirmation before the import slice.
+> Implementation note (9.1/9.2/9.3): the default student/teacher code is `{school.code}-{academicYearStart}-{NNI}` generated at the service layer (`POST /students` or `POST /teachers` without a `code`); an explicitly provided code - including from the Excel import (9.4) - overrides the default. Until a real NNI is available, the NNI segment falls back to a zero-padded per-school sequence (`NDS-DEMO-2026-001`, `002`, …) counting archived rows so codes are never reused. The exact NNI handling stays pending confirmation before the import slice.
 
 ### 9.2 Student and guardian slice
 
@@ -385,8 +385,8 @@ Do not freeze the grade schema until all of these are true:
 - [x] Create or deactivate a Teacher login independently of the teacher record.
 - [x] Prevent deletion when historical assignments or grades exist.
 
-> Implementation note (9.3): teachers ship as their own school module (`TEACHERS`, migration `0005`), gated exactly like `STUDENTS`. Codes follow the same `{school.code}-{academicYearStart}-{NNI}` rule (explicit codes from the Excel import override the default). Teacher logins are created from the record (`POST /teachers/:id/login`); the generated username/initial password are returned exactly once and never retrievable later. Record status and account status stay independent — an archived teacher keeps its login disabled. Deletion is prevented by the archive-only pattern plus the `teacher.user_id` restrict foreign key; future assignment/grade tables will extend the same tenant-scoped restrict rule.
-> TODO (9.3/9.4): when assignments/grades exist, block record archival too — the roadmap wording says "prevent deletion", and the archive-only model already satisfies it, but the UI should surface the reason once grade tables exist.
+> Implementation note (9.3): teachers ship as their own school module (`TEACHERS`, migration `0005`), gated exactly like `STUDENTS`. Codes follow the same `{school.code}-{academicYearStart}-{NNI}` rule (explicit codes from the Excel import override the default). Teacher logins are created from the record (`POST /teachers/:id/login`); the generated username/initial password are returned exactly once and never retrievable later. Record status and account status stay independent - an archived teacher keeps its login disabled. Deletion is prevented by the archive-only pattern plus the `teacher.user_id` restrict foreign key; future assignment/grade tables will extend the same tenant-scoped restrict rule.
+> TODO (9.3/9.4): when assignments/grades exist, block record archival too - the roadmap wording says "prevent deletion", and the archive-only model already satisfies it, but the UI should surface the reason once grade tables exist.
 
 ### 9.4 Import slice
 
@@ -399,10 +399,10 @@ Do not freeze the grade schema until all of these are true:
 - [x] Make confirmed imports idempotent through an import identifier.
 
 > Implementation note (9.4): the import slice ships as an in-app module behind the
-> same SCHOOL_MASTER gate — `POST /imports/preview/:kind` (multipart .xlsx), `POST /imports/confirm`,
+> same SCHOOL_MASTER gate - `POST /imports/preview/:kind` (multipart .xlsx), `POST /imports/confirm`,
 > `GET /imports/templates/:kind` (French template with README sheet) and
 > `GET /imports/errors/:importId` (rejected-rows CSV). Preview lives in an in-memory,
-> 30-minute TTL store — nothing touches the DB until confirm, which runs in a
+> 30-minute TTL store - nothing touches the DB until confirm, which runs in a
 > transaction, skips rows whose code already exists, and records an `import_batch`
 > row (migration 0006) whose (school, import_identifier) unique index makes
 > re-confirming the same identifier a no-op. Row-level French errors cover required
@@ -425,8 +425,8 @@ Do not freeze the grade schema until all of these are true:
 > duplicated within the school, explicit codes survive verbatim, generated
 > codes match `{school}-{year}-{NNI}`, the list endpoint agrees with the raw
 > count, re-confirming the same identifier is a clearly reported no-op, and
-> identical names stay distinguishable by code. The remaining criterion — a
-> non-developer finds, edits and archives a record — is a manual walkthrough:
+> identical names stay distinguishable by code. The remaining criterion - a
+> non-developer finds, edits and archives a record - is a manual walkthrough:
 > Élèves → search by name or code → open the profile → Modifier → save →
 > Archiver (with reason) → the record reappears under Filtres → Statut: Archivés
 > and can be réactivé. All of it is SCHOOL_MASTER-only, so no help needed from
@@ -439,35 +439,37 @@ Do not freeze the grade schema until all of these are true:
 
 ### 10.1 Data model
 
-- [ ] Add `subject`, `classroom`, `class_subject`, `class_enrollment` and `student_subject_enrollment`.
-- [ ] Enforce tenant, academic-year and effective-date constraints.
-- [ ] Store coefficients as positive integers and maximum grade as 20.00 policy.
+- [x] Add `subject`, `classroom`, `class_subject`, `class_enrollment` and `student_subject_enrollment`.
+- [x] Enforce tenant, academic-year and effective-date constraints.
+- [x] Store coefficients as positive integers and maximum grade as 20.00 policy.
 
 ### 10.2 Curriculum slice
 
-- [ ] Create a school subject catalogue with localized display names, codes and categories.
-- [ ] Create classrooms for an academic year and level.
-- [ ] Assign subjects, coefficients and teachers to classrooms.
-- [ ] Mark a class-subject optional without automatically assigning every student.
-- [ ] Enrol applicable students in optional subjects explicitly.
-- [ ] Extend the preview/validation/import pipeline to subjects, classrooms, class-subjects, coefficients and assignments.
-- [ ] Copy a curriculum from a previous class/year with review before confirmation.
+- [x] Create a school subject catalogue with localized display names, codes and categories.
+- [x] Create classrooms for an academic year and level.
+- [x] Assign subjects, coefficients and teachers to classrooms.
+- [x] Mark a class-subject optional without automatically assigning every student.
+- [x] Enrol applicable students in optional subjects explicitly.
+- [x] Extend the preview/validation/import pipeline to subjects, classrooms, class-subjects, coefficients and assignments.
+- [x] Copy a curriculum from a previous class/year with review before confirmation.
 
 ### 10.3 Enrolment slice
 
-- [ ] Enrol one or many students in a classroom for the year.
-- [ ] Prevent simultaneous active classroom enrolments for the same student/year.
-- [ ] Transfer with effective date and reason while preserving history.
-- [ ] Show class roster, capacity and students missing an active class.
-- [ ] Export a basic class register.
+- [x] Enrol one or many students in a classroom for the year.
+- [x] Prevent simultaneous active classroom enrolments for the same student/year.
+- [x] Transfer with effective date and reason while preserving history.
+- [x] Show class roster, capacity and students missing an active class.
+- [x] Export a basic class register.
 
 ### 10.4 Gate
 
-- [ ] A SchoolMaster configures a realistic class and curriculum from a pilot fixture.
-- [ ] Reimporting the same confirmed curriculum file is idempotent and does not duplicate assignments.
-- [ ] Teacher assignment and optional-subject authorization tests pass.
-- [ ] Transfer and historical-enrolment tests pass.
-- [ ] The structure produces the exact subject rows expected on a reference bulletin.
+- [x] A SchoolMaster configures a realistic class and curriculum from a pilot fixture.
+- [x] Reimporting the same confirmed curriculum file is idempotent and does not duplicate assignments.
+- [x] Teacher assignment and optional-subject authorization tests pass.
+- [x] Transfer and historical-enrolment tests pass.
+- [x] The structure produces the exact subject rows expected on a reference bulletin.
+
+> Gate evidence lives in `docs/phase-4-gate.md` and `apps/api/src/test/phase4.gate.test.ts`.
 
 ## 11. Phase 5 - Grade entry and validation
 

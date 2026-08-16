@@ -1,9 +1,9 @@
-import { and, asc, count, eq, isNotNull, isNull, like, or, sql } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, isNotNull, isNull, like, or, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { PersonSex } from '@edutrack/shared';
 import type { RepositoryExecutor, TenantContext } from './base.js';
 import { TenantScopedRepository } from './base.js';
-import { student } from '../schema.sqlite.js';
+import { academicYear, classEnrollment, classroom, student } from '../schema.sqlite.js';
 
 // TODO(roadmap §9.2/9.3): the default student code is `{school.code}-{academicYear}-{NNI}`,
 // generated at the service layer; an explicitly provided code (e.g. from the Excel import)
@@ -60,6 +60,11 @@ export interface ListStudentsOptions {
   search?: string;
   /** 'archived' lists archived records; omitted or 'active' lists active ones. */
   status?: 'active' | 'archived';
+  /** Only students with an ACTIVE enrollment this year in a classroom of this level. */
+  classLevelId?: string;
+  /** Only students with an ACTIVE enrollment this year in this classroom. */
+  classroomId?: string;
+  sex?: PersonSex;
   limit?: number;
   offset?: number;
 }
@@ -67,6 +72,9 @@ export interface ListStudentsOptions {
 export interface CountStudentsOptions {
   search?: string;
   status?: 'active' | 'archived';
+  classLevelId?: string;
+  classroomId?: string;
+  sex?: PersonSex;
 }
 
 /** Persists tenant-scoped student records; codes are durable identity and never reused. */
@@ -89,6 +97,69 @@ export class StudentRepository extends TenantScopedRepository {
       .from(student)
       .where(and(eq(student.id, id), eq(student.schoolId, this.schoolId)))
       .get();
+  }
+
+  /** Batch lookup so roster-style reads never issue one query per student. */
+  findByIds(ids: string[]) {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    return this.db
+      .select(studentColumns)
+      .from(student)
+      .where(and(eq(student.schoolId, this.schoolId), inArray(student.id, ids)))
+      .all();
+  }
+
+  findByIdWithClassroom(id: string) {
+    const currentYearId = this.db
+      .select({ id: academicYear.id })
+      .from(academicYear)
+      .where(
+        and(
+          eq(academicYear.schoolId, this.schoolId),
+          eq(academicYear.isCurrent, true),
+          isNull(academicYear.deletedAt)
+        )
+      )
+      .get()?.id;
+
+    const row = this.db
+      .select({
+        student: studentColumns,
+        classroom: {
+          id: classroom.id,
+          code: classroom.code,
+          name: classroom.name,
+        },
+      })
+      .from(student)
+      .leftJoin(
+        classEnrollment,
+        and(
+          eq(classEnrollment.schoolId, this.schoolId),
+          eq(classEnrollment.studentId, student.id),
+          eq(classEnrollment.academicYearId, currentYearId ?? ''),
+          eq(classEnrollment.status, 'ACTIVE'),
+          isNull(classEnrollment.deletedAt)
+        )
+      )
+      .leftJoin(
+        classroom,
+        and(eq(classroom.schoolId, this.schoolId), eq(classroom.id, classEnrollment.classroomId))
+      )
+      .where(and(eq(student.id, id), eq(student.schoolId, this.schoolId)))
+      .get();
+
+    if (!row) return undefined;
+
+    return {
+      ...row.student,
+      currentClassroom: row.classroom?.id
+        ? { id: row.classroom.id, name: row.classroom.name ?? row.classroom.code }
+        : null,
+    };
   }
 
   findByCode(code: string) {
@@ -129,11 +200,75 @@ export class StudentRepository extends TenantScopedRepository {
     return this.db
       .select(studentColumns)
       .from(student)
-      .where(studentWhere(this.schoolId, search, options.status))
+      .where(
+        and(
+          studentWhere(this.schoolId, search, options.status, options.sex),
+          this.enrollmentFilter(options)
+        )
+      )
       .orderBy(asc(student.lastName), asc(student.firstName), asc(student.code))
       .limit(limit)
       .offset(offset)
       .all();
+  }
+
+  listWithClassrooms(options: ListStudentsOptions = {}) {
+    const search = options.search?.trim();
+    const limit = options.limit ?? 50;
+    const offset = options.offset ?? 0;
+
+    const currentYearId = this.db
+      .select({ id: academicYear.id })
+      .from(academicYear)
+      .where(
+        and(
+          eq(academicYear.schoolId, this.schoolId),
+          eq(academicYear.isCurrent, true),
+          isNull(academicYear.deletedAt)
+        )
+      )
+      .get()?.id;
+
+    const query = this.db
+      .select({
+        student: studentColumns,
+        classroom: {
+          id: classroom.id,
+          code: classroom.code,
+          name: classroom.name,
+        },
+      })
+      .from(student)
+      .leftJoin(
+        classEnrollment,
+        and(
+          eq(classEnrollment.schoolId, this.schoolId),
+          eq(classEnrollment.studentId, student.id),
+          eq(classEnrollment.academicYearId, currentYearId ?? ''),
+          eq(classEnrollment.status, 'ACTIVE'),
+          isNull(classEnrollment.deletedAt)
+        )
+      )
+      .leftJoin(
+        classroom,
+        and(eq(classroom.schoolId, this.schoolId), eq(classroom.id, classEnrollment.classroomId))
+      )
+      .where(
+        and(
+          studentWhere(this.schoolId, search, options.status, options.sex),
+          this.enrollmentFilter(options)
+        )
+      )
+      .orderBy(asc(student.lastName), asc(student.firstName), asc(student.code))
+      .limit(limit)
+      .offset(offset);
+
+    return query.all().map((row) => ({
+      ...row.student,
+      currentClassroom: row.classroom?.id
+        ? { id: row.classroom.id, name: row.classroom.name ?? row.classroom.code }
+        : null,
+    }));
   }
 
   /** Total students matching the list filters, used for stable pagination totals. */
@@ -142,10 +277,58 @@ export class StudentRepository extends TenantScopedRepository {
     const row = this.db
       .select({ value: count() })
       .from(student)
-      .where(studentWhere(this.schoolId, search, options.status))
+      .where(
+        and(
+          studentWhere(this.schoolId, search, options.status, options.sex),
+          this.enrollmentFilter(options)
+        )
+      )
       .get();
 
     return row?.value ?? 0;
+  }
+
+  /**
+   * Restricts the list to students with an ACTIVE enrollment in the current
+   * academic year, optionally narrowed to a classroom or a class level. The
+   * filter queries the enrollment relationship (never a raw student field), so
+   * it stays correct once transfers and year rollovers exist.
+   */
+  private enrollmentFilter(options: { classLevelId?: string; classroomId?: string }) {
+    const { classLevelId, classroomId } = options;
+
+    if (!classLevelId && !classroomId) {
+      return undefined;
+    }
+
+    const currentYear = this.db
+      .select({ id: academicYear.id })
+      .from(academicYear)
+      .where(
+        and(
+          eq(academicYear.schoolId, this.schoolId),
+          eq(academicYear.isCurrent, true),
+          isNull(academicYear.deletedAt)
+        )
+      )
+      .get();
+
+    if (!currentYear) {
+      return sql`1 = 0`;
+    }
+
+    return sql`exists (
+      select 1
+      from ${classEnrollment} ce
+      join ${classroom} cr on cr.id = ce.classroom_id
+      where ce.school_id = ${this.schoolId}
+        and ce.academic_year_id = ${currentYear.id}
+        and ce.status = 'ACTIVE'
+        and ce.deleted_at is null
+        and ce.student_id = ${student.id}
+        ${classLevelId ? sql`and cr.class_level_id = ${classLevelId}` : sql``}
+        ${classroomId ? sql`and ce.classroom_id = ${classroomId}` : sql``}
+    )`;
   }
 
   listActive(options: ListStudentsOptions = {}) {
@@ -220,7 +403,8 @@ export function createStudentRepository(db: RepositoryExecutor, tenant: TenantCo
 function studentWhere(
   schoolId: string,
   search: string | undefined,
-  status: 'active' | 'archived' | undefined
+  status: 'active' | 'archived' | undefined,
+  sex?: PersonSex
 ) {
   const archived = status === 'archived';
 
@@ -228,6 +412,7 @@ function studentWhere(
     eq(student.schoolId, schoolId),
     eq(student.isActive, !archived),
     archived ? isNotNull(student.deletedAt) : isNull(student.deletedAt),
+    sex ? eq(student.sex, sex) : undefined,
     search
       ? or(
           like(student.firstName, `%${search}%`),
