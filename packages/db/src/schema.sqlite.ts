@@ -175,7 +175,7 @@ export const schoolModuleConfig = sqliteTable(
     uniqueIndex('school_module_config_school_module_unique').on(table.schoolId, table.moduleName),
     check(
       'school_module_config_module_name_check',
-      sql`${table.moduleName} in ('SCHOOL_SETUP', 'ACADEMIC_STRUCTURE', 'STUDENTS', 'TEACHERS', 'CLASSES')`
+      sql`${table.moduleName} in ('SCHOOL_SETUP', 'ACADEMIC_STRUCTURE', 'STUDENTS', 'TEACHERS', 'CLASSES', 'CONFIGURATION')`
     ),
   ]
 );
