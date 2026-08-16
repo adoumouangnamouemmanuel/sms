@@ -120,6 +120,13 @@
       "when": 1787700000000,
       "tag": "0019_structure_configuration",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "5",
+      "when": 1787800000000,
+      "tag": "0020_grading_policy",
+      "breakpoints": true
     }
   ]
 }

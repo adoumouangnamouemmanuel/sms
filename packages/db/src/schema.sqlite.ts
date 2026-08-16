@@ -1,15 +1,25 @@
 import {
   ACADEMIC_YEAR_STATUSES,
+  ASSESSMENT_OCCURRENCE_MODES,
   AUTH_USER_ROLES,
+  CONFIG_LIFECYCLE_STATUSES,
+  DERIVED_OPERATIONS,
   ENROLLMENT_STATUSES,
   GUARDIAN_RELATIONSHIP_TYPES,
   IMPLEMENTED_SCHOOL_MODULES,
   IMPORT_KINDS,
   PERSON_SEX_VALUES,
+  POLICY_SCOPE_TYPES,
+  ROUNDING_MODES,
   SCHOOL_SETUP_STATUSES,
   SUBJECT_CATEGORIES,
+  type AssessmentOccurrenceMode,
   type AuthUserRole,
+  type ConfigLifecycleStatus,
+  type DerivedOperation,
   type ImportKind,
+  type PolicyScopeType,
+  type RoundingMode,
   type SchoolModuleName,
   type SchoolSetupStatus,
 } from '@edutrack/shared';
@@ -44,6 +54,19 @@ export const enrollmentStatuses = ENROLLMENT_STATUSES;
 export type EnrollmentStatus = (typeof enrollmentStatuses)[number];
 export const academicYearStatuses = ACADEMIC_YEAR_STATUSES;
 export type AcademicYearStatus = (typeof academicYearStatuses)[number];
+export const assessmentOccurrenceModes = ASSESSMENT_OCCURRENCE_MODES;
+export const derivedOperations = DERIVED_OPERATIONS;
+export const roundingModes = ROUNDING_MODES;
+export const policyScopeTypes = POLICY_SCOPE_TYPES;
+export const configLifecycleStatuses = CONFIG_LIFECYCLE_STATUSES;
+// Re-exported directly (not redefined) so the shared types stay canonical.
+export type {
+  AssessmentOccurrenceMode,
+  ConfigLifecycleStatus,
+  DerivedOperation,
+  PolicyScopeType,
+  RoundingMode,
+};
 
 export const auditOutcomes = ['SUCCESS', 'FAILURE'] as const;
 export type AuditOutcome = (typeof auditOutcomes)[number];
@@ -717,6 +740,315 @@ export const studentSubjectEnrollment = sqliteTable(
     foreignKey({
       columns: [table.schoolId, table.classSubjectId],
       foreignColumns: [classSubject.schoolId, classSubject.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Grading-policy model (roadmap §9.7-§9.10, design §6-§14)
+//
+// A grading policy is a versioned document: `logical_policy_id` groups the
+// versions of one conceptual policy, `version` numbers them, and the status
+// follows `DRAFT -> PUBLISHED -> SUPERSEDED`. Published documents are
+// immutable - edits create a new version (the API duplicate endpoint). The
+// calculation graph (assessment types -> derived results -> one subject
+// result) is validated by the pure domain before publication; the schema
+// enforces the structural invariants (occurrence ranges, weight sanity,
+// scope uniqueness).
+// ---------------------------------------------------------------------------
+
+export const gradingPolicy = sqliteTable(
+  'grading_policy',
+  {
+    id: uuidPrimaryKey(),
+    ...tenantColumns(),
+    logicalPolicyId: text('logical_policy_id').notNull(),
+    version: integer('version').notNull(),
+    name: text('name').notNull(),
+    status: text('status').$type<ConfigLifecycleStatus>().notNull().default('DRAFT'),
+    scaleMax: integer('scale_max').notNull(),
+    /** Pass threshold in hundredths (1000 = 10.00 on a /20 scale). */
+    passThreshold: integer('pass_threshold').notNull(),
+    decimalPrecision: integer('decimal_precision').notNull().default(2),
+    roundingMode: text('rounding_mode').$type<RoundingMode>().notNull().default('HALF_UP'),
+    effectiveAcademicYearId: text('effective_academic_year_id'),
+    createdBy: text('created_by'),
+    publishedBy: text('published_by'),
+    publishedAt: text('published_at'),
+    supersedesPolicyId: text('supersedes_policy_id'),
+    ...recordLifecycleColumns(),
+  },
+  (table) => [
+    index('grading_policy_school_id_idx').on(table.schoolId),
+    index('grading_policy_logical_policy_id_idx').on(table.logicalPolicyId),
+    uniqueIndex('grading_policy_school_id_id_unique').on(table.schoolId, table.id),
+    uniqueIndex('grading_policy_school_logical_version_unique').on(
+      table.schoolId,
+      table.logicalPolicyId,
+      table.version
+    ),
+    check('grading_policy_scale_max_check', sql`${table.scaleMax} >= 1 AND ${table.scaleMax} <= 100`),
+    check('grading_policy_pass_threshold_check', sql`${table.passThreshold} >= 0`),
+    check(
+      'grading_policy_status_check',
+      sql`${table.status} in ('DRAFT', 'PUBLISHED', 'SUPERSEDED')`
+    ),
+    check(
+      'grading_policy_rounding_check',
+      sql`${table.roundingMode} in ('HALF_UP', 'TRUNCATE')`
+    ),
+    foreignKey({
+      columns: [table.schoolId, table.effectiveAcademicYearId],
+      foreignColumns: [academicYear.schoolId, academicYear.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+  ]
+);
+
+export const assessmentTypeDefinition = sqliteTable(
+  'assessment_type_definition',
+  {
+    id: uuidPrimaryKey(),
+    ...tenantColumns(),
+    gradingPolicyId: text('grading_policy_id').notNull(),
+    name: text('name').notNull(),
+    shortName: text('short_name').notNull(),
+    scaleMax: integer('scale_max').notNull(),
+    occurrenceMode: text('occurrence_mode').$type<AssessmentOccurrenceMode>().notNull(),
+    minOccurrences: integer('min_occurrences').notNull(),
+    maxOccurrences: integer('max_occurrences').notNull(),
+    required: integer('required', { mode: 'boolean' }).notNull().default(true),
+    teacherCanCreateInstances: integer('teacher_can_create_instances', { mode: 'boolean' })
+      .notNull()
+      .default(true),
+    displayOrder: integer('display_order').notNull().default(0),
+    ...recordLifecycleColumns(),
+  },
+  (table) => [
+    index('assessment_type_definition_school_id_idx').on(table.schoolId),
+    index('assessment_type_definition_grading_policy_id_idx').on(table.gradingPolicyId),
+    uniqueIndex('assessment_type_definition_school_id_id_unique').on(table.schoolId, table.id),
+    check(
+      'assessment_type_definition_occurrence_mode_check',
+      sql`${table.occurrenceMode} in ('SINGLE', 'REPEATABLE')`
+    ),
+    check('assessment_type_definition_scale_max_check', sql`${table.scaleMax} >= 1`),
+    check('assessment_type_definition_min_occurrences_check', sql`${table.minOccurrences} >= 0`),
+    check(
+      'assessment_type_definition_max_occurrences_check',
+      sql`${table.maxOccurrences} >= ${table.minOccurrences}`
+    ),
+    foreignKey({
+      columns: [table.schoolId, table.gradingPolicyId],
+      foreignColumns: [gradingPolicy.schoolId, gradingPolicy.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+  ]
+);
+
+export const derivedResultDefinition = sqliteTable(
+  'derived_result_definition',
+  {
+    id: uuidPrimaryKey(),
+    ...tenantColumns(),
+    gradingPolicyId: text('grading_policy_id').notNull(),
+    name: text('name').notNull(),
+    shortName: text('short_name').notNull(),
+    operation: text('operation').$type<DerivedOperation>().notNull(),
+    /** Source assessment-type definition ids (JSON array of strings). */
+    sourceDefinitionIds: text('source_definition_ids').notNull(),
+    precision: integer('precision').notNull().default(2),
+    roundingMode: text('rounding_mode').$type<RoundingMode>().notNull().default('HALF_UP'),
+    displayOrder: integer('display_order').notNull().default(0),
+    ...recordLifecycleColumns(),
+  },
+  (table) => [
+    index('derived_result_definition_school_id_idx').on(table.schoolId),
+    index('derived_result_definition_grading_policy_id_idx').on(table.gradingPolicyId),
+    uniqueIndex('derived_result_definition_school_id_id_unique').on(table.schoolId, table.id),
+    check(
+      'derived_result_definition_operation_check',
+      sql`${table.operation} in ('MEAN')`
+    ),
+    check(
+      'derived_result_definition_rounding_check',
+      sql`${table.roundingMode} in ('HALF_UP', 'TRUNCATE')`
+    ),
+    foreignKey({
+      columns: [table.schoolId, table.gradingPolicyId],
+      foreignColumns: [gradingPolicy.schoolId, gradingPolicy.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+  ]
+);
+
+export const subjectResultDefinition = sqliteTable(
+  'subject_result_definition',
+  {
+    id: uuidPrimaryKey(),
+    ...tenantColumns(),
+    gradingPolicyId: text('grading_policy_id').notNull(),
+    name: text('name').notNull(),
+    shortName: text('short_name').notNull(),
+    precision: integer('precision').notNull().default(2),
+    roundingMode: text('rounding_mode').$type<RoundingMode>().notNull().default('HALF_UP'),
+    ...recordLifecycleColumns(),
+  },
+  (table) => [
+    index('subject_result_definition_school_id_idx').on(table.schoolId),
+    index('subject_result_definition_grading_policy_id_idx').on(table.gradingPolicyId),
+    uniqueIndex('subject_result_definition_school_id_id_unique').on(table.schoolId, table.id),
+    uniqueIndex('subject_result_definition_school_policy_unique')
+      .on(table.schoolId, table.gradingPolicyId)
+      .where(sql`${table.deletedAt} is null`),
+    check(
+      'subject_result_definition_rounding_check',
+      sql`${table.roundingMode} in ('HALF_UP', 'TRUNCATE')`
+    ),
+    foreignKey({
+      columns: [table.schoolId, table.gradingPolicyId],
+      foreignColumns: [gradingPolicy.schoolId, gradingPolicy.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+  ]
+);
+
+export const subjectResultInput = sqliteTable(
+  'subject_result_input',
+  {
+    id: uuidPrimaryKey(),
+    ...tenantColumns(),
+    subjectResultDefinitionId: text('subject_result_definition_id').notNull(),
+    /** Source id: an assessment type OR a derived result (polymorphic). */
+    sourceDefinitionId: text('source_definition_id').notNull(),
+    /** Weight in hundredths of a percent (5000 = 50%). */
+    weight: integer('weight').notNull(),
+    displayOrder: integer('display_order').notNull().default(0),
+    ...recordLifecycleColumns(),
+  },
+  (table) => [
+    index('subject_result_input_school_id_idx').on(table.schoolId),
+    index('subject_result_input_subject_result_definition_id_idx').on(
+      table.subjectResultDefinitionId
+    ),
+    uniqueIndex('subject_result_input_school_id_id_unique').on(table.schoolId, table.id),
+    check('subject_result_input_weight_check', sql`${table.weight} > 0`),
+    foreignKey({
+      columns: [table.schoolId, table.subjectResultDefinitionId],
+      foreignColumns: [subjectResultDefinition.schoolId, subjectResultDefinition.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+  ]
+);
+
+export const policyScope = sqliteTable(
+  'policy_scope',
+  {
+    id: uuidPrimaryKey(),
+    ...tenantColumns(),
+    gradingPolicyId: text('grading_policy_id').notNull(),
+    scopeType: text('scope_type').$type<PolicyScopeType>().notNull(),
+    classLevelId: text('class_level_id'),
+    subjectId: text('subject_id'),
+    ...recordLifecycleColumns(),
+  },
+  (table) => [
+    index('policy_scope_school_id_idx').on(table.schoolId),
+    index('policy_scope_grading_policy_id_idx').on(table.gradingPolicyId),
+    uniqueIndex('policy_scope_school_id_id_unique').on(table.schoolId, table.id),
+    // One scope slot per school/level/subject. NULLs are distinct in SQLite
+    // unique indexes, so each scope type gets its own partial index.
+    uniqueIndex('policy_scope_school_default_unique')
+      .on(table.schoolId)
+      .where(sql`${table.scopeType} = 'SCHOOL_DEFAULT' AND ${table.deletedAt} is null`),
+    uniqueIndex('policy_scope_level_unique')
+      .on(table.schoolId, table.classLevelId)
+      .where(sql`${table.scopeType} = 'LEVEL' AND ${table.deletedAt} is null`),
+    uniqueIndex('policy_scope_level_subject_unique')
+      .on(table.schoolId, table.classLevelId, table.subjectId)
+      .where(sql`${table.scopeType} = 'LEVEL_SUBJECT' AND ${table.deletedAt} is null`),
+    check(
+      'policy_scope_type_check',
+      sql`${table.scopeType} in ('SCHOOL_DEFAULT', 'LEVEL', 'LEVEL_SUBJECT')`
+    ),
+    foreignKey({
+      columns: [table.schoolId, table.gradingPolicyId],
+      foreignColumns: [gradingPolicy.schoolId, gradingPolicy.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+    foreignKey({
+      columns: [table.schoolId, table.classLevelId],
+      foreignColumns: [classLevel.schoolId, classLevel.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+    foreignKey({
+      columns: [table.schoolId, table.subjectId],
+      foreignColumns: [subject.schoolId, subject.id],
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+  ]
+);
+
+export const appreciationScale = sqliteTable(
+  'appreciation_scale',
+  {
+    id: uuidPrimaryKey(),
+    ...tenantColumns(),
+    logicalScaleId: text('logical_scale_id').notNull(),
+    version: integer('version').notNull(),
+    name: text('name').notNull(),
+    status: text('status').$type<ConfigLifecycleStatus>().notNull().default('DRAFT'),
+    scaleMax: integer('scale_max').notNull(),
+    publishedAt: text('published_at'),
+    ...recordLifecycleColumns(),
+  },
+  (table) => [
+    index('appreciation_scale_school_id_idx').on(table.schoolId),
+    index('appreciation_scale_logical_scale_id_idx').on(table.logicalScaleId),
+    uniqueIndex('appreciation_scale_school_id_id_unique').on(table.schoolId, table.id),
+    check(
+      'appreciation_scale_status_check',
+      sql`${table.status} in ('DRAFT', 'PUBLISHED', 'SUPERSEDED')`
+    ),
+    check('appreciation_scale_scale_max_check', sql`${table.scaleMax} >= 1`),
+  ]
+);
+
+export const appreciationBand = sqliteTable(
+  'appreciation_band',
+  {
+    id: uuidPrimaryKey(),
+    ...tenantColumns(),
+    appreciationScaleId: text('appreciation_scale_id').notNull(),
+    /** Inclusive bounds in hundredths (1600 = 16.00). */
+    lowerBound: integer('lower_bound').notNull(),
+    upperBound: integer('upper_bound').notNull(),
+    labelFr: text('label_fr').notNull(),
+    labelAr: text('label_ar').notNull(),
+    labelEn: text('label_en').notNull(),
+    shortLabel: text('short_label').notNull(),
+    displayOrder: integer('display_order').notNull().default(0),
+    ...recordLifecycleColumns(),
+  },
+  (table) => [
+    index('appreciation_band_school_id_idx').on(table.schoolId),
+    index('appreciation_band_appreciation_scale_id_idx').on(table.appreciationScaleId),
+    uniqueIndex('appreciation_band_school_id_id_unique').on(table.schoolId, table.id),
+    check('appreciation_band_lower_bound_check', sql`${table.lowerBound} >= 0`),
+    check('appreciation_band_upper_bound_check', sql`${table.upperBound} >= ${table.lowerBound}`),
+    foreignKey({
+      columns: [table.schoolId, table.appreciationScaleId],
+      foreignColumns: [appreciationScale.schoolId, appreciationScale.id],
     })
       .onDelete('restrict')
       .onUpdate('cascade'),
