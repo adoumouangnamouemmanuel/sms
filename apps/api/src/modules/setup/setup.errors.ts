@@ -5,6 +5,7 @@ export type SetupErrorCode =
   | 'INVALID_CLASS_LEVELS'
   | 'INVALID_SETUP_STEP'
   | 'INVALID_TERMS'
+  | 'MODULE_STEP_DATA_REQUIRED'
   | 'SCHOOL_NOT_FOUND'
   | 'SETUP_FAILED';
 
@@ -50,4 +51,8 @@ export function classLevelsRequired() {
     409,
     'Ajoutez au moins un niveau de classe avant de terminer la configuration.'
   );
+}
+
+export function moduleStepDataRequired(message: string) {
+  return new SetupServiceError('MODULE_STEP_DATA_REQUIRED', 409, message);
 }
