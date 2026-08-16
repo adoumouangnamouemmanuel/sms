@@ -1,18 +1,28 @@
-import { academicYearStatusRequestSchema, createAcademicYearRequestSchema } from '@edutrack/shared';
+import {
+  appreciationScaleInputSchema,
+  assignPolicyScopesRequestSchema,
+  createAcademicYearRequestSchema,
+  academicYearStatusRequestSchema,
+  gradingPolicyConfigSchema,
+} from '@edutrack/shared';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthServiceError, parseAuthorizationHeader, type AuthService } from '../auth/index.js';
 import { readHeader } from '../auth/auth.cookies.js';
 import type { RequestAuditContext } from '../auth/auth.types.js';
-import { ConfigurationServiceError } from './configuration.errors.js';
 import type { AcademicYearsService } from './academic-years.service.js';
+import type { AppreciationService } from './appreciation.service.js';
+import { ConfigurationServiceError } from './configuration.errors.js';
 import type { ConfigurationService } from './configuration.service.js';
+import type { GradingPolicyService } from './grading-policy.service.js';
 
 /** Handles configuration HTTP auth and response envelopes. */
 export class ConfigurationController {
   constructor(
     private readonly authService: AuthService,
     private readonly configurationService: ConfigurationService,
-    private readonly academicYearsService: AcademicYearsService
+    private readonly academicYearsService: AcademicYearsService,
+    private readonly gradingPolicyService: GradingPolicyService,
+    private readonly appreciationService: AppreciationService
   ) {}
 
   readonly getReadiness = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -86,6 +96,261 @@ export class ConfigurationController {
           getRequestAuditContext(request)
         ),
         message: 'Statut de l\u2019année scolaire mis à jour.',
+      });
+    } catch (error) {
+      return sendConfigurationError(reply, error);
+    }
+  };
+
+  // -------------------------------------------------------------------------
+  // Grading policies (roadmap §9.7-§9.9)
+  // -------------------------------------------------------------------------
+
+  readonly listGradingPolicies = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const actor = await this.authenticateRequest(request);
+      return await reply.send({
+        success: true,
+        data: this.gradingPolicyService.list(actor),
+        message: 'Politiques de notation chargées.',
+      });
+    } catch (error) {
+      return sendConfigurationError(reply, error);
+    }
+  };
+
+  readonly getGradingPolicy = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const actor = await this.authenticateRequest(request);
+      return await reply.send({
+        success: true,
+        data: this.gradingPolicyService.get(actor, readParam(request, 'policyId')),
+        message: 'Politique de notation chargée.',
+      });
+    } catch (error) {
+      return sendConfigurationError(reply, error);
+    }
+  };
+
+  readonly createGradingPolicy = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedBody = gradingPolicyConfigSchema.safeParse(request.body);
+    if (!parsedBody.success) {
+      return sendValidationError(reply, parsedBody.error);
+    }
+
+    try {
+      const actor = await this.authenticateRequest(request);
+      return await reply.send({
+        success: true,
+        data: this.gradingPolicyService.createDraft(
+          actor,
+          parsedBody.data,
+          getRequestAuditContext(request)
+        ),
+        message: 'Politique de notation créée.',
+      });
+    } catch (error) {
+      return sendConfigurationError(reply, error);
+    }
+  };
+
+  readonly updateGradingPolicy = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedBody = gradingPolicyConfigSchema.safeParse(request.body);
+    if (!parsedBody.success) {
+      return sendValidationError(reply, parsedBody.error);
+    }
+
+    try {
+      const actor = await this.authenticateRequest(request);
+      return await reply.send({
+        success: true,
+        data: this.gradingPolicyService.updateDraft(
+          actor,
+          readParam(request, 'policyId'),
+          parsedBody.data,
+          getRequestAuditContext(request)
+        ),
+        message: 'Politique de notation mise à jour.',
+      });
+    } catch (error) {
+      return sendConfigurationError(reply, error);
+    }
+  };
+
+  readonly publishGradingPolicy = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const actor = await this.authenticateRequest(request);
+      return await reply.send({
+        success: true,
+        data: this.gradingPolicyService.publish(
+          actor,
+          readParam(request, 'policyId'),
+          getRequestAuditContext(request)
+        ),
+        message: 'Politique de notation publiée.',
+      });
+    } catch (error) {
+      return sendConfigurationError(reply, error);
+    }
+  };
+
+  readonly duplicateGradingPolicy = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const actor = await this.authenticateRequest(request);
+      return await reply.send({
+        success: true,
+        data: this.gradingPolicyService.duplicate(
+          actor,
+          readParam(request, 'policyId'),
+          getRequestAuditContext(request)
+        ),
+        message: 'Nouvelle version de la politique créée.',
+      });
+    } catch (error) {
+      return sendConfigurationError(reply, error);
+    }
+  };
+
+  readonly assignPolicyScopes = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedBody = assignPolicyScopesRequestSchema.safeParse(request.body);
+    if (!parsedBody.success) {
+      return sendValidationError(reply, parsedBody.error);
+    }
+
+    try {
+      const actor = await this.authenticateRequest(request);
+      return await reply.send({
+        success: true,
+        data: this.gradingPolicyService.replaceScopes(
+          actor,
+          readParam(request, 'policyId'),
+          parsedBody.data,
+          getRequestAuditContext(request)
+        ),
+        message: 'Périmètres de la politique mis à jour.',
+      });
+    } catch (error) {
+      return sendConfigurationError(reply, error);
+    }
+  };
+
+  readonly resolveGradingPolicy = async (request: FastifyRequest, reply: FastifyReply) => {
+    const query = request.query as Record<string, string | undefined>;
+    const levelId = query['levelId'];
+    const subjectId = query['subjectId'] ?? null;
+
+    if (!levelId) {
+      return reply.code(400).send({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Le paramètre levelId est requis.',
+        },
+      });
+    }
+
+    try {
+      const actor = await this.authenticateRequest(request);
+      return await reply.send({
+        success: true,
+        data: this.gradingPolicyService.resolve(actor, levelId, subjectId),
+        message: 'Politique résolue.',
+      });
+    } catch (error) {
+      return sendConfigurationError(reply, error);
+    }
+  };
+
+  // -------------------------------------------------------------------------
+  // Appreciation (roadmap §9.10)
+  // -------------------------------------------------------------------------
+
+  readonly listAppreciationScales = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const actor = await this.authenticateRequest(request);
+      return await reply.send({
+        success: true,
+        data: this.appreciationService.list(actor),
+        message: 'Échelles d\u2019appréciation chargées.',
+      });
+    } catch (error) {
+      return sendConfigurationError(reply, error);
+    }
+  };
+
+  readonly createAppreciationScale = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedBody = appreciationScaleInputSchema.safeParse(request.body);
+    if (!parsedBody.success) {
+      return sendValidationError(reply, parsedBody.error);
+    }
+
+    try {
+      const actor = await this.authenticateRequest(request);
+      return await reply.send({
+        success: true,
+        data: this.appreciationService.createDraft(
+          actor,
+          parsedBody.data,
+          getRequestAuditContext(request)
+        ),
+        message: 'Échelle d\u2019appréciation créée.',
+      });
+    } catch (error) {
+      return sendConfigurationError(reply, error);
+    }
+  };
+
+  readonly updateAppreciationScale = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedBody = appreciationScaleInputSchema.safeParse(request.body);
+    if (!parsedBody.success) {
+      return sendValidationError(reply, parsedBody.error);
+    }
+
+    try {
+      const actor = await this.authenticateRequest(request);
+      return await reply.send({
+        success: true,
+        data: this.appreciationService.updateDraft(
+          actor,
+          readParam(request, 'scaleId'),
+          parsedBody.data,
+          getRequestAuditContext(request)
+        ),
+        message: 'Échelle d\u2019appréciation mise à jour.',
+      });
+    } catch (error) {
+      return sendConfigurationError(reply, error);
+    }
+  };
+
+  readonly publishAppreciationScale = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const actor = await this.authenticateRequest(request);
+      return await reply.send({
+        success: true,
+        data: this.appreciationService.publish(
+          actor,
+          readParam(request, 'scaleId'),
+          getRequestAuditContext(request)
+        ),
+        message: 'Échelle d\u2019appréciation publiée.',
+      });
+    } catch (error) {
+      return sendConfigurationError(reply, error);
+    }
+  };
+
+  readonly duplicateAppreciationScale = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const actor = await this.authenticateRequest(request);
+      return await reply.send({
+        success: true,
+        data: this.appreciationService.duplicate(
+          actor,
+          readParam(request, 'scaleId'),
+          getRequestAuditContext(request)
+        ),
+        message: 'Nouvelle version de l\u2019échelle créée.',
       });
     } catch (error) {
       return sendConfigurationError(reply, error);

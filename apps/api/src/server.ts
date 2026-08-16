@@ -27,7 +27,9 @@ import {
 } from './modules/classes/index.js';
 import {
   AcademicYearsService,
+  AppreciationService,
   ConfigurationService,
+  GradingPolicyService,
   registerConfigurationRoutes,
 } from './modules/configuration/index.js';
 import { ImportsService, registerImportsRoutes } from './modules/imports/index.js';
@@ -222,6 +224,12 @@ export function buildServer(options: BuildServerOptions = {}) {
       authService,
       configurationService: new ConfigurationService(database),
       academicYearsService: new AcademicYearsService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+      gradingPolicyService: new GradingPolicyService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+      appreciationService: new AppreciationService(database, {
         ...(options.auth?.now ? { now: options.auth.now } : {}),
       }),
     });
