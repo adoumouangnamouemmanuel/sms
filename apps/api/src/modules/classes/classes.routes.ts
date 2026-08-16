@@ -5,6 +5,8 @@ import type { ClassEnrollmentsService } from './class-enrollments.service.js';
 import type { ClassSubjectsService } from './class-subjects.service.js';
 import type { ClassroomsService } from './classrooms.service.js';
 import type { CurriculumService } from './curriculum.service.js';
+import type { LevelCurriculumService } from './level-curriculum.service.js';
+import type { SubjectGroupsService } from './subject-groups.service.js';
 import type { SubjectsService } from './subjects.service.js';
 
 export interface RegisterClassesRoutesOptions {
@@ -14,6 +16,8 @@ export interface RegisterClassesRoutesOptions {
   classSubjectsService: ClassSubjectsService;
   classEnrollmentsService: ClassEnrollmentsService;
   curriculumService: CurriculumService;
+  levelCurriculumService: LevelCurriculumService;
+  subjectGroupsService: SubjectGroupsService;
 }
 
 /** Registers the Phase 4.2/4.3 classes, curriculum and enrolment routes. */
@@ -27,7 +31,9 @@ export function registerClassesRoutes(
     options.classroomsService,
     options.classSubjectsService,
     options.classEnrollmentsService,
-    options.curriculumService
+    options.curriculumService,
+    options.levelCurriculumService,
+    options.subjectGroupsService
   );
 
   // Subjects
@@ -61,4 +67,16 @@ export function registerClassesRoutes(
   // Curriculum copy
   server.post('/curriculum/copy/preview', controller.previewCurriculumCopy);
   server.post('/curriculum/copy/confirm', controller.confirmCurriculumCopy);
+
+  // Level curriculum (roadmap §9.5)
+  server.get('/level-curriculum', controller.listLevelCurriculums);
+  server.put('/level-curriculum', controller.saveLevelCurriculum);
+
+  // Subject groups (roadmap §9.6)
+  server.get('/subject-groups', controller.listSubjectGroups);
+  server.post('/subject-groups', controller.createSubjectGroup);
+  server.put('/subject-groups/:groupId', controller.updateSubjectGroup);
+  server.post('/subject-groups/:groupId/archive', controller.archiveSubjectGroup);
+  server.get('/subject-groups/:groupId/members', controller.listSubjectGroupMembers);
+  server.put('/subject-groups/:groupId/members', controller.setSubjectGroupMembers);
 }
