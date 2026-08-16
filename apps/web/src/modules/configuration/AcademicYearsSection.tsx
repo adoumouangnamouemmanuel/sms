@@ -47,7 +47,9 @@ export function AcademicYearsSection({
   // section) each time the parent re-renders - the callback still works
   // because ref.current is always up to date.
   const onSessionExpiredRef = useRef(onSessionExpired);
-  onSessionExpiredRef.current = onSessionExpired;
+  useEffect(() => {
+    onSessionExpiredRef.current = onSessionExpired;
+  }, [onSessionExpired]);
 
   const requestOptions = useCallback(
     () => ({
