@@ -126,23 +126,21 @@ même identifiant ne peut être confirmé qu'une seule fois.
 Le modèle `responsables_modele.xlsx` (bouton **Importer** du module
 **Responsables**) comporte les colonnes :
 
-| Colonne                         | Requis | Règle                                                                                                                                                               |
-| ------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Prénom`, `Nom`                 | Oui    | Texte (max 120 caractères).                                                                                                                                         |
-| `Téléphone`, `Email`, `Adresse` | Non    | Texte libre.                                                                                                                                                        |
-| `Code élève`                    | Non    | Code d'un élève existant de l'école : lie automatiquement le responsable à cet élève. Un code inconnu rejette la ligne (l'élève doit être importé ou créé d'abord). |
+| Colonne                         | Requis | Règle                                                                                                                                                                                |
+| ------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Prénom`, `Nom`                 | Oui    | Texte (max 120 caractères).                                                                                                                                                          |
+| `Téléphone`, `Email`, `Adresse` | Non    | Texte libre.                                                                                                                                                                         |
+| `Code élève`                    | Non    | Code d’un élève existant de l’école : utilisé uniquement pour lier le responsable importé à cet élève. Un code inconnu rejette la ligne (l’élève doit être importé ou créé d’abord). |
 
 > Le lien de parenté (`PERE`, `MERE`, `TUTEUR`, `AUTRE`) ne se règle pas à
-> l'import : il se choisit dans l'application quand on lie le responsable à un
+> l’import : il se choisit dans l’application quand on lie le responsable à un
 > élève (les responsables importés sont liés en `AUTRE` par défaut).
 
-- **Liaison** : un responsable avec un `Code élève` valide est lié à l'élève
+- **Liaison** : un responsable avec un `Code élève` valide est lié à l’élève
   correspondant au moment de la confirmation ; sans `Code élève`, le
   responsable est créé seul et peut être lié ensuite depuis la fiche élève
-  (**Lier un responsable**).
-- **Doublons** : deux responsables identiques (mêmes nom et prénom) restent
-  distincts ; utilisez le lien par `Code élève` pour rattacher plusieurs
-  élèves au même responsable.
+  (**Lier un responsable**). L’import ne permet de lier un responsable qu’à un seul élève. Pour lier d’autres élèves (fratrie), utilisez la liaison post-import dans l’application.
+- **Doublons** : l’import utilise une déduplication basée sur le nom qui ne génère qu’un avertissement. Deux responsables avec les mêmes nom et prénom restent distincts (car des personnes différentes peuvent partager un nom). Le `Code élève` n'identifie pas le responsable.
 
 **Vérification manuelle (Test 7)** : dans **Élèves**, notez le code d'un élève
 (par ex. `NDS-DEMO-2026-001` après le test 1). Ouvrez

@@ -500,10 +500,10 @@ function escapeCsvCell(value: string) {
 
   if (
     guarded.includes(';') ||
-   guarded.includes('"') ||
-   guarded.includes('\r') ||
-   guarded.includes('\n')
- ) {
+    guarded.includes('"') ||
+    guarded.includes('\r') ||
+    guarded.includes('\n')
+  ) {
     return `"${guarded.replace(/"/g, '""')}"`;
   }
 
