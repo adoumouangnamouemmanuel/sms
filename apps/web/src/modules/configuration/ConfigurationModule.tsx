@@ -10,7 +10,7 @@ import {
   type CreateAcademicYearRequest,
   type SchoolCapability,
 } from '@edutrack/shared';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AcademicYearsSection } from './AcademicYearsSection';
 import {
@@ -64,6 +64,12 @@ export function ConfigurationModule({
   const [isLoading, setIsLoading] = useState(true);
   const [errorKey, setErrorKey] = useState<string | null>(null);
 
+  // The shell recreates onSessionExpired on every render; a ref keeps the
+  // readiness fetch (and the page flash that comes with it) from re-running
+  // on each parent re-render while keeping the callback usable.
+  const onSessionExpiredRef = useRef(onSessionExpired);
+  onSessionExpiredRef.current = onSessionExpired;
+
   useEffect(() => {
     let cancelled = false;
 
@@ -84,7 +90,7 @@ export function ConfigurationModule({
       } catch (error) {
         if (!cancelled) {
           if (error instanceof ConfigurationApiError && error.code === 'INVALID_ACCESS_TOKEN') {
-            onSessionExpired?.();
+            onSessionExpiredRef.current?.();
             return;
           }
 
@@ -102,7 +108,7 @@ export function ConfigurationModule({
     return () => {
       cancelled = true;
     };
-  }, [apiBaseUrl, capabilityToken, client, onSessionExpired]);
+  }, [apiBaseUrl, capabilityToken, client]);
 
   const readyAreas = readiness?.areas.filter((area) => area.status === 'READY').length ?? 0;
 

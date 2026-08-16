@@ -5,7 +5,7 @@ import type {
   CreateAcademicYearRequest,
   DraftTermInput,
 } from '@edutrack/shared';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DatePicker } from '../../components/DatePicker';
 import { formatISODate } from '../../components/dateFormat';
@@ -42,6 +42,13 @@ export function AcademicYearsSection({
   const [isCreating, setIsCreating] = useState(false);
   const [isMutating, setIsMutating] = useState(false);
 
+  // The shell creates a fresh onSessionExpired closure on every render. A ref
+  // keeps the load effect from re-running (and refetching, which flickers the
+  // section) each time the parent re-renders - the callback still works
+  // because ref.current is always up to date.
+  const onSessionExpiredRef = useRef(onSessionExpired);
+  onSessionExpiredRef.current = onSessionExpired;
+
   const requestOptions = useCallback(
     () => ({
       ...(capabilityToken ? { capabilityToken } : {}),
@@ -60,7 +67,7 @@ export function AcademicYearsSection({
       setResponse(data);
     } catch (error) {
       if (error instanceof ConfigurationApiError && error.code === 'INVALID_ACCESS_TOKEN') {
-        onSessionExpired?.();
+        onSessionExpiredRef.current?.();
         return;
       }
 
@@ -68,7 +75,7 @@ export function AcademicYearsSection({
     } finally {
       setIsLoading(false);
     }
-  }, [apiBaseUrl, client, onSessionExpired, requestOptions]);
+  }, [apiBaseUrl, client, requestOptions]);
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -78,7 +85,7 @@ export function AcademicYearsSection({
     return () => {
       window.clearTimeout(handle);
     };
-  }, [apiBaseUrl, capabilityToken, client, load]);
+  }, [load]);
 
   const activeYear = response?.years.find((year) => year.status === 'ACTIVE') ?? null;
 
@@ -101,7 +108,7 @@ export function AcademicYearsSection({
       await load();
     } catch (error) {
       if (error instanceof ConfigurationApiError && error.code === 'INVALID_ACCESS_TOKEN') {
-        onSessionExpired?.();
+        onSessionExpiredRef.current?.();
         return;
       }
 
