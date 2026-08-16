@@ -147,10 +147,7 @@ export class StudentRepository extends TenantScopedRepository {
       )
       .leftJoin(
         classroom,
-        and(
-          eq(classroom.schoolId, this.schoolId),
-          eq(classroom.id, classEnrollment.classroomId)
-        )
+        and(eq(classroom.schoolId, this.schoolId), eq(classroom.id, classEnrollment.classroomId))
       )
       .where(and(eq(student.id, id), eq(student.schoolId, this.schoolId)))
       .get();
@@ -254,10 +251,7 @@ export class StudentRepository extends TenantScopedRepository {
       )
       .leftJoin(
         classroom,
-        and(
-          eq(classroom.schoolId, this.schoolId),
-          eq(classroom.id, classEnrollment.classroomId)
-        )
+        and(eq(classroom.schoolId, this.schoolId), eq(classroom.id, classEnrollment.classroomId))
       )
       .where(
         and(

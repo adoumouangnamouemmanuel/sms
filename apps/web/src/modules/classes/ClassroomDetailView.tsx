@@ -907,16 +907,22 @@ function AssignSubjectModal({
 
   useEffect(() => {
     let cancelled = false;
-    void api.subjects(requestOptions).then((items) => {
-      if (!cancelled) {
-        setSubjects(items);
-      }
-    }).catch(() => undefined);
-    void api.teachers(requestOptions).then((items) => {
-      if (!cancelled) {
-        setTeachers(items);
-      }
-    }).catch(() => undefined);
+    void api
+      .subjects(requestOptions)
+      .then((items) => {
+        if (!cancelled) {
+          setSubjects(items);
+        }
+      })
+      .catch(() => undefined);
+    void api
+      .teachers(requestOptions)
+      .then((items) => {
+        if (!cancelled) {
+          setTeachers(items);
+        }
+      })
+      .catch(() => undefined);
     return () => {
       cancelled = true;
     };
@@ -1192,11 +1198,14 @@ function TransferModal({
 
   useEffect(() => {
     let cancelled = false;
-    void api.classrooms(requestOptions).then((items) => {
-      if (!cancelled) {
-        setClassrooms(items);
-      }
-    }).catch(() => undefined);
+    void api
+      .classrooms(requestOptions)
+      .then((items) => {
+        if (!cancelled) {
+          setClassrooms(items);
+        }
+      })
+      .catch(() => undefined);
     return () => {
       cancelled = true;
     };
@@ -1420,11 +1429,14 @@ function CopyCurriculumModal({
 
   useEffect(() => {
     let cancelled = false;
-    void api.classrooms(requestOptions).then((items) => {
-      if (!cancelled) {
-        setClassrooms(items);
-      }
-    }).catch(() => undefined);
+    void api
+      .classrooms(requestOptions)
+      .then((items) => {
+        if (!cancelled) {
+          setClassrooms(items);
+        }
+      })
+      .catch(() => undefined);
     return () => {
       cancelled = true;
     };

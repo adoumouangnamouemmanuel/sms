@@ -78,7 +78,7 @@ export async function fetchClassDistribution(
   academicYearId: string | undefined,
   options: DashboardRequestOptions = {}
 ): Promise<ClassDistributionItem[]> {
-const byLevel = new Map<string, ClassDistributionItem>();
+  const byLevel = new Map<string, ClassDistributionItem>();
   const pageSize = 100;
   let offset = 0;
 

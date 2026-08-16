@@ -464,10 +464,7 @@ export class ClassEnrollmentsService {
  * Pages through a repository listing until it is exhausted so aggregate reads
  * are never silently truncated by a single page cap.
  */
-function listAllPages<T>(
-  fetchPage: (offset: number, limit: number) => T[],
-  pageSize = 200
-): T[] {
+function listAllPages<T>(fetchPage: (offset: number, limit: number) => T[], pageSize = 200): T[] {
   const collected: T[] = [];
   let offset = 0;
 
