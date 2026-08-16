@@ -108,6 +108,92 @@ export const paginatedSubjectsResponseSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
+// Level curriculum (roadmap §9.5): coefficient + required per subject per level
+// ---------------------------------------------------------------------------
+
+/**
+ * Level-scope curriculum matrix. Coefficients and requirements are defined
+ * once per level and inherited by every classroom of that level, instead of
+ * being duplicated per classroom (design §4.3). The operational per-class
+ * records (class_subject, teacher assignment) remain separate.
+ */
+export const levelCurriculumEntrySchema = z.object({
+  subjectId: z.uuid(),
+  coefficient: z.number().int().min(1).max(MAX_SUBJECT_COEFFICIENT),
+  isRequired: z.boolean(),
+});
+
+export const saveLevelCurriculumRequestSchema = z.object({
+  levelId: z.uuid(),
+  entries: z.array(levelCurriculumEntrySchema).max(100),
+});
+
+export const levelCurriculumEntryViewSchema = levelCurriculumEntrySchema.extend({
+  subjectCode: z.string().min(1),
+  subjectName: z.string().min(1),
+  subjectCategory: z.enum(SUBJECT_CATEGORIES),
+});
+
+export const levelCurriculumViewSchema = z.object({
+  levelId: z.uuid(),
+  levelCode: z.string().min(1),
+  levelName: z.string().min(1),
+  entries: z.array(levelCurriculumEntryViewSchema),
+});
+
+export const levelCurriculumsResponseSchema = z.object({
+  items: z.array(levelCurriculumViewSchema),
+});
+
+// ---------------------------------------------------------------------------
+// Subject groups / sections (roadmap §9.6)
+// ---------------------------------------------------------------------------
+
+export const createSubjectGroupRequestSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  nameEn: classNullableTextSchema,
+  nameAr: classNullableTextSchema,
+  displayOrder: z.number().int().min(1).max(200),
+});
+
+export const updateSubjectGroupRequestSchema = createSubjectGroupRequestSchema.partial();
+
+export const subjectGroupResponseSchema = z.object({
+  id: z.uuid(),
+  schoolId: z.uuid(),
+  name: z.string().min(1),
+  nameEn: z.string().nullable(),
+  nameAr: z.string().nullable(),
+  displayOrder: z.number().int().min(1),
+  isActive: z.boolean(),
+  recordVersion: z.number().int().min(0),
+});
+
+export const subjectGroupViewSchema = subjectGroupResponseSchema.extend({
+  subjectCount: z.number().int().min(0),
+});
+
+export const subjectGroupsResponseSchema = z.object({
+  items: z.array(subjectGroupViewSchema),
+});
+
+export const setSubjectGroupMembersRequestSchema = z.object({
+  // Order in the array becomes the membership display order.
+  subjectIds: z.array(z.uuid()).max(200),
+});
+
+export const subjectGroupMemberViewSchema = z.object({
+  subjectId: z.uuid(),
+  subjectCode: z.string().min(1),
+  subjectName: z.string().min(1),
+  displayOrder: z.number().int().min(1),
+});
+
+export const subjectGroupMembersResponseSchema = z.object({
+  members: z.array(subjectGroupMemberViewSchema),
+});
+
+// ---------------------------------------------------------------------------
 // Classroom
 // ---------------------------------------------------------------------------
 
