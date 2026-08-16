@@ -1,8 +1,8 @@
 import { APP_NAME, type PublicAuthUser } from '@edutrack/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { readDesktopDeploymentStatus, type DesktopDeploymentStatus } from './desktopStatus';
-import { LoginScreen, resolveAuthRuntime } from './modules/auth';
+import { readDesktopDeploymentStatus, type DesktopDeploymentStatus } from './lib/desktopStatus';
+import { LoginScreen, resolveAuthRuntime, useSessionKeepAlive } from './modules/auth';
 import { AuthenticatedSetupApp } from './modules/setup';
 
 const DEPLOYMENT_STATUS_POLL_MS = 500;
@@ -65,6 +65,17 @@ export function App() {
   }, []);
 
   const authRuntime = resolveAuthRuntime(desktopStatus);
+
+  // Refresh the in-memory access token before it expires so long sessions
+  // (the setup wizard included) never trip a 15-minute expiry mid-flow.
+  useSessionKeepAlive({
+    apiBaseUrl: authRuntime.apiBaseUrl,
+    ...(authRuntime.capabilityToken ? { capabilityToken: authRuntime.capabilityToken } : {}),
+    enabled: authenticatedUser !== null,
+    onSessionExpired: () => {
+      setAuthenticatedUser(null);
+    },
+  });
 
   if (authenticatedUser) {
     return (

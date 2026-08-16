@@ -4,5 +4,6 @@ export * from './authRuntime';
 export * from './authSession';
 export * from './ForgotPasswordNotice';
 export * from './LoginScreen';
+export * from './sessionKeepAlive';
 export * from './useLoginForm';
 export * from './useLogoutAction';
