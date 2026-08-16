@@ -68,7 +68,8 @@ describe('database foundation migrations', () => {
           !file.startsWith('0016') &&
           !file.startsWith('0017') &&
           !file.startsWith('0018') &&
-          !file.startsWith('0019')
+          !file.startsWith('0019') &&
+          !file.startsWith('0020')
       )
       .sort();
     for (const migrationFile of phase3Migrations) {
