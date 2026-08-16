@@ -537,9 +537,11 @@ export const classEnrollment = sqliteTable(
     index('class_enrollment_student_id_idx').on(table.studentId),
     index('class_enrollment_classroom_id_idx').on(table.classroomId),
     index('class_enrollment_academic_year_id_idx').on(table.academicYearId),
+    // Only live rows count as duplicates: a transfer back to a previous
+    // classroom must not collide with the retained TRANSFERRED history row.
     uniqueIndex('class_enrollment_school_classroom_student_unique')
       .on(table.schoolId, table.classroomId, table.studentId)
-      .where(sql`${table.deletedAt} is null`),
+      .where(sql`${table.status} = 'ACTIVE' AND ${table.deletedAt} is null`),
     // AGENTS.md §9.3: a student has at most one ACTIVE class enrollment per year.
     uniqueIndex('class_enrollment_school_student_year_active_unique')
       .on(table.schoolId, table.studentId, table.academicYearId)
@@ -567,6 +569,12 @@ export const classEnrollment = sqliteTable(
     })
       .onDelete('restrict')
       .onUpdate('cascade'),
+    // Migration 0016 pins the enrollment to the classroom's actual academic
+    // year (a row can never reference a classroom from a different year) via
+    // BEFORE INSERT/UPDATE triggers, because SQLite cannot add a FOREIGN KEY
+    // to an existing table. Kept out of the schema so generated migrations
+    // stay aligned with the real database state.
+    // See 0016_class_enrollment_consistency.sql.
   ]
 );
 
