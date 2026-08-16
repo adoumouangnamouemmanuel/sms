@@ -7,7 +7,10 @@ import type {
 } from '@edutrack/shared';
 import { describe, expect, it, vi } from 'vitest';
 import '../i18n';
-import { AppreciationSection, type AppreciationClient } from '../modules/configuration/AppreciationSection';
+import {
+  AppreciationSection,
+  type AppreciationClient,
+} from '../modules/configuration/AppreciationSection';
 import {
   GradingPolicySection,
   type GradingPolicyClient,
@@ -17,7 +20,9 @@ import { formatHundredths, parseDecimalToHundredths } from '../modules/configura
 const policyId = '00000000-0000-4000-8000-00000000d001';
 const scaleId = '00000000-0000-4000-8000-00000000d101';
 
-function policyDetail(overrides: Partial<GradingPolicyDetailResponse['policy']> = {}): GradingPolicyDetailResponse {
+function policyDetail(
+  overrides: Partial<GradingPolicyDetailResponse['policy']> = {}
+): GradingPolicyDetailResponse {
   return {
     policy: {
       id: policyId,
@@ -117,9 +122,36 @@ function appreciationScale(overrides: Partial<AppreciationScaleView> = {}): Appr
     status: 'DRAFT',
     scaleMax: 20,
     bands: [
-      { id: 'band-1', lowerBound: 1600, upperBound: 2000, labelFr: 'Très bien', labelAr: 'جيد جداً', labelEn: 'Very good', shortLabel: 'TB', displayOrder: 1 },
-      { id: 'band-2', lowerBound: 1000, upperBound: 1599, labelFr: 'Passable', labelAr: 'مقبول', labelEn: 'Passable', shortLabel: 'P', displayOrder: 2 },
-      { id: 'band-3', lowerBound: 0, upperBound: 999, labelFr: 'Insuffisant', labelAr: 'غير كاف', labelEn: 'Insufficient', shortLabel: 'I', displayOrder: 3 },
+      {
+        id: 'band-1',
+        lowerBound: 1600,
+        upperBound: 2000,
+        labelFr: 'Très bien',
+        labelAr: 'جيد جداً',
+        labelEn: 'Very good',
+        shortLabel: 'TB',
+        displayOrder: 1,
+      },
+      {
+        id: 'band-2',
+        lowerBound: 1000,
+        upperBound: 1599,
+        labelFr: 'Passable',
+        labelAr: 'مقبول',
+        labelEn: 'Passable',
+        shortLabel: 'P',
+        displayOrder: 2,
+      },
+      {
+        id: 'band-3',
+        lowerBound: 0,
+        upperBound: 999,
+        labelFr: 'Insuffisant',
+        labelAr: 'غير كاف',
+        labelEn: 'Insufficient',
+        shortLabel: 'I',
+        displayOrder: 3,
+      },
     ],
     publishedAt: null,
     createdAt: '2026-08-15T10:00:00.000Z',
@@ -143,6 +175,55 @@ describe('grading-policy builder (roadmap §9.8)', () => {
     await screen.findByText('Types de notes');
     expect(screen.getByDisplayValue('Devoir')).toBeInTheDocument();
     expect(screen.getByText('Total des pondérations : 100 %')).toBeInTheDocument();
+  });
+
+  it('saves and publishes through the real API when no client seam is provided', async () => {
+    // Regression: the editor used to require the test-seam `client` for
+    // save/publish/duplicate/scopes — in the real app those buttons silently
+    // did nothing. Now they fall back to the configuration API.
+    const user = userEvent.setup();
+    const calls: { method: string; url: string }[] = [];
+
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      const method = init?.method ?? 'GET';
+      calls.push({ method, url });
+
+      let data: unknown = null;
+      if (url.endsWith('/grading-policies')) {
+        data = policiesFixture();
+      } else if (url.includes('/grading-policies/') && !url.includes('/publish')) {
+        data = policyDetail();
+      } else if (url.includes('/publish')) {
+        data = policyDetail({ status: 'PUBLISHED' });
+      }
+
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ success: true, data }),
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      render(<GradingPolicySection apiBaseUrl="http://127.0.0.1:49152" />);
+      await screen.findByText('Devoirs + Composition');
+      await user.click(screen.getByRole('button', { name: /Devoirs \+ Composition/ }));
+      await screen.findByText('Enregistrer le brouillon');
+
+      await user.click(screen.getByRole('button', { name: 'Enregistrer le brouillon' }));
+      await screen.findByText(/Modifications enregistrées/);
+      expect(calls.some((call) => call.method === 'PUT')).toBe(true);
+
+      await user.click(screen.getByRole('button', { name: 'Publier' }));
+      await screen.findByText(/Modifications enregistrées/);
+      expect(calls.some((call) => call.method === 'POST' && call.url.includes('/publish'))).toBe(
+        true
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('runs the sandbox with the same deterministic engine and shows pass/fail', async () => {
