@@ -1329,6 +1329,10 @@ function ScopeEditor({
   const { t } = useTranslation();
   const [levels, setLevels] = useState<{ id: string; label: string }[]>([]);
   const [subjects, setSubjects] = useState<{ id: string; label: string }[]>([]);
+  // Subject ids per level, from the level curriculum: a LEVEL_SUBJECT scope
+  // must pick a subject that is actually taught at the chosen level (roadmap
+  // §9.9 resolution is school default -> level -> level + subject).
+  const [subjectsByLevel, setSubjectsByLevel] = useState<Map<string, string[]>>(() => new Map());
   const cancelledRef = useRef(false);
 
   // Load real levels and subjects once so scopes pick from actual records
@@ -1359,6 +1363,14 @@ function ScopeEditor({
               label: item.name,
             }))
           );
+          setSubjectsByLevel(
+            new Map(
+              curriculum.items.map((item) => [
+                item.levelId,
+                item.entries.map((entry) => entry.subjectId),
+              ])
+            )
+          );
         }
       } catch {
         // The picker stays empty; raw values in existing scopes are preserved
@@ -1383,10 +1395,34 @@ function ScopeEditor({
     return [...keep, ...levels];
   };
 
-  const subjectOptions = (current: string | null) => {
-    const known = subjects.find((item) => item.id === current);
+  /** Subjects taught at the scope's level; falls back to every subject when
+   *  no curriculum is configured yet (wizard before the Matières step). */
+  const subjectOptions = (scope: PolicyScopeAssignment) => {
+    const current = scope.subjectId;
+    const levelSubjectIds = scope.levelId ? (subjectsByLevel.get(scope.levelId) ?? null) : null;
+    const pool =
+      levelSubjectIds === null
+        ? subjects
+        : subjects.filter((subject) => levelSubjectIds.includes(subject.id));
+    const known = pool.find((item) => item.id === current);
     const keep = current && !known ? [{ id: current, label: current }] : [];
-    return [...keep, ...subjects];
+    return [...keep, ...pool];
+  };
+
+  // When the level changes, clear a subject that is no longer taught there so
+  // the scope cannot reference a subject the level does not offer.
+  const handleLevelChange = (index: number, nextLevelId: string) => {
+    const scope = scopes[index];
+    if (!scope) {
+      return;
+    }
+    const levelSubjectIds = nextLevelId ? (subjectsByLevel.get(nextLevelId) ?? null) : null;
+    const subjectStillValid =
+      !scope.subjectId || levelSubjectIds === null || levelSubjectIds.includes(scope.subjectId);
+    updateScope(index, {
+      levelId: nextLevelId || null,
+      ...(subjectStillValid ? {} : { subjectId: null }),
+    });
   };
 
   return (
@@ -1417,7 +1453,7 @@ function ScopeEditor({
               className={`${formSelectClassName} min-w-[160px] flex-1`}
               disabled={disabled}
               onChange={(event) => {
-                updateScope(index, { levelId: event.target.value || null });
+                handleLevelChange(index, event.target.value);
               }}
               value={scope.levelId ?? ''}
             >
@@ -1440,7 +1476,7 @@ function ScopeEditor({
               value={scope.subjectId ?? ''}
             >
               <option value="">{t('configuration.grading.selectSubject')}</option>
-              {subjectOptions(scope.subjectId).map((item) => (
+              {subjectOptions(scope).map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.label}
                 </option>
