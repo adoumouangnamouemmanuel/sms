@@ -240,17 +240,37 @@ export function validatePolicyForPublication(
 
   for (const definition of config.assessmentTypes) {
     issues.push(...validateAssessmentType(definition));
+
+    // A type marked on a different scale than the policy produces marks the
+    // weighted engine cannot combine safely - the whole policy shares one
+    // barème (design §12). Block publication instead of silently mixing.
+    if (definition.scaleMax !== config.scaleMax) {
+      issues.push({
+        code: 'SCALE_MISMATCH',
+        message: `« ${definition.name} » est sur un barème de ${String(definition.scaleMax)}, différent du barème de la politique (${String(config.scaleMax)}). Toutes les notes doivent utiliser le même barème.`,
+      });
+    }
   }
 
-  const allSourceIds = new Set(config.assessmentTypes.map((definition) => definition.id));
-  const derivedIds = new Set<string>();
-
+  // Every id that can feed the calculation: assessment types and derived
+  // results are nodes; a derived result may reference either as a source.
+  // The subject result's inputs reference any node too. The graph must stay
+  // acyclic (design §11) - cycles are rejected, never resolved dynamically.
+  const nodeIds = new Set<string>();
+  for (const definition of config.assessmentTypes) {
+    if (definition.id) {
+      nodeIds.add(definition.id);
+    }
+  }
   for (const derived of config.derivedResults) {
     if (derived.id) {
-      derivedIds.add(derived.id);
+      nodeIds.add(derived.id);
     }
+  }
+
+  for (const derived of config.derivedResults) {
     for (const sourceId of derived.sourceDefinitionIds) {
-      if (!allSourceIds.has(sourceId)) {
+      if (!nodeIds.has(sourceId)) {
         issues.push({
           code: 'MISSING_DERIVED_SOURCE',
           message: `« ${derived.name} » référence une source inexistante.`,
@@ -270,10 +290,10 @@ export function validatePolicyForPublication(
 
   let totalWeight = 0;
   for (const input of subject.inputs) {
-    if (!allSourceIds.has(input.sourceDefinitionId) && !derivedIds.has(input.sourceDefinitionId)) {
+    if (!nodeIds.has(input.sourceDefinitionId)) {
       issues.push({
         code: 'MISSING_SUBJECT_SOURCE',
-        message: `Le résultat final référence une source inexistante.`,
+        message: 'Le résultat final référence une source inexistante.',
       });
     }
     totalWeight += input.weight;
@@ -282,23 +302,26 @@ export function validatePolicyForPublication(
   if (totalWeight !== 10000) {
     issues.push({
       code: 'WEIGHT_TOTAL',
-      message: `Les pondérations doivent totaliser 100 % (actuellement ${totalWeight / 100} %).`,
+      message: `Les pondérations doivent totaliser 100 % (actuellement ${String(totalWeight / 100)} %).`,
     });
   }
 
-  // Calculation graph: derived results and the subject result are nodes; an
-  // edge exists when a node lists another node as a source. Cycles are
-  // rejected (design §11).
-  const nodeIds = new Set<string>([...derivedIds]);
+  // Cycle detection over the derived-result subgraph. A cycle needs at least
+  // one derived->derived edge; assessment types have no outgoing edges.
+  const derivedNodeIds = new Set(
+    config.derivedResults.map((derived) => derived.id).filter((id): id is string => Boolean(id))
+  );
   const edges = new Map<string, string[]>();
-
   for (const derived of config.derivedResults) {
     if (derived.id) {
-      edges.set(derived.id, [...derived.sourceDefinitionIds]);
+      edges.set(
+        derived.id,
+        derived.sourceDefinitionIds.filter((sourceId) => derivedNodeIds.has(sourceId))
+      );
     }
   }
 
-  if (hasCycle(nodeIds, edges)) {
+  if (hasCycle(derivedNodeIds, edges)) {
     issues.push({
       code: 'CYCLE_DETECTED',
       message: 'Le calcul contient une dépendance circulaire. Corrigez-la avant de publier.',
@@ -338,6 +361,109 @@ function hasCycle(nodes: Set<string>, edges: Map<string, string[]>): boolean {
   }
 
   return false;
+}
+
+// ---------------------------------------------------------------------------
+// Sandbox evaluation (roadmap §9.8 - "Tester cette politique")
+// ---------------------------------------------------------------------------
+
+/**
+ * Evaluates a policy against sample marks for the builder sandbox.
+ *
+ * `marksByTypeId` maps each assessment-type id to the marks recorded for it
+ * (integer hundredths, one entry per occurrence). Nodes are evaluated in
+ * dependency order: assessment types -> derived results (MEAN over their
+ * sources) -> the official subject result (weighted combination).
+ *
+ * Returns the official subject result in hundredths plus every intermediate
+ * value so the UI can render the whole calculation path.
+ */
+export function evaluatePolicy(
+  config: GradingPolicyConfig,
+  marksByTypeId: ReadonlyMap<string, readonly number[]>
+): {
+  derivedValues: Map<string, number>;
+  subjectResult: number;
+  passThreshold: number;
+  scaleMaxHundredths: number;
+} {
+  const nodeValues = new Map<string, number>();
+
+  for (const definition of config.assessmentTypes) {
+    const marks = definition.id ? (marksByTypeId.get(definition.id) ?? []) : [];
+    // A single-occurrence type uses its only mark; a repeatable type uses
+    // the mean of the provided occurrences (the sandbox samples one per
+    // occurrence). Marks are already hundredths.
+    const effective =
+      marks.length === 0
+        ? 0
+        : derivedMean(marks, config.decimalPrecision, config.roundingMode);
+    if (definition.id) {
+      nodeValues.set(definition.id, effective);
+    }
+  }
+
+  // Evaluate derived results in topological order (repeated until fixpoint;
+  // publish validation guarantees acyclicity).
+  const derivedById = new Map(
+    config.derivedResults
+      .filter(
+        (derived): derived is DerivedResultInput & { id: string } => derived.id !== undefined
+      )
+      .map((derived) => [derived.id, derived])
+  );
+
+  let remaining = [...derivedById.keys()];
+  while (remaining.length > 0) {
+    const progress: string[] = [];
+
+    for (const id of remaining) {
+      const derived = derivedById.get(id);
+      if (!derived) {
+        continue;
+      }
+
+      const sources = derived.sourceDefinitionIds
+        .map((sourceId) => nodeValues.get(sourceId))
+        .filter((value): value is number => value !== undefined);
+
+      if (sources.length !== derived.sourceDefinitionIds.length) {
+        continue; // not ready yet
+      }
+
+      nodeValues.set(
+        id,
+        derivedMean(sources, derived.precision, derived.roundingMode)
+      );
+      progress.push(id);
+    }
+
+    if (progress.length === 0) {
+      break; // defensive: should never happen for a validated policy
+    }
+    remaining = remaining.filter((id) => !progress.includes(id));
+  }
+
+  const inputs = config.subjectResult.inputs.map((input) => {
+    const value = nodeValues.get(input.sourceDefinitionId);
+    if (value === undefined) {
+      throw new Error('La politique contient une source de résultat non calculable.');
+    }
+    return { weight: input.weight, markHundredths: value };
+  });
+
+  const subjectResult = weightedSubjectResult(
+    inputs,
+    config.subjectResult.precision,
+    config.subjectResult.roundingMode
+  );
+
+  return {
+    derivedValues: nodeValues,
+    subjectResult,
+    passThreshold: config.passThreshold,
+    scaleMaxHundredths: config.scaleMax * 100,
+  };
 }
 
 // ---------------------------------------------------------------------------

@@ -269,6 +269,7 @@ export const GRADING_POLICY_TEMPLATES: GradingPolicyTemplate[] = [
       effectiveAcademicYearId: null,
       assessmentTypes: [
         {
+          id: 'tpl-devoir',
           name: 'Devoir',
           shortName: 'Dev.',
           scaleMax,
@@ -280,6 +281,7 @@ export const GRADING_POLICY_TEMPLATES: GradingPolicyTemplate[] = [
           displayOrder: 1,
         },
         {
+          id: 'tpl-composition',
           name: 'Composition',
           shortName: 'Comp.',
           scaleMax,
@@ -293,10 +295,11 @@ export const GRADING_POLICY_TEMPLATES: GradingPolicyTemplate[] = [
       ],
       derivedResults: [
         {
+          id: 'tpl-moyenne-devoirs',
           name: 'Moyenne des devoirs',
           shortName: 'Moy. Dev.',
           operation: 'MEAN',
-          sourceDefinitionIds: [], // filled by the builder (the Devoir type id)
+          sourceDefinitionIds: ['tpl-devoir'],
           precision: 2,
           roundingMode: 'HALF_UP',
           displayOrder: 1,
@@ -308,9 +311,8 @@ export const GRADING_POLICY_TEMPLATES: GradingPolicyTemplate[] = [
         precision: 2,
         roundingMode: 'HALF_UP',
         inputs: [
-          // weights filled by the builder once source ids are known
-          { sourceDefinitionId: '', weight: 5000, displayOrder: 1 },
-          { sourceDefinitionId: '', weight: 5000, displayOrder: 2 },
+          { sourceDefinitionId: 'tpl-moyenne-devoirs', weight: 5000, displayOrder: 1 },
+          { sourceDefinitionId: 'tpl-composition', weight: 5000, displayOrder: 2 },
         ],
       },
     }),
@@ -328,6 +330,7 @@ export const GRADING_POLICY_TEMPLATES: GradingPolicyTemplate[] = [
       effectiveAcademicYearId: null,
       assessmentTypes: [
         {
+          id: 'tpl-evaluation',
           name: 'Évaluation',
           shortName: 'Éval.',
           scaleMax,
@@ -339,6 +342,7 @@ export const GRADING_POLICY_TEMPLATES: GradingPolicyTemplate[] = [
           displayOrder: 1,
         },
         {
+          id: 'tpl-composition',
           name: 'Composition',
           shortName: 'Comp.',
           scaleMax,
@@ -352,10 +356,11 @@ export const GRADING_POLICY_TEMPLATES: GradingPolicyTemplate[] = [
       ],
       derivedResults: [
         {
+          id: 'tpl-evaluation-moyenne',
           name: 'Évaluation',
           shortName: 'Éval.',
           operation: 'MEAN',
-          sourceDefinitionIds: [],
+          sourceDefinitionIds: ['tpl-evaluation'],
           precision: 2,
           roundingMode: 'HALF_UP',
           displayOrder: 1,
@@ -367,8 +372,8 @@ export const GRADING_POLICY_TEMPLATES: GradingPolicyTemplate[] = [
         precision: 2,
         roundingMode: 'HALF_UP',
         inputs: [
-          { sourceDefinitionId: '', weight: 4000, displayOrder: 1 },
-          { sourceDefinitionId: '', weight: 6000, displayOrder: 2 },
+          { sourceDefinitionId: 'tpl-evaluation-moyenne', weight: 4000, displayOrder: 1 },
+          { sourceDefinitionId: 'tpl-composition', weight: 6000, displayOrder: 2 },
         ],
       },
     }),
@@ -386,6 +391,7 @@ export const GRADING_POLICY_TEMPLATES: GradingPolicyTemplate[] = [
       effectiveAcademicYearId: null,
       assessmentTypes: [
         {
+          id: 'tpl-note-finale',
           name: 'Note finale',
           shortName: 'Finale',
           scaleMax,
@@ -403,7 +409,7 @@ export const GRADING_POLICY_TEMPLATES: GradingPolicyTemplate[] = [
         shortName: 'Moy. Mat.',
         precision: 2,
         roundingMode: 'HALF_UP',
-        inputs: [{ sourceDefinitionId: '', weight: 10000, displayOrder: 1 }],
+        inputs: [{ sourceDefinitionId: 'tpl-note-finale', weight: 10000, displayOrder: 1 }],
       },
     }),
   },
@@ -420,6 +426,7 @@ export const GRADING_POLICY_TEMPLATES: GradingPolicyTemplate[] = [
       effectiveAcademicYearId: null,
       assessmentTypes: [
         {
+          id: 'tpl-interrogation',
           name: 'Interrogation',
           shortName: 'Inter.',
           scaleMax,
@@ -437,7 +444,7 @@ export const GRADING_POLICY_TEMPLATES: GradingPolicyTemplate[] = [
         shortName: 'Moy. Mat.',
         precision: 2,
         roundingMode: 'HALF_UP',
-        inputs: [{ sourceDefinitionId: '', weight: 10000, displayOrder: 1 }],
+        inputs: [{ sourceDefinitionId: 'tpl-interrogation', weight: 10000, displayOrder: 1 }],
       },
     }),
   },
