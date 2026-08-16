@@ -76,6 +76,73 @@ export type ConfigurationReadinessStatus = (typeof CONFIGURATION_READINESS_STATU
 export const CONFIG_LIFECYCLE_STATUSES = ['DRAFT', 'PUBLISHED', 'SUPERSEDED'] as const;
 export type ConfigLifecycleStatus = (typeof CONFIG_LIFECYCLE_STATUSES)[number];
 
+// ---------------------------------------------------------------------------
+// Academic year lifecycle (roadmap §9.3, design §4.1)
+// ---------------------------------------------------------------------------
+
+/**
+ * Academic-year lifecycle (design §4.1). One year is ACTIVE per school;
+ * historical years stay readable. Transitions are validated in the domain
+ * (packages/domain/src/academic-year.ts): DRAFT -> ACTIVE -> CLOSED.
+ */
+export const ACADEMIC_YEAR_STATUSES = ['DRAFT', 'ACTIVE', 'CLOSED'] as const;
+export type AcademicYearStatus = (typeof ACADEMIC_YEAR_STATUSES)[number];
+
+export const ACADEMIC_YEAR_STATUS_LABELS: Record<AcademicYearStatus, string> = {
+  DRAFT: 'Brouillon',
+  ACTIVE: 'Active',
+  CLOSED: 'Clôturée',
+};
+
+/** Draft terms never carry isCurrent: only the ACTIVE year's terms do. */
+export const draftTermInputSchema = z.object({
+  label: z.string().trim().min(2).max(80),
+  termNumber: z.number().int().min(1).max(3),
+  startDate: z.iso.date(),
+  endDate: z.iso.date(),
+});
+
+export const createAcademicYearRequestSchema = z.object({
+  label: z.string().trim().min(4).max(40),
+  startDate: z.iso.date(),
+  endDate: z.iso.date(),
+  terms: z.array(draftTermInputSchema).min(2).max(3),
+});
+
+export const academicYearStatusRequestSchema = z.object({
+  status: z.enum(['ACTIVE', 'CLOSED']),
+});
+
+export const academicYearWithTermsSchema = z.object({
+  id: z.string(),
+  schoolId: z.string(),
+  label: z.string(),
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
+  status: z.enum(ACADEMIC_YEAR_STATUSES),
+  isCurrent: z.boolean(),
+  terms: z.array(
+    z.object({
+      id: z.string(),
+      label: z.string(),
+      termNumber: z.number().int(),
+      startDate: z.string(),
+      endDate: z.string(),
+      isCurrent: z.boolean(),
+    })
+  ),
+});
+
+export const academicYearsResponseSchema = z.object({
+  years: z.array(academicYearWithTermsSchema),
+});
+
+export type DraftTermInput = z.infer<typeof draftTermInputSchema>;
+export type CreateAcademicYearRequest = z.infer<typeof createAcademicYearRequestSchema>;
+export type AcademicYearStatusRequest = z.infer<typeof academicYearStatusRequestSchema>;
+export type AcademicYearWithTerms = z.infer<typeof academicYearWithTermsSchema>;
+export type AcademicYearsResponse = z.infer<typeof academicYearsResponseSchema>;
+
 /**
  * Action vocabulary for configuration mutations. Every configuration section
  * (3.2 onwards) writes these actions through the existing audit repository so
