@@ -67,6 +67,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Scope picker (Phase 3.8)**: Policy scope rows now pick levels and subjects from real records (fetched from the classes API) instead of raw UUID text inputs, keeping any previously saved raw value selectable.
 - **Policy validation messages (Phase 3.8)**: The amber validation summary renders translated French messages instead of raw i18n keys.
 - **Appreciation warnings i18n (Phase 3.10)**: Band warnings (inverted bounds, gaps, overlaps, top/bottom reach) are now localized i18n keys instead of hardcoded French strings.
+- **Session keep-alive (auth)**: The in-memory access token is now refreshed silently shortly before its 15-minute expiry (refresh token stays an httpOnly cookie), so long sessions - the setup wizard included - no longer get logged out mid-flow by an expired token. Real session loss (INVALID/MISSING_REFRESH_SESSION) still logs out; transient sidecar failures back off and retry instead.
+- **Level-coefficient prefill (Phase 4.2)**: Assigning a subject to a class now prefills the coefficient from the class's level curriculum (with a hint naming the level) instead of defaulting to 1, so per-class assignments inherit the level coefficient instead of silently conflicting with it.
+- **i18n file split**: The single 3,400-line `i18n.ts` is split into `src/i18n/fr.ts`, `ar.ts`, `en.ts` and a slim `index.ts`; the shared HTTP client and desktop-status helpers moved to `src/lib/`, and component tests are grouped per module under `src/test/<module>/`.
 
 - **Web app**: Replaced the generated Next.js scaffold with the Version 1 Vite React shell and French-first i18n.
 - **API app**: Replaced the generated hello-world route with a local sidecar foundation, loopback defaults, and redacted logging.
