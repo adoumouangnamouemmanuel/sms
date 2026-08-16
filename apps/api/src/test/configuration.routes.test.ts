@@ -20,7 +20,6 @@ import {
   CONFIG_REQUIREMENTS,
   configurationReadinessResponseSchema,
   type AuthTokenResponse,
-  type ConfigRequirement,
   type ConfigurationReadinessResponse,
   type ConfigurationSnapshot,
 } from '@edutrack/shared';
@@ -33,7 +32,6 @@ const migrationsDir = fileURLToPath(
   new URL('../../../../packages/db/migrations/sqlite/', import.meta.url)
 );
 const firstSchoolId = '00000000-0000-4000-8000-000000000101';
-const secondSchoolId = '00000000-0000-4000-8000-000000000102';
 const schoolMasterId = '00000000-0000-4000-8000-000000000201';
 const secondSchoolMasterId = '00000000-0000-4000-8000-000000000202';
 const teacherId = '00000000-0000-4000-8000-000000000301';
@@ -136,12 +134,8 @@ describe('configuration readiness domain rules', () => {
 
   it('treats zero counts as unmet requirements without NaN or partial values', () => {
     for (const requirement of CONFIG_REQUIREMENTS) {
-      expect(configurationRequirementMet(emptySnapshot, requirement as ConfigRequirement)).toBe(
-        false
-      );
-      expect(configurationRequirementMet(fullSnapshot, requirement as ConfigRequirement)).toBe(
-        true
-      );
+      expect(configurationRequirementMet(emptySnapshot, requirement)).toBe(false);
+      expect(configurationRequirementMet(fullSnapshot, requirement)).toBe(true);
     }
   });
 
@@ -153,10 +147,12 @@ describe('configuration readiness domain rules', () => {
     expect(canTransitionConfigLifecycle('SUPERSEDED', 'PUBLISHED')).toBe(false);
     expect(canTransitionConfigLifecycle('SUPERSEDED', 'DRAFT')).toBe(false);
 
-    expect(() => assertConfigLifecycleTransition('PUBLISHED', 'DRAFT')).toThrow(
-      ConfigLifecycleTransitionError
-    );
-    expect(() => assertConfigLifecycleTransition('DRAFT', 'PUBLISHED')).not.toThrow();
+    expect(() => {
+      assertConfigLifecycleTransition('PUBLISHED', 'DRAFT');
+    }).toThrow(ConfigLifecycleTransitionError);
+    expect(() => {
+      assertConfigLifecycleTransition('DRAFT', 'PUBLISHED');
+    }).not.toThrow();
   });
 });
 
@@ -303,22 +299,28 @@ describe('configuration readiness routes', () => {
       role: 'SCHOOL_MASTER' as const,
     };
 
-    expect(() => service.assertCapability(emptyActor, 'GRADE_ENTRY')).toThrow(
-      ConfigurationServiceError
-    );
-    expect(() => service.assertCapability(emptyActor, 'GRADE_ENTRY')).toThrowError(
-      expect.objectContaining({
-        code: 'CONFIGURATION_NOT_READY',
-        statusCode: 409,
-        fields: expect.objectContaining({
-          missing: expect.arrayContaining(['GRADING_POLICY_PUBLISHED']),
-        }),
-      })
-    );
+    let caught: unknown;
+
+    try {
+      service.assertCapability(emptyActor, 'GRADE_ENTRY');
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(ConfigurationServiceError);
+    if (caught instanceof ConfigurationServiceError) {
+      expect(caught.code).toBe('CONFIGURATION_NOT_READY');
+      expect(caught.statusCode).toBe(409);
+      expect(caught.fields?.missing).toContain('GRADING_POLICY_PUBLISHED');
+    }
 
     seedConfigurationFixture(sqlite, firstSchoolId);
-    expect(() => service.assertCapability(emptyActor, 'CLASSROOM_MANAGEMENT')).not.toThrow();
-    expect(() => service.assertCapability(emptyActor, 'GRADE_ENTRY')).toThrow();
+    expect(() => {
+      service.assertCapability(emptyActor, 'CLASSROOM_MANAGEMENT');
+    }).not.toThrow();
+    expect(() => {
+      service.assertCapability(emptyActor, 'GRADE_ENTRY');
+    }).toThrow(ConfigurationServiceError);
   });
 
   async function loginAndReadAccessToken(username: string, schoolCode = 'NDS-DEMO') {
