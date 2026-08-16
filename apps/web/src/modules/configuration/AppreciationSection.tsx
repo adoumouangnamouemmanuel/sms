@@ -497,7 +497,9 @@ function AppreciationEditor({
             </p>
             <ul className="mt-2 space-y-1 text-xs font-semibold text-amber-800">
               {warnings.map((warning, index) => (
-                <li key={index}>• {warning}</li>
+                <li key={index}>
+                  • {warning.params ? t(warning.key, warning.params) : t(warning.key)}
+                </li>
               ))}
             </ul>
           </div>
@@ -622,25 +624,92 @@ function defaultBands(): AppreciationBandInput[] {
   // Très Bien, 14-15.99 Bien, 12-13.99 Assez Bien, 10-11.99 Passable,
   // 8-9.99 Insuffisant, 6-7.99 Faible, 0-5.99 Très Faible. Editable.
   return [
-    { lowerBound: 1800, upperBound: 2000, labelFr: 'Excellent', labelAr: 'ممتاز', labelEn: 'Excellent', shortLabel: 'Exc', displayOrder: 1 },
-    { lowerBound: 1600, upperBound: 1799, labelFr: 'Très bien', labelAr: 'جيد جداً', labelEn: 'Very good', shortLabel: 'TB', displayOrder: 2 },
-    { lowerBound: 1400, upperBound: 1599, labelFr: 'Bien', labelAr: 'جيد', labelEn: 'Good', shortLabel: 'B', displayOrder: 3 },
-    { lowerBound: 1200, upperBound: 1399, labelFr: 'Assez bien', labelAr: 'لا بأس به', labelEn: 'Fairly good', shortLabel: 'AB', displayOrder: 4 },
-    { lowerBound: 1000, upperBound: 1199, labelFr: 'Passable', labelAr: 'مقبول', labelEn: 'Passable', shortLabel: 'P', displayOrder: 5 },
-    { lowerBound: 800, upperBound: 999, labelFr: 'Insuffisant', labelAr: 'غير كاف', labelEn: 'Insufficient', shortLabel: 'I', displayOrder: 6 },
-    { lowerBound: 600, upperBound: 799, labelFr: 'Faible', labelAr: 'ضعيف', labelEn: 'Weak', shortLabel: 'F', displayOrder: 7 },
-    { lowerBound: 0, upperBound: 599, labelFr: 'Très faible', labelAr: 'ضعيف جداً', labelEn: 'Very weak', shortLabel: 'TF', displayOrder: 8 },
+    {
+      lowerBound: 1800,
+      upperBound: 2000,
+      labelFr: 'Excellent',
+      labelAr: 'ممتاز',
+      labelEn: 'Excellent',
+      shortLabel: 'Exc',
+      displayOrder: 1,
+    },
+    {
+      lowerBound: 1600,
+      upperBound: 1799,
+      labelFr: 'Très bien',
+      labelAr: 'جيد جداً',
+      labelEn: 'Very good',
+      shortLabel: 'TB',
+      displayOrder: 2,
+    },
+    {
+      lowerBound: 1400,
+      upperBound: 1599,
+      labelFr: 'Bien',
+      labelAr: 'جيد',
+      labelEn: 'Good',
+      shortLabel: 'B',
+      displayOrder: 3,
+    },
+    {
+      lowerBound: 1200,
+      upperBound: 1399,
+      labelFr: 'Assez bien',
+      labelAr: 'لا بأس به',
+      labelEn: 'Fairly good',
+      shortLabel: 'AB',
+      displayOrder: 4,
+    },
+    {
+      lowerBound: 1000,
+      upperBound: 1199,
+      labelFr: 'Passable',
+      labelAr: 'مقبول',
+      labelEn: 'Passable',
+      shortLabel: 'P',
+      displayOrder: 5,
+    },
+    {
+      lowerBound: 800,
+      upperBound: 999,
+      labelFr: 'Insuffisant',
+      labelAr: 'غير كاف',
+      labelEn: 'Insufficient',
+      shortLabel: 'I',
+      displayOrder: 6,
+    },
+    {
+      lowerBound: 600,
+      upperBound: 799,
+      labelFr: 'Faible',
+      labelAr: 'ضعيف',
+      labelEn: 'Weak',
+      shortLabel: 'F',
+      displayOrder: 7,
+    },
+    {
+      lowerBound: 0,
+      upperBound: 599,
+      labelFr: 'Très faible',
+      labelAr: 'ضعيف جداً',
+      labelEn: 'Very weak',
+      shortLabel: 'TF',
+      displayOrder: 8,
+    },
   ];
 }
 
-function bandWarnings(bands: AppreciationBandInput[], scaleMax: number): string[] {
-  const warnings: string[] = [];
+function bandWarnings(
+  bands: AppreciationBandInput[],
+  scaleMax: number
+): { key: string; params?: Record<string, string> }[] {
+  const warnings: { key: string; params?: Record<string, string> }[] = [];
   const sorted = [...bands].sort((a, b) => b.lowerBound - a.lowerBound);
   const scaleHundredths = scaleMax * 100;
 
   for (const band of sorted) {
     if (band.lowerBound > band.upperBound) {
-      warnings.push('Bornes inversées.');
+      warnings.push({ key: 'configuration.appreciation.warnInverted' });
     }
   }
   for (let index = 0; index < sorted.length - 1; index += 1) {
@@ -650,19 +719,25 @@ function bandWarnings(bands: AppreciationBandInput[], scaleMax: number): string[
       continue;
     }
     if (next.upperBound + 1 < band.lowerBound) {
-      warnings.push(`Il manque une tranche entre ${formatHundredths(next.upperBound)} et ${formatHundredths(band.lowerBound)}.`);
+      warnings.push({
+        key: 'configuration.appreciation.warnGap',
+        params: {
+          from: formatHundredths(next.upperBound),
+          to: formatHundredths(band.lowerBound),
+        },
+      });
     }
     if (next.upperBound >= band.lowerBound) {
-      warnings.push('Les tranches se chevauchent.');
+      warnings.push({ key: 'configuration.appreciation.warnOverlap' });
     }
   }
   const highest = sorted[0];
   const lowest = sorted[sorted.length - 1];
   if (highest && highest.upperBound < scaleHundredths) {
-    warnings.push('La tranche supérieure doit atteindre le barème maximum.');
+    warnings.push({ key: 'configuration.appreciation.warnReachTop' });
   }
   if (lowest && lowest.lowerBound > 0) {
-    warnings.push('La tranche inférieure doit commencer à zéro.');
+    warnings.push({ key: 'configuration.appreciation.warnStartZero' });
   }
 
   return warnings;
@@ -671,7 +746,9 @@ function bandWarnings(bands: AppreciationBandInput[], scaleMax: number): string[
 function findPreviewBand(bands: AppreciationBandInput[], average: string) {
   const hundredths = parseDecimalToHundredths(average);
   const sorted = [...bands].sort((a, b) => b.lowerBound - a.lowerBound);
-  return sorted.find((band) => hundredths >= band.lowerBound && hundredths <= band.upperBound) ?? null;
+  return (
+    sorted.find((band) => hundredths >= band.lowerBound && hundredths <= band.upperBound) ?? null
+  );
 }
 
 function extractFieldErrors(error: unknown): Record<string, string> {

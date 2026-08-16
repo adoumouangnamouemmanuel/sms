@@ -15,7 +15,11 @@ import { useTranslation } from 'react-i18next';
 import { formInputClassName, formSelectClassName, ModalShell } from '../people/ui';
 import { DecimalField } from './DecimalField';
 import { ConfigurationApiError, resolveConfigurationErrorMessageKey } from './configurationApi';
-import { formatHundredths, parseDecimalToHundredths, parseWeightToHundredths } from './gradingFormat';
+import {
+  formatHundredths,
+  parseDecimalToHundredths,
+  parseWeightToHundredths,
+} from './gradingFormat';
 
 /** Test seam: replaces the network client for component tests. */
 export interface GradingPolicyClient {
@@ -194,9 +198,7 @@ export function GradingPolicySection({
         </div>
       ) : summaries.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-10 text-center">
-          <p className="text-sm font-black text-slate-600">
-            {t('configuration.grading.empty')}
-          </p>
+          <p className="text-sm font-black text-slate-600">{t('configuration.grading.empty')}</p>
           {!readOnly ? (
             <button
               className="mt-4 cursor-pointer rounded-2xl bg-teal-500 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-teal-400"
@@ -219,6 +221,8 @@ export function GradingPolicySection({
           />
           {selected ? (
             <GradingPolicyEditor
+              apiBaseUrl={apiBaseUrl}
+              {...(capabilityToken ? { capabilityToken } : {})}
               {...(client ? { client } : {})}
               detail={selected}
               onCreated={handleCreated}
@@ -306,6 +310,8 @@ function PolicyList({
 // ---------------------------------------------------------------------------
 
 function GradingPolicyEditor({
+  apiBaseUrl,
+  capabilityToken,
   client,
   detail,
   onCreated,
@@ -313,6 +319,8 @@ function GradingPolicyEditor({
   onUpdated,
   readOnly,
 }: {
+  apiBaseUrl: string | null;
+  capabilityToken?: string;
   client?: GradingPolicyClient;
   detail: GradingPolicyDetailResponse;
   onCreated: (detail: GradingPolicyDetailResponse) => void;
@@ -361,16 +369,19 @@ function GradingPolicyEditor({
     setSaved(false);
 
     try {
-      const result =
-        detail.policy.status === 'DRAFT' && client?.update
-          ? await client.update(detail.policy.id, config)
-          : client?.create
-            ? await client.create(config)
-            : null;
-      if (result) {
-        onUpdated(result);
-        setSaved(true);
-      }
+      const result = client?.update
+        ? await client.update(detail.policy.id, config)
+        : client?.create
+          ? await client.create(config)
+          : await saveViaApi(
+              detail.policy.status === 'DRAFT' ? 'update' : 'create',
+              apiBaseUrl,
+              detail.policy.id,
+              config,
+              capabilityToken
+            );
+      onUpdated(result);
+      setSaved(true);
     } catch (error) {
       if (isInvalidAccessToken(error)) {
         onSessionExpired();
@@ -384,7 +395,7 @@ function GradingPolicyEditor({
   };
 
   const handlePublish = async () => {
-    if (readOnly || isPublished || !client?.publish) {
+    if (readOnly || isPublished) {
       return;
     }
     setIsSaving(true);
@@ -392,7 +403,9 @@ function GradingPolicyEditor({
     setFieldErrors({});
 
     try {
-      const result = await client.publish(detail.policy.id);
+      const result = client?.publish
+        ? await client.publish(detail.policy.id)
+        : await publishViaApi(apiBaseUrl, detail.policy.id, capabilityToken);
       onUpdated(result);
       setSaved(true);
     } catch (error) {
@@ -408,14 +421,16 @@ function GradingPolicyEditor({
   };
 
   const handleDuplicate = async () => {
-    if (readOnly || !client?.duplicate) {
+    if (readOnly) {
       return;
     }
     setIsSaving(true);
     setErrorKey(null);
 
     try {
-      const result = await client.duplicate(detail.policy.id);
+      const result = client?.duplicate
+        ? await client.duplicate(detail.policy.id)
+        : await duplicateViaApi(apiBaseUrl, detail.policy.id, capabilityToken);
       onCreated(result);
     } catch (error) {
       if (isInvalidAccessToken(error)) {
@@ -429,14 +444,16 @@ function GradingPolicyEditor({
   };
 
   const handleSaveScopes = async () => {
-    if (readOnly || isPublished || !client?.assignScopes) {
+    if (readOnly || isPublished) {
       return;
     }
     setIsSaving(true);
     setErrorKey(null);
 
     try {
-      const result = await client.assignScopes(detail.policy.id, scopes);
+      const result = client?.assignScopes
+        ? await client.assignScopes(detail.policy.id, scopes)
+        : await assignScopesViaApi(apiBaseUrl, detail.policy.id, scopes, capabilityToken);
       onUpdated(result);
       setSaved(true);
     } catch (error) {
@@ -669,7 +686,10 @@ function GradingPolicyEditor({
       <EditorCard title={t('configuration.grading.subjectTitle')}>
         <div className="space-y-3">
           {config.subjectResult.inputs.map((input, index) => (
-            <div className="flex flex-wrap items-center gap-3" key={`${input.sourceDefinitionId}-${String(index)}`}>
+            <div
+              className="flex flex-wrap items-center gap-3"
+              key={`${input.sourceDefinitionId}-${String(index)}`}
+            >
               <select
                 className={`${formSelectClassName} min-w-[200px] flex-1`}
                 disabled={readOnly || isPublished}
@@ -744,7 +764,11 @@ function GradingPolicyEditor({
                     ...config.subjectResult,
                     inputs: [
                       ...config.subjectResult.inputs,
-                      { sourceDefinitionId: '', weight: 0, displayOrder: config.subjectResult.inputs.length + 1 },
+                      {
+                        sourceDefinitionId: '',
+                        weight: 0,
+                        displayOrder: config.subjectResult.inputs.length + 1,
+                      },
                     ],
                   },
                 });
@@ -775,7 +799,7 @@ function GradingPolicyEditor({
           </p>
           <ul className="mt-2 space-y-1 text-xs font-semibold text-amber-800">
             {validationIssues.map((issue, index) => (
-              <li key={index}>• {issue}</li>
+              <li key={index}>• {t(issue)}</li>
             ))}
           </ul>
         </div>
@@ -787,6 +811,8 @@ function GradingPolicyEditor({
       {/* Scopes */}
       <EditorCard title={t('configuration.grading.scopesTitle')}>
         <ScopeEditor
+          apiBaseUrl={apiBaseUrl}
+          {...(capabilityToken ? { capabilityToken } : {})}
           disabled={readOnly || isPublished}
           onSave={handleSaveScopes}
           scopes={scopes}
@@ -913,9 +939,7 @@ function TemplateModal({
               type="button"
             >
               <p className="text-[13px] font-black text-slate-800">{item.labelFr}</p>
-              <p className="mt-1 text-[11px] font-semibold text-slate-400">
-                {item.descriptionFr}
-              </p>
+              <p className="mt-1 text-[11px] font-semibold text-slate-400">{item.descriptionFr}</p>
             </button>
           ))}
         </div>
@@ -1018,9 +1042,7 @@ function Sandbox({ config, readOnly }: { config: GradingPolicyConfig; readOnly: 
               </p>
               <p className="mt-1 text-3xl font-black tracking-tight text-slate-900">
                 {formatHundredths(result.subjectResult)}
-                <span className="ml-1 text-sm font-bold text-slate-400">
-                  / {result.scaleMax}
-                </span>
+                <span className="ml-1 text-sm font-bold text-slate-400">/ {result.scaleMax}</span>
               </p>
             </div>
             <span
@@ -1043,7 +1065,10 @@ function Sandbox({ config, readOnly }: { config: GradingPolicyConfig; readOnly: 
                   return null;
                 }
                 return (
-                  <li className="flex items-center justify-between text-xs font-bold text-slate-500" key={id}>
+                  <li
+                    className="flex items-center justify-between text-xs font-bold text-slate-500"
+                    key={id}
+                  >
                     <span>{derived.name || derived.shortName}</span>
                     <span>{formatHundredths(value)}</span>
                   </li>
@@ -1287,17 +1312,64 @@ function DerivedResultRow({
 }
 
 function ScopeEditor({
+  apiBaseUrl,
+  capabilityToken,
   disabled,
   onSave,
   scopes,
   setScopes,
 }: {
+  apiBaseUrl: string | null;
+  capabilityToken?: string;
   disabled: boolean;
   onSave: () => Promise<void>;
   scopes: PolicyScopeAssignment[];
   setScopes: (scopes: PolicyScopeAssignment[]) => void;
 }) {
   const { t } = useTranslation();
+  const [levels, setLevels] = useState<{ id: string; label: string }[]>([]);
+  const [subjects, setSubjects] = useState<{ id: string; label: string }[]>([]);
+  const cancelledRef = useRef(false);
+
+  // Load real levels and subjects once so scopes pick from actual records
+  // instead of raw UUIDs (roadmap §9.9, policy resolution by level/subject).
+  useEffect(() => {
+    if (!apiBaseUrl) {
+      return;
+    }
+
+    cancelledRef.current = false;
+
+    void (async () => {
+      try {
+        const [{ listLevelCurriculums }, { listSubjects }] = await Promise.all([
+          import('../classes/classesApi'),
+          import('../classes/classesApi'),
+        ]);
+        const options = { ...(capabilityToken ? { capabilityToken } : {}) };
+        const [curriculum, subjectsPage] = await Promise.all([
+          listLevelCurriculums(apiBaseUrl, options),
+          listSubjects(apiBaseUrl, { limit: 100, offset: 0 }, options),
+        ]);
+        if (!cancelledRef.current) {
+          setLevels(curriculum.items.map((item) => ({ id: item.levelId, label: item.levelName })));
+          setSubjects(
+            subjectsPage.items.map((item) => ({
+              id: item.id,
+              label: item.name,
+            }))
+          );
+        }
+      } catch {
+        // The picker stays empty; raw values in existing scopes are preserved
+        // via the "keep current" options below.
+      }
+    })();
+
+    return () => {
+      cancelledRef.current = true;
+    };
+  }, [apiBaseUrl, capabilityToken]);
 
   const updateScope = (index: number, patch: Partial<PolicyScopeAssignment>) => {
     setScopes(
@@ -1305,9 +1377,23 @@ function ScopeEditor({
     );
   };
 
+  const levelOptions = (current: string | null) => {
+    const known = levels.find((item) => item.id === current);
+    const keep = current && !known ? [{ id: current, label: current }] : [];
+    return [...keep, ...levels];
+  };
+
+  const subjectOptions = (current: string | null) => {
+    const known = subjects.find((item) => item.id === current);
+    const keep = current && !known ? [{ id: current, label: current }] : [];
+    return [...keep, ...subjects];
+  };
+
   return (
     <div className="space-y-3">
-      <p className="text-xs font-semibold text-slate-400">{t('configuration.grading.scopesHint')}</p>
+      <p className="text-xs font-semibold text-slate-400">
+        {t('configuration.grading.scopesHint')}
+      </p>
       {scopes.length === 0 ? (
         <p className="text-xs font-bold text-slate-400">{t('configuration.grading.noScopes')}</p>
       ) : null}
@@ -1326,28 +1412,40 @@ function ScopeEditor({
             <option value="LEVEL_SUBJECT">{t('configuration.grading.scopeSubject')}</option>
           </select>
           {scope.scopeType !== 'SCHOOL_DEFAULT' ? (
-            <input
+            <select
               aria-label={t('configuration.grading.levelId')}
-              className={`${formInputClassName} min-w-[120px] flex-1`}
+              className={`${formSelectClassName} min-w-[160px] flex-1`}
               disabled={disabled}
               onChange={(event) => {
                 updateScope(index, { levelId: event.target.value || null });
               }}
-              placeholder="ID niveau"
               value={scope.levelId ?? ''}
-            />
+            >
+              <option value="">{t('configuration.grading.selectLevel')}</option>
+              {levelOptions(scope.levelId).map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
           ) : null}
           {scope.scopeType === 'LEVEL_SUBJECT' ? (
-            <input
+            <select
               aria-label={t('configuration.grading.subjectId')}
-              className={`${formInputClassName} min-w-[120px] flex-1`}
+              className={`${formSelectClassName} min-w-[160px] flex-1`}
               disabled={disabled}
               onChange={(event) => {
                 updateScope(index, { subjectId: event.target.value || null });
               }}
-              placeholder="ID matière"
               value={scope.subjectId ?? ''}
-            />
+            >
+              <option value="">{t('configuration.grading.selectSubject')}</option>
+              {subjectOptions(scope.subjectId).map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
           ) : null}
           {!disabled ? (
             <button
@@ -1368,7 +1466,10 @@ function ScopeEditor({
           <button
             className="cursor-pointer rounded-2xl border border-dashed border-teal-300 px-4 py-2.5 text-xs font-bold text-teal-700 transition-colors hover:bg-teal-50"
             onClick={() => {
-              setScopes([...scopes, { scopeType: 'SCHOOL_DEFAULT', levelId: null, subjectId: null }]);
+              setScopes([
+                ...scopes,
+                { scopeType: 'SCHOOL_DEFAULT', levelId: null, subjectId: null },
+              ]);
             }}
             type="button"
           >
@@ -1597,10 +1698,79 @@ function createGradingPolicyClientFallback(
   return async (config) => {
     const { createGradingPolicy } = await import('./configurationApi');
     if (!apiBaseUrl) {
-      throw new ConfigurationApiError('LOCAL_SERVICE_UNAVAILABLE', 'Service local indisponible.', 0);
+      throw new ConfigurationApiError(
+        'LOCAL_SERVICE_UNAVAILABLE',
+        'Service local indisponible.',
+        0
+      );
     }
     return createGradingPolicy(apiBaseUrl, config, {
       ...(capabilityToken ? { capabilityToken } : {}),
     });
   };
+}
+
+async function saveViaApi(
+  kind: 'create' | 'update',
+  apiBaseUrl: string | null,
+  policyId: string,
+  config: GradingPolicyConfig,
+  capabilityToken?: string
+) {
+  const { createGradingPolicy, updateGradingPolicy } = await import('./configurationApi');
+  if (!apiBaseUrl) {
+    throw new ConfigurationApiError('LOCAL_SERVICE_UNAVAILABLE', 'Service local indisponible.', 0);
+  }
+  const options = { ...(capabilityToken ? { capabilityToken } : {}) };
+  return kind === 'update'
+    ? updateGradingPolicy(apiBaseUrl, policyId, config, options)
+    : createGradingPolicy(apiBaseUrl, config, options);
+}
+
+async function publishViaApi(
+  apiBaseUrl: string | null,
+  policyId: string,
+  capabilityToken?: string
+) {
+  const { publishGradingPolicy } = await import('./configurationApi');
+  if (!apiBaseUrl) {
+    throw new ConfigurationApiError('LOCAL_SERVICE_UNAVAILABLE', 'Service local indisponible.', 0);
+  }
+  return publishGradingPolicy(apiBaseUrl, policyId, {
+    ...(capabilityToken ? { capabilityToken } : {}),
+  });
+}
+
+async function duplicateViaApi(
+  apiBaseUrl: string | null,
+  policyId: string,
+  capabilityToken?: string
+) {
+  const { duplicateGradingPolicy } = await import('./configurationApi');
+  if (!apiBaseUrl) {
+    throw new ConfigurationApiError('LOCAL_SERVICE_UNAVAILABLE', 'Service local indisponible.', 0);
+  }
+  return duplicateGradingPolicy(apiBaseUrl, policyId, {
+    ...(capabilityToken ? { capabilityToken } : {}),
+  });
+}
+
+async function assignScopesViaApi(
+  apiBaseUrl: string | null,
+  policyId: string,
+  scopes: PolicyScopeAssignment[],
+  capabilityToken?: string
+) {
+  const { assignPolicyScopes } = await import('./configurationApi');
+  if (!apiBaseUrl) {
+    throw new ConfigurationApiError('LOCAL_SERVICE_UNAVAILABLE', 'Service local indisponible.', 0);
+  }
+  return assignPolicyScopes(
+    apiBaseUrl,
+    policyId,
+    { scopes },
+    {
+      ...(capabilityToken ? { capabilityToken } : {}),
+    }
+  );
 }
