@@ -96,7 +96,13 @@ export function LevelCurriculumView({
   }, [apiBaseUrl, client, onSessionExpired, requestOptions]);
 
   useEffect(() => {
-    void load();
+    const handle = window.setTimeout(() => {
+      void load();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(handle);
+    };
   }, [load]);
 
   const selectLevel = (levelId: string) => {
@@ -117,15 +123,11 @@ export function LevelCurriculumView({
 
   const toggleSubject = (subjectId: string) => {
     setDraft((current) => {
-      const next = { ...current };
-
-      if (next[subjectId]) {
-        delete next[subjectId];
-      } else {
-        next[subjectId] = { coefficient: 1, isRequired: true };
+      if (current[subjectId]) {
+        return Object.fromEntries(Object.entries(current).filter(([id]) => id !== subjectId));
       }
 
-      return next;
+      return { ...current, [subjectId]: { coefficient: 1, isRequired: true } };
     });
     setSaved(false);
   };
@@ -136,18 +138,26 @@ export function LevelCurriculumView({
       return;
     }
 
-    setDraft((current) => ({
-      ...current,
-      [subjectId]: { ...current[subjectId]!, coefficient },
-    }));
+    setDraft((current) => {
+      const existing = current[subjectId];
+      if (!existing) {
+        return current;
+      }
+
+      return { ...current, [subjectId]: { ...existing, coefficient } };
+    });
     setSaved(false);
   };
 
   const toggleRequired = (subjectId: string) => {
-    setDraft((current) => ({
-      ...current,
-      [subjectId]: { ...current[subjectId]!, isRequired: !current[subjectId]!.isRequired },
-    }));
+    setDraft((current) => {
+      const existing = current[subjectId];
+      if (!existing) {
+        return current;
+      }
+
+      return { ...current, [subjectId]: { ...existing, isRequired: !existing.isRequired } };
+    });
     setSaved(false);
   };
 

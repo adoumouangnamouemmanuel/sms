@@ -5,7 +5,7 @@ import type {
   CreateAcademicYearRequest,
   DraftTermInput,
 } from '@edutrack/shared';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DatePicker } from '../../components/DatePicker';
 import { formatISODate } from '../../components/dateFormat';
@@ -42,16 +42,21 @@ export function AcademicYearsSection({
   const [isCreating, setIsCreating] = useState(false);
   const [isMutating, setIsMutating] = useState(false);
 
-  const requestOptions = { ...(capabilityToken ? { capabilityToken } : {}) };
+  const requestOptions = useCallback(
+    () => ({
+      ...(capabilityToken ? { capabilityToken } : {}),
+    }),
+    [capabilityToken]
+  );
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setIsLoading(true);
     setErrorKey(null);
 
     try {
       const data = client?.listAcademicYears
         ? await client.listAcademicYears()
-        : await listAcademicYears(apiBaseUrl ?? '', requestOptions);
+        : await listAcademicYears(apiBaseUrl ?? '', requestOptions());
       setResponse(data);
     } catch (error) {
       if (error instanceof ConfigurationApiError && error.code === 'INVALID_ACCESS_TOKEN') {
@@ -63,12 +68,17 @@ export function AcademicYearsSection({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [apiBaseUrl, client, onSessionExpired, requestOptions]);
 
   useEffect(() => {
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiBaseUrl, capabilityToken, client]);
+    const handle = window.setTimeout(() => {
+      void load();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(handle);
+    };
+  }, [apiBaseUrl, capabilityToken, client, load]);
 
   const activeYear = response?.years.find((year) => year.status === 'ACTIVE') ?? null;
 
@@ -84,7 +94,7 @@ export function AcademicYearsSection({
           apiBaseUrl ?? '',
           year.id,
           { status },
-          requestOptions
+          requestOptions()
         );
       }
 
@@ -232,7 +242,7 @@ export function AcademicYearsSection({
             await load();
           }}
           {...(onSessionExpired ? { onSessionExpired } : {})}
-          requestOptions={requestOptions}
+          requestOptions={requestOptions()}
         />
       ) : null}
     </section>

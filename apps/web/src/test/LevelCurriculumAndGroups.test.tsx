@@ -208,8 +208,13 @@ describe('SubjectGroupsView (roadmap §9.6)', () => {
 
   it('opens the create-group modal and submits the name', async () => {
     const user = userEvent.setup();
+    const baseGroup = groupsFixture.items[0];
+    if (baseGroup === undefined) {
+      throw new Error('Expected the groups fixture to contain one group.');
+    }
+
     const created: SubjectGroupView = {
-      ...(groupsFixture.items[0] as SubjectGroupView),
+      ...baseGroup,
       id: '00000000-0000-4000-8000-00000000c002',
       name: 'Matières littéraires',
     };

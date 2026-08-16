@@ -92,7 +92,13 @@ export function SubjectGroupsView({
   }, [apiBaseUrl, client, onSessionExpired, requestOptions]);
 
   useEffect(() => {
-    void load();
+    const handle = window.setTimeout(() => {
+      void load();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(handle);
+    };
   }, [load]);
 
   const loadMembers = useCallback(
@@ -124,11 +130,17 @@ export function SubjectGroupsView({
   );
 
   useEffect(() => {
-    if (selectedGroupId) {
-      void loadMembers(selectedGroupId);
-    } else {
-      setMembers([]);
-    }
+    const handle = window.setTimeout(() => {
+      if (selectedGroupId) {
+        void loadMembers(selectedGroupId);
+      } else {
+        setMembers([]);
+      }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(handle);
+    };
   }, [selectedGroupId, loadMembers]);
 
   const selectedGroup = groups?.items.find((group) => group.id === selectedGroupId) ?? null;
@@ -201,7 +213,12 @@ export function SubjectGroupsView({
 
       const next = [...current];
       const [moved] = next.splice(index, 1);
-      next.splice(target, 0, moved!);
+
+      if (moved === undefined) {
+        return current;
+      }
+
+      next.splice(target, 0, moved);
 
       return next.map((member, order) => ({ ...member, displayOrder: order + 1 }));
     });

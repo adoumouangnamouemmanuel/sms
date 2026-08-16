@@ -241,9 +241,7 @@ describe('ConfigurationModule academic years (roadmap §9.3)', () => {
 
   it('opens the create-year modal and blocks submission until all dates are set', async () => {
     const user = userEvent.setup();
-    const createAcademicYear = vi
-      .fn()
-      .mockResolvedValue(yearsFixture.years[0] as AcademicYearWithTerms);
+    const createAcademicYear = vi.fn().mockResolvedValue(yearsFixture.years[0]);
     const client: ConfigurationClient = {
       loadReadiness: vi.fn().mockResolvedValue(readinessFixture),
       listAcademicYears: vi.fn().mockResolvedValue({ years: [] }),

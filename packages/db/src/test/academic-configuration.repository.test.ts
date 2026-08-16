@@ -36,7 +36,7 @@ describe('academic configuration repositories (roadmap §9.3/§9.5/§9.6)', () =
 
   const [firstSchool, secondSchool] = foundationSeed.schools;
 
-  function tenant(schoolId = firstSchool.id) {
+  function tenant(schoolId: string = firstSchool.id) {
     return createTenantContext(schoolId);
   }
 
@@ -47,7 +47,7 @@ describe('academic configuration repositories (roadmap §9.3/§9.5/§9.6)', () =
       [{ code: '6E', name: 'Sixième', displayOrder: 1, isExamYear: false }],
       fixedAt
     );
-    const level = levelRepository.listActive()[0]!;
+    const level = requireFound(levelRepository.listActive()[0], 'level');
     const math = subjectRepository.create({
       code: 'MATH',
       name: 'Mathématiques',
@@ -113,7 +113,7 @@ describe('academic configuration repositories (roadmap §9.3/§9.5/§9.6)', () =
       [{ code: '6E', name: 'Sixième', displayOrder: 1, isExamYear: false }],
       fixedAt
     );
-    const otherLevel = otherLevelRepository.listActive()[0]!;
+    const otherLevel = requireFound(otherLevelRepository.listActive()[0], 'other level');
     const otherMath = createSubjectRepository(db, otherTenant).create({
       code: 'MATH',
       name: 'Mathématiques',
@@ -137,7 +137,10 @@ describe('academic configuration repositories (roadmap §9.3/§9.5/§9.6)', () =
 
   it('creates groups with display order and bumps the record version on update', () => {
     const repository = createSubjectGroupRepository(db, tenant());
-    const created = repository.create({ name: 'Matières scientifiques', displayOrder: 1 }, fixedAt);
+    const created = repository.create(
+      { name: 'Matières scientifiques', nameEn: null, nameAr: null, displayOrder: 1 },
+      fixedAt
+    );
     expect(created).toMatchObject({
       schoolId: firstSchool.id,
       name: 'Matières scientifiques',
@@ -154,7 +157,10 @@ describe('academic configuration repositories (roadmap §9.3/§9.5/§9.6)', () =
   it('replaces membership atomically: array order becomes the display order', () => {
     const { math, french } = seedLevelAndSubject();
     const repository = createSubjectGroupRepository(db, tenant());
-    const group = repository.create({ name: 'Matières scientifiques', displayOrder: 1 }, fixedAt);
+    const group = repository.create(
+      { name: 'Matières scientifiques', nameEn: null, nameAr: null, displayOrder: 1 },
+      fixedAt
+    );
 
     const members = repository.replaceMembers(group.id, [french.id, math.id], fixedAt);
     expect(members).toHaveLength(2);
@@ -183,14 +189,17 @@ describe('academic configuration repositories (roadmap §9.3/§9.5/§9.6)', () =
 
   it('keeps subject groups and members tenant-scoped', () => {
     const repository = createSubjectGroupRepository(db, tenant());
-    repository.create({ name: 'Matières scientifiques', displayOrder: 1 }, fixedAt);
+    repository.create(
+      { name: 'Matières scientifiques', nameEn: null, nameAr: null, displayOrder: 1 },
+      fixedAt
+    );
 
     const otherTenant = tenant(secondSchool.id);
     const otherRepository = createSubjectGroupRepository(db, otherTenant);
     expect(otherRepository.listWithCounts()).toHaveLength(0);
 
     const group = otherRepository.create(
-      { name: 'Matières littéraires', displayOrder: 1 },
+      { name: 'Matières littéraires', nameEn: null, nameAr: null, displayOrder: 1 },
       fixedAt
     );
     expect(otherRepository.listWithCounts()).toHaveLength(1);
@@ -294,6 +303,14 @@ describe('academic configuration repositories (roadmap §9.3/§9.5/§9.6)', () =
     expect(termRepository.listForAcademicYear(year.id).some((term) => term.isCurrent)).toBe(false);
   });
 });
+
+function requireFound<T>(value: T | undefined, label: string): T {
+  if (value === undefined) {
+    throw new Error(`Expected ${label} to exist.`);
+  }
+
+  return value;
+}
 
 function applyAllMigrations(sqlite: Database.Database) {
   const migrationFiles = readdirSync(migrationsDir)
