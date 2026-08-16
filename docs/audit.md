@@ -191,3 +191,62 @@
 - Vérification du journal de migrations (ordre des `when`, 13 entrées)
 - `pnpm exec vite build` (mesure des chunks, 6.2 s)
 - Revue manuelle : `server.ts`, `auth.*`, `authSession.ts`, `auth.cookies.ts`, `lib.rs`, `tauri.conf.json`, `capabilities/default.json`, `seeds.ts`, `student.repository.ts`, CI workflows
+
+---
+
+## 10. État de remédiation (mise à jour)
+
+Tous les findings de ce rapport ont été corrigés et vérifiés. Chaque item
+ci-dessous indique le commit / la porte de vérification correspondante.
+
+### 🔴 Dépendances — résolu
+
+- **S1/S2/S3 (fastify 4.29.1, find-my-way, content-type bypass)** : upgrade
+  `fastify` → **5.12.0** + `@fastify/multipart` ligne compatible v5.
+- **S4/S5 (drizzle-orm 0.30.10, échappement d'identifiants GHSA-gpj5-g38j-94v9)** :
+  upgrade → **0.45.2** ; les 18 configs `sqliteTable` (forme objet dépréciée)
+  converties à la forme tableau.
+- **Vérification** : `pnpm audit --prod` → _No known vulnerabilities found_.
+
+### 🟡 Médiums — résolus
+
+- **B1 (pas de `setErrorHandler`)** : handler global + `setNotFoundHandler`
+  dans `server.ts` (enveloppe `{success, error:{code,message}}` uniforme,
+  pino, pas de stack en prod). Tests : `apps/api/src/test/server-errors.test.ts`.
+- **D1 (ordre du journal)** : tests de régression dans
+  `database-foundation.test.ts` (ordre strict des `when` + parité des fichiers
+  SQL). Ajout d'un test de non-régression (0016 appliqué après 0014/0015).
+- **D2 (dossier `migrations/` orphelin)** : supprimé.
+- **F1 (pas d'ErrorBoundary)** : `ErrorBoundary` racine dans
+  `apps/web/src/components/ErrorBoundary.tsx` (UI de récupération FR).
+- **F2 (chunk unique 690 kB)** : lazy-loading des 5 modules + `manualChunks`
+  react/i18n → chargement initial **442 kB raw (150 kB gzip)**.
+- **F3 (fetch sans timeout)** : `fetchWithTimeout` (abort 30 s) partagé
+  (`apps/web/src/httpClient.ts`), utilisé par les 9 call sites API.
+- **F4 (clé i18n manquante)** : `common.date` + `datePicker` ajoutés à `ar`/`en`.
+- **S6 (token de capability)** : conservé par conception (exigé par le
+  sidecar) ; atténué par CSP stricte et zéro sink XSS — documenté.
+- **O2 (fichier exemple modifié localement)** : à committer par l'utilisateur
+  si souhaité — hors périmètre.
+
+### 🟢 Bas / Bonus — résolus
+
+- **O1 (README e2e)** : déjà documenté (faux positif).
+- Tests web obsolètes (5) réalignés après refactors récents ; lint cassé dans
+  `teacher.repository.ts` réparé ; format Prettier appliqué sur 9 fichiers.
+
+### Vérification finale
+
+- **271 tests** (96 db + 104 api + 71 web) — verts.
+- Typecheck 0 erreur · lint 0 · format 0 · `pnpm audit --prod` 0 vulnérabilité.
+- Sidecar : build de prod + boot sur base neuve → 13/13 migrations,
+  tables classes créées.
+- Revue CodeRabbit PR #19 : les 16 threads majeurs traités (voir commits du
+  batch « code review »), y compris migration 0016 (invariant
+  classe-année via triggers SQLite + index unique conscient du statut).
+
+### Suivi restant (hors audit)
+
+- `drizzle-kit` reste en 0.20 en devDependency (génération OK, testée via
+  `scripts/drizzle-generate.mjs`) ; à aligner avec drizzle-orm 0.45 lors d'une
+  prochaine montée de version.

@@ -12,15 +12,15 @@ Deux options :
 2. **Depuis ce dépôt** - les fichiers prêts à l'emploi sont dans
    `docs/import-templates/` :
 
-   | Fichier                    | Contenu                                                              |
-   | -------------------------- | -------------------------------------------------------------------- |
-   | `eleves_modele.xlsx`       | En-têtes + feuille « Mode d'emploi » + exemples (0 ligne de données) |
-   | `professeurs_modele.xlsx`  | Idem pour les professeurs                                            |
-   | `tuteurs_modele.xlsx`      | Idem pour les tuteurs                                                |
-   | `eleves_exemple.xlsx`      | **6 élèves valides, prêts à importer**                               |
-   | `professeurs_exemple.xlsx` | **4 professeurs valides, prêts à importer**                          |
-   | `tuteurs_exemple.xlsx`     | **4 tuteurs valides, prêts à importer**                              |
-   | `eleves_avec_erreurs.xlsx` | 6 lignes dont 3 en erreur (pour tester le rapport)                   |
+   | Fichier                     | Contenu                                                              |
+   | --------------------------- | -------------------------------------------------------------------- |
+   | `eleves_modele.xlsx`        | En-têtes + feuille « Mode d'emploi » + exemples (0 ligne de données) |
+   | `professeurs_modele.xlsx`   | Idem pour les professeurs                                            |
+   | `responsables_modele.xlsx`  | Idem pour les responsables (tuteurs)                                 |
+   | `eleves_exemple.xlsx`       | **6 élèves valides, prêts à importer**                               |
+   | `professeurs_exemple.xlsx`  | **4 professeurs valides, prêts à importer**                          |
+   | `responsables_exemple.xlsx` | **4 responsables valides, prêts à importer**                         |
+   | `eleves_avec_erreurs.xlsx`  | 6 lignes dont 3 en erreur (pour tester le rapport)                   |
 
 ## 2. Remplir le fichier
 
@@ -35,7 +35,7 @@ Deux options :
   | `Prénom`, `Nom`                                              | Oui    | Texte (max 120 caractères).                                                                                                                           |
   | `Sexe` (élèves)                                              | Non    | `M`, `F` ou `AUTRE` (ou `Masculin` / `Féminin`).                                                                                                      |
   | `Date de naissance` / `Date d'embauche`                      | Non    | `JJ/MM/AAAA` (ex. `14/03/2012`) ou `AAAA-MM-JJ`.                                                                                                      |
-  | `Code élève` (tuteurs)                                       | Non    | Code de l'élève à lier automatiquement au tuteur.                                                                                                     |
+  | `Code élève` (responsables)                                  | Non    | Code de l'élève à lier automatiquement au responsable.                                                                                                |
   | `Nationalité`, `Spécialité`, `Téléphone`, `Email`, `Adresse` | Non    | Texte libre.                                                                                                                                          |
 
 - **Codes** : un code utilisé deux fois dans le même fichier, ou déjà présent
@@ -44,7 +44,7 @@ Deux options :
 
 ## 3. Importer
 
-1. Cliquez sur **Importer** (barre du module Élèves, Professeurs ou Tuteurs).
+1. Cliquez sur **Importer** (barre du module Élèves, Professeurs ou Responsables).
 2. **Analyser le fichier** - l'application lit le fichier, montre un aperçu
    (`valides` / `en erreur`) et **n'enregistre rien** à ce stade.
 3. En cas d'erreurs, les messages s'affichent ligne par ligne. Cliquez sur
@@ -79,9 +79,11 @@ identifiant **différent** pour chaque fichier réellement nouveau.
    `professeurs_exemple.xlsx` → analyser (4 valides) → identifiant
    `test-professeurs-1` → confirmer → 4 importés (la date `01/09/2015` devient
    `2015-09-01` sur le profil).
-5. **Test 4 - tuteurs** : module **Tuteurs** → **Importer** →
-   `tuteurs_exemple.xlsx` → analyser (4 valides) → identifiant
-   `test-tuteurs-1` → confirmer → 4 importés. Les tuteurs sont créés et liés automatiquement s'ils ont un code d'élève.
+5. **Test 4 - responsables** : module **Responsables** → **Importer** →
+   `responsables_exemple.xlsx` → analyser (4 valides) → identifiant
+   `test-responsables-1` → confirmer → 4 importés. Les responsables sont
+   créés et liés automatiquement aux élèves dont le `Code élève` figure dans
+   le fichier (voir §7).
 6. **Test 5 - erreurs** : **Élèves** → **Importer** →
    `eleves_avec_erreurs.xlsx` → analyser. Attendu : **3 en erreur** (Prénom
    manquant ligne 3, Sexe invalide ligne 4, Code dupliqué ligne 5).
@@ -118,3 +120,34 @@ Exemples de test rapide : **Classes** → **Importer** → `classes_exemple.xlsx
 importées ; même logique pour `matieres_exemple.xlsx` et
 `affectations_exemple.xlsx`. La règle d'idempotence du §4 s'applique aussi : le
 même identifiant ne peut être confirmé qu'une seule fois.
+
+## 7. Import des responsables (détail)
+
+Le modèle `responsables_modele.xlsx` (bouton **Importer** du module
+**Responsables**) comporte les colonnes :
+
+| Colonne                         | Requis | Règle                                                                                                                                                               |
+| ------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Prénom`, `Nom`                 | Oui    | Texte (max 120 caractères).                                                                                                                                         |
+| `Téléphone`, `Email`, `Adresse` | Non    | Texte libre.                                                                                                                                                        |
+| `Code élève`                    | Non    | Code d'un élève existant de l'école : lie automatiquement le responsable à cet élève. Un code inconnu rejette la ligne (l'élève doit être importé ou créé d'abord). |
+
+> Le lien de parenté (`PERE`, `MERE`, `TUTEUR`, `AUTRE`) ne se règle pas à
+> l'import : il se choisit dans l'application quand on lie le responsable à un
+> élève (les responsables importés sont liés en `AUTRE` par défaut).
+
+- **Liaison** : un responsable avec un `Code élève` valide est lié à l'élève
+  correspondant au moment de la confirmation ; sans `Code élève`, le
+  responsable est créé seul et peut être lié ensuite depuis la fiche élève
+  (**Lier un responsable**).
+- **Doublons** : deux responsables identiques (mêmes nom et prénom) restent
+  distincts ; utilisez le lien par `Code élève` pour rattacher plusieurs
+  élèves au même responsable.
+
+**Vérification manuelle (Test 7)** : dans **Élèves**, notez le code d'un élève
+(par ex. `NDS-DEMO-2026-001` après le test 1). Ouvrez
+`responsables_exemple.xlsx`, remplacez la valeur de la colonne `Code élève`
+d'une ligne par ce code, puis **Importer** → **Analyser** → **Confirmer** avec
+l'identifiant `test-responsables-2`. Attendu : la ligne est valide et, sur la
+fiche de l'élève, le responsable apparaît dans **Responsables liés** ; la fiche
+responsable affiche l'élève dans **Élèves liés (fratrie)**.
