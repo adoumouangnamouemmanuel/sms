@@ -1,4 +1,5 @@
 export * from './academic-year.repository.js';
+export * from './appreciation.repository.js';
 export * from './audit-log.repository.js';
 export * from './base.js';
 export * from './class-enrollment.repository.js';
@@ -6,6 +7,7 @@ export * from './class-level.repository.js';
 export * from './class-subject.repository.js';
 export * from './classroom.repository.js';
 export * from './configuration.repository.js';
+export * from './grading-policy.repository.js';
 export * from './guardian.repository.js';
 export * from './import-batch.repository.js';
 export * from './level-subject.repository.js';

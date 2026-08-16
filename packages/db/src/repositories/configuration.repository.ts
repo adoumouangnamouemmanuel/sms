@@ -2,7 +2,15 @@ import { and, count, eq, isNull } from 'drizzle-orm';
 import type { ConfigurationSnapshot } from '@edutrack/shared';
 import type { RepositoryExecutor, TenantContext } from './base.js';
 import { TenantScopedRepository } from './base.js';
-import { academicYear, classLevel, classSubject, school, subject } from '../schema.sqlite.js';
+import {
+  academicYear,
+  appreciationScale,
+  classLevel,
+  classSubject,
+  gradingPolicy,
+  school,
+  subject,
+} from '../schema.sqlite.js';
 
 /**
  * Reads the live configuration facts the readiness evaluator consumes
@@ -78,11 +86,44 @@ export class ConfigurationRepository extends TenantScopedRepository {
       levelCount: levelCountRow?.value ?? 0,
       subjectCount: subjectCountRow?.value ?? 0,
       curriculumClassCount: curriculumCountRow?.value ?? 0,
-      publishedGradingPolicies: 0,
-      appreciationConfigured: false,
+      publishedGradingPolicies: this.countPublishedPolicies(),
+      appreciationConfigured: this.hasPublishedAppreciationScale(),
       validatedSubmissions: 0,
       bulletinConfigured: false,
     };
+  }
+
+  private countPublishedPolicies(): number {
+    const row = this.db
+      .select({ value: count() })
+      .from(gradingPolicy)
+      .where(
+        and(
+          eq(gradingPolicy.schoolId, this.schoolId),
+          eq(gradingPolicy.status, 'PUBLISHED'),
+          isNull(gradingPolicy.deletedAt)
+        )
+      )
+      .get();
+
+    return row?.value ?? 0;
+  }
+
+  private hasPublishedAppreciationScale(): boolean {
+    const row = this.db
+      .select({ id: appreciationScale.id })
+      .from(appreciationScale)
+      .where(
+        and(
+          eq(appreciationScale.schoolId, this.schoolId),
+          eq(appreciationScale.status, 'PUBLISHED'),
+          isNull(appreciationScale.deletedAt)
+        )
+      )
+      .limit(1)
+      .get();
+
+    return row !== undefined;
   }
 }
 
