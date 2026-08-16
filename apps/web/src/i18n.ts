@@ -44,6 +44,13 @@ const resources = {
           profile: "Profil de l'école",
           structure: 'Structure académique',
         },
+        profile: {
+          title: "Profil de l'école",
+          hint: "Identité et coordonnées utilisées par les bulletins.",
+          edit: 'Modifier',
+          saved: 'Profil enregistré.',
+        },
+        saveProfile: 'Enregistrer',
         years: {
           title: 'Années scolaires',
           hint: "Périodes et années de l'établissement — une seule année active.",

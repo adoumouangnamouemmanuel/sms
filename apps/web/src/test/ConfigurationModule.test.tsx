@@ -4,6 +4,7 @@ import type {
   AcademicYearWithTerms,
   AcademicYearsResponse,
   ConfigurationReadinessResponse,
+  SetupStateResponse,
 } from '@edutrack/shared';
 import { describe, expect, it, vi } from 'vitest';
 import '../i18n';
@@ -11,6 +12,33 @@ import {
   ConfigurationModule,
   type ConfigurationClient,
 } from '../modules/configuration/ConfigurationModule';
+
+const setupStateFixture: SetupStateResponse = {
+  school: {
+    id: '00000000-0000-4000-8000-000000000101',
+    code: 'NDS-DEMO',
+    name: 'Ecole Demo',
+    shortName: 'Demo',
+    logoUrl: null,
+    address: 'Rue 12, Quartier Farcha',
+    city: 'N Djamena',
+    country: 'TD',
+    phone: '+23566000000',
+    email: 'contact@demo.td',
+    motto: 'Travail et réussite',
+    ministryCode: null,
+    locale: 'fr',
+    timezone: 'Africa/Ndjamena',
+    currency: 'XAF',
+    setupStatus: 'COMPLETED',
+  },
+  academicYear: null,
+  termSystem: 'TRIMESTER',
+  terms: [],
+  classLevels: [],
+  enabledModules: [],
+  nextStep: 'profile',
+};
 
 const readinessFixture: ConfigurationReadinessResponse = {
   areas: [
@@ -83,6 +111,17 @@ function createClient(
   };
 }
 
+function renderModule(client: ConfigurationClient, props: Partial<Parameters<typeof ConfigurationModule>[0]> = {}) {
+  return render(
+    <ConfigurationModule
+      apiBaseUrl={null}
+      client={client}
+      setupState={setupStateFixture}
+      {...props}
+    />
+  );
+}
+
 const yearsFixture: AcademicYearsResponse = {
   years: [
     {
@@ -117,7 +156,7 @@ const yearsFixture: AcademicYearsResponse = {
 
 describe('ConfigurationModule', () => {
   it('renders French area cards with their statuses', async () => {
-    render(<ConfigurationModule apiBaseUrl={null} client={createClient()} />);
+    renderModule(createClient());
 
     expect(await screen.findByRole('heading', { name: 'Configuration' })).toBeInTheDocument();
 
@@ -132,7 +171,7 @@ describe('ConfigurationModule', () => {
   });
 
   it('lists every capability with the missing requirement in French', async () => {
-    render(<ConfigurationModule apiBaseUrl={null} client={createClient()} />);
+    renderModule(createClient());
 
     expect(await screen.findByText('Saisir les notes')).toBeInTheDocument();
     // GRADE_ENTRY and GRADE_SUBMISSION both list the same missing requirement.
@@ -149,7 +188,7 @@ describe('ConfigurationModule', () => {
       loadReadiness: vi.fn().mockRejectedValue(new Error('sidecar down')),
     };
 
-    render(<ConfigurationModule apiBaseUrl={null} client={failingClient} />);
+    renderModule(failingClient);
 
     expect(
       await screen.findByText('La configuration est temporairement indisponible. Réessayez.')
@@ -161,11 +200,9 @@ describe('ConfigurationModule', () => {
     const user = userEvent.setup();
     const onNavigate = vi.fn();
 
-    render(
-      <ConfigurationModule apiBaseUrl={null} client={createClient()} onNavigate={onNavigate} />
-    );
+    renderModule(createClient(), { onNavigate });
 
-    expect(await screen.findByText("Profil de l'école")).toBeInTheDocument();
+    expect((await screen.findAllByText("Profil de l'école")).length).toBeGreaterThanOrEqual(2);
 
     await user.click(screen.getByRole('button', { name: "Profil de l'école" }));
     expect(onNavigate).toHaveBeenCalledWith('SCHOOL_SETUP');
@@ -175,7 +212,7 @@ describe('ConfigurationModule', () => {
   });
 
   it('keeps accessibility semantics for the status summary', async () => {
-    render(<ConfigurationModule apiBaseUrl={null} client={createClient()} />);
+    renderModule(createClient());
 
     const readinessPill = await screen.findByText('2 / 5 sections prêtes');
     expect(readinessPill.closest('span')).toBeInTheDocument();
@@ -188,7 +225,7 @@ describe('ConfigurationModule', () => {
 
 describe('ConfigurationModule academic years (roadmap §9.3)', () => {
   it('lists the active year with its terms and the current badge', async () => {
-    render(<ConfigurationModule apiBaseUrl={null} client={createClient()} />);
+    renderModule(createClient());
 
     expect(await screen.findByText('2026-2027')).toBeInTheDocument();
     expect(screen.getByText(/Trimestre 1/)).toBeInTheDocument();
@@ -227,7 +264,7 @@ describe('ConfigurationModule academic years (roadmap §9.3)', () => {
       changeAcademicYearStatus: changeStatus,
     };
 
-    render(<ConfigurationModule apiBaseUrl={null} client={client} />);
+    renderModule(client);
 
     expect(await screen.findByText('2027-2028')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Activer' }));
@@ -236,6 +273,29 @@ describe('ConfigurationModule academic years (roadmap §9.3)', () => {
       expect(changeStatus).toHaveBeenCalledWith('00000000-0000-4000-8000-000000000902', {
         status: 'ACTIVE',
       });
+    });
+  });
+
+  it('shows the school profile and saves edits through the client seam', async () => {
+    const user = userEvent.setup();
+    const saveProfile = vi
+      .fn()
+      .mockResolvedValue({ ...setupStateFixture, school: { ...setupStateFixture.school, motto: 'Réussite et discipline' } });
+    const client = createClient();
+    client.saveProfile = saveProfile;
+
+    renderModule(client);
+
+    expect(
+      await screen.findByRole('heading', { name: "Profil de l'école" })
+    ).toBeInTheDocument();
+    expect(screen.getAllByText('Ecole Demo').length).toBeGreaterThanOrEqual(1);
+
+    await user.click(screen.getByRole('button', { name: 'Modifier' }));
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+
+    await waitFor(() => {
+      expect(saveProfile).toHaveBeenCalled();
     });
   });
 
@@ -248,7 +308,7 @@ describe('ConfigurationModule academic years (roadmap §9.3)', () => {
       createAcademicYear,
     };
 
-    render(<ConfigurationModule apiBaseUrl={null} client={client} />);
+    renderModule(client);
 
     expect(await screen.findByText('Aucune année scolaire pour le moment.')).toBeInTheDocument();
 

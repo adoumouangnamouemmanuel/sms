@@ -417,7 +417,7 @@ Do not freeze the grade schema until all of these are true:
 
 ### 9.2 School profile
 
-- [x] Official name, short name, logo reference, contact/address and display language, reconciled with the setup-wizard profile step (§8.2).
+- [x] Official name, short name, logo reference, contact/address and display language, reconciled with the setup-wizard profile step (§8.2) and editable from the permanent Configuration area (embedded profile editor, same `school` table and setup endpoint).
 - [x] The profile fields bulletins need (header lines, school identity) are available here; the bulletin designer itself is Phase 6.
 
 ### 9.3 Academic year and periods

@@ -9,10 +9,13 @@ import {
   type ConfigRequirement,
   type CreateAcademicYearRequest,
   type SchoolCapability,
+  type SetupSchoolProfileRequest,
+  type SetupStateResponse,
 } from '@edutrack/shared';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AcademicYearsSection } from './AcademicYearsSection';
+import { SchoolProfileSection } from './SchoolProfileSection';
 import {
   ConfigurationApiError,
   fetchConfigurationReadiness,
@@ -27,6 +30,9 @@ export interface ConfigurationModuleProps {
   /** Navigates to another school module (e.g. the profile or structure screens). */
   onNavigate?: (module: 'SCHOOL_SETUP' | 'CLASSES') => void;
   onSessionExpired?: () => void;
+  /** Shared school state (profile, years, levels) for the embedded editors. */
+  setupState?: SetupStateResponse;
+  onSetupStateChange?: (state: SetupStateResponse) => void;
 }
 
 export interface ConfigurationClient {
@@ -38,6 +44,8 @@ export interface ConfigurationClient {
     yearId: string,
     input: AcademicYearStatusRequest
   ) => Promise<AcademicYearWithTerms>;
+  /** School profile (roadmap §9.2) - optional test seam. */
+  saveProfile?: (input: SetupSchoolProfileRequest) => Promise<SetupStateResponse>;
 }
 
 const AREA_ORDER: ConfigurationArea[] = [...CONFIGURATION_AREAS];
@@ -58,6 +66,8 @@ export function ConfigurationModule({
   client,
   onNavigate,
   onSessionExpired,
+  setupState,
+  onSetupStateChange,
 }: ConfigurationModuleProps) {
   const { t } = useTranslation();
   const [readiness, setReadiness] = useState<ConfigurationReadinessResponse | null>(null);
@@ -68,7 +78,9 @@ export function ConfigurationModule({
   // readiness fetch (and the page flash that comes with it) from re-running
   // on each parent re-render while keeping the callback usable.
   const onSessionExpiredRef = useRef(onSessionExpired);
-  onSessionExpiredRef.current = onSessionExpired;
+  useEffect(() => {
+    onSessionExpiredRef.current = onSessionExpired;
+  }, [onSessionExpired]);
 
   useEffect(() => {
     let cancelled = false;
@@ -296,6 +308,18 @@ export function ConfigurationModule({
               })}
             </div>
           </section>
+
+          {/* ── School profile ────────────────────────────────────────────── */}
+          {setupState ? (
+            <SchoolProfileSection
+              apiBaseUrl={apiBaseUrl}
+              {...(capabilityToken ? { capabilityToken } : {})}
+              {...(client?.saveProfile ? { client: { saveProfile: client.saveProfile } } : {})}
+              {...(onSetupStateChange ? { onSetupStateChange } : {})}
+              {...(onSessionExpired ? { onSessionExpired } : {})}
+              setupState={setupState}
+            />
+          ) : null}
 
           {/* ── Academic years ────────────────────────────────────────────── */}
           <AcademicYearsSection

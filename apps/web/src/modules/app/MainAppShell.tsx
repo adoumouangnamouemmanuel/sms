@@ -568,6 +568,8 @@ export function MainAppShell({
                 {...(capabilityToken ? { capabilityToken } : {})}
                 onNavigate={setActiveModule}
                 onSessionExpired={handleSessionExpired}
+                {...(onSetupStateChange ? { onSetupStateChange } : {})}
+                setupState={setupState}
               />
             ) : activeModule === 'STUDENTS' ? (
               <StudentsModule
