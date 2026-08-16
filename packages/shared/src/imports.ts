@@ -121,7 +121,7 @@ export const CLASSROOM_IMPORT_COLUMNS: ImportColumnDefinition[] = [
     key: 'capacity',
     label: 'Capacité',
     required: false,
-    description: 'Optionnel. Nombre entier ≥ 1.',
+    description: 'Optionnel. Nombre entier ≥ 1 et ≤ 1000.',
   },
 ];
 

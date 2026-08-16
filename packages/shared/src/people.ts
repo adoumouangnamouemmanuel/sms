@@ -210,7 +210,6 @@ export const teacherResponseSchema = z.object({
 
 export const teacherListQuerySchema = z.object({
   search: z.string().trim().max(120).optional(),
-  sex: z.enum(PERSON_SEX_VALUES).optional(),
   status: z.enum(RECORD_STATUS_VALUES).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   offset: z.coerce.number().int().min(0).default(0),
