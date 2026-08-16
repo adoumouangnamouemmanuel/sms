@@ -24,7 +24,6 @@ const migrationsDir = fileURLToPath(
   new URL('../../../../packages/db/migrations/sqlite/', import.meta.url)
 );
 const firstSchoolId = '00000000-0000-4000-8000-000000000101';
-const secondSchoolId = '00000000-0000-4000-8000-000000000102';
 const schoolMasterId = '00000000-0000-4000-8000-000000000201';
 const correctPassword = 'correct-password';
 const accessTokenSecret = 'phase-3-grading-policy-test-secret';
@@ -178,7 +177,10 @@ describe('grading-policy routes (roadmap §9.7-§9.10)', () => {
     const policyId = await createDraftPolicy(accessToken);
 
     const bad = validPolicyConfig();
-    bad.subjectResult.inputs[0] = { ...bad.subjectResult.inputs[0]!, weight: 3000 };
+    const firstInput = bad.subjectResult.inputs[0];
+    if (firstInput) {
+      bad.subjectResult.inputs[0] = { ...firstInput, weight: 3000 };
+    }
     await server.inject({
       method: 'PUT',
       url: `/grading-policies/${policyId}`,
@@ -196,6 +198,34 @@ describe('grading-policy routes (roadmap §9.7-§9.10)', () => {
     const failure = readFailure(response);
     expect(failure.error.code).toBe('GRADING_POLICY_INVALID');
     expect(failure.error.fields?.WEIGHT_TOTAL).toMatch(/100 %/);
+  });
+
+  it('rejects publication when an assessment type uses a different scale than the policy', async () => {
+    const accessToken = await loginAndReadAccessToken('directeur');
+    const policyId = await createDraftPolicy(accessToken);
+
+    const mismatched = validPolicyConfig();
+    const firstType = mismatched.assessmentTypes[0];
+    if (firstType) {
+      mismatched.assessmentTypes[0] = { ...firstType, scaleMax: 10 };
+    }
+    await server.inject({
+      method: 'PUT',
+      url: `/grading-policies/${policyId}`,
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: mismatched,
+    });
+
+    const response = await server.inject({
+      method: 'POST',
+      url: `/grading-policies/${policyId}/publish`,
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+
+    expect(response.statusCode).toBe(422);
+    const failure = readFailure(response);
+    expect(failure.error.code).toBe('GRADING_POLICY_INVALID');
+    expect(failure.error.fields?.SCALE_MISMATCH).toMatch(/même barème/);
   });
 
   it('rejects publication with a cyclic derived-result graph', async () => {
