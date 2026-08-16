@@ -40,11 +40,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Navigation (Phase 4.2)**: The Structure académique nav entry now opens the real Classes & programmes module (levels, subjects, classes, enrolment tabs); the simulated structure screen and its mock data were removed.
 - **Dashboard real data (Phase 4)**: The Tableau de bord now shows real data everywhere - the class distribution chart is computed from live enrolment, and the recent-activity feed is backed by a new `GET /audit/recent` endpoint (`AuditLogRepository.listRecent`), so the simulated widgets and `dashboardMock.ts` were removed.
 - **Students class filter (Phase 4.3)**: The students list Filtres panel now filters by Niveau and Classe through the ACTIVE class-enrollment relationship of the current academic year - not a field on the student record (queried via `class_enrollment`).
+- **Academic configuration redesign (docs)**: Adopted the neutral, configured grading-policy model from `docs/academic/Academic_Configuration_Grading_Redesign.md` as the canonical baseline - assessment types/instances, derived results, one weighted subject result, configurable scale/pass threshold/rounding, versioned appreciation. Removed the single-result `docs/transcript-scheme-proposal.md`; reorganized `docs/SchoolMS_Roadmap.md` (v2.1) into config-first phases; reconciled `docs/sms.md` (v2.1) and `AGENTS.md` with the new model.
 
 ### Changed
 
 - **Import deduplication (Phase 3.4)**: Names are never treated as identity - rows matching an existing name or code are flagged as possible duplicates in the preview but always import; codes remain the only hard identity.
 - **Settings labels**: The school motto field is now labelled "Devise scolaire" to avoid colliding with the currency label "Devise", and genuinely empty optional fields render a muted "Non renseigné".
+- **Roadmap phase renumbering**: The roadmap is reorganized into config-first phases - a new Phase 3 "School and academic configuration" precedes the former Phase 3 people work, which is now Phase 4 "People, enrolment and teaching assignments"; the former Phase 5 single-result grade-entry implementation is superseded and will be rebuilt on the grading-policy model (roadmap §11.0 rollback). GitHub milestones and issue titles were renamed to match; earlier changelog entries keep their original phase labels as a historical record.
 
 ### Fixed
 

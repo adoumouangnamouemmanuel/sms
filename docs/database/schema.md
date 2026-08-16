@@ -2,6 +2,8 @@
 
 SQLite is the Version 1 system of record. PostgreSQL, cloud sync and remote web access remain out of scope until a later ADR approves them.
 
+> **Status (Aug 2026):** this document is being reconciled with the academic configuration redesign (`docs/academic/Academic_Configuration_Grading_Redesign.md`, roadmap v2.1). The phase labels below follow the reorganized roadmap: the people tables were built under the old "Phase 3.1" label and now belong to Phase 4 (People, enrolment and teaching assignments), and the classes/curriculum tables serve the Phase 3 configuration slices (§9.4/§9.5) and Phase 4 enrolment (§10.4). The neutral grading-policy tables (`grading_policy`, `assessment_type_definition`, `assessment_instance`, `derived_result_definition`, `subject_result_definition`, `student_assessment_result`, `appreciation_scale`/`appreciation_band`, `policy_assignment`) are defined in the redesign doc and land with the Phase 3 migrations. The legacy single-result tables on the local Phase 5 branch (`submission_result`, `transcript`, `transcript_line`, `grade_submission`) are superseded by that model and will be rolled back under roadmap §11.0; they are not part of `develop`.
+
 ## Conventions
 
 - Primary keys are UUID text values, except explicitly keyed metadata tables such as `schema_metadata`.
@@ -123,7 +125,7 @@ Stores local schema/seed metadata that must persist with the SQLite database. It
 
 Key columns: `key`, `value`, `description`, `created_at`, `updated_at`, `record_version`.
 
-## Phase 3.1 People Tables
+## Phase 4 People Tables (students, guardians, teachers)
 
 ### `student`
 
@@ -189,7 +191,7 @@ SQLite migration files live in `packages/db/migrations/sqlite`.
 
 `0002_glorious_lizard.sql` adds the Phase 2.2 setup tables for terms, class levels and module visibility. It is additive and safe for non-empty databases that do not already violate the single-current-year invariant.
 
-`0003_old_sumo.sql` adds the Phase 3.1 people tables (`student`, `teacher`, `guardian`, `student_guardian`) with strict tenant-local code uniqueness and composite tenant foreign keys. It is additive and safe for non-empty databases.
+`0003_old_sumo.sql` adds the Phase 4 people tables (`student`, `teacher`, `guardian`, `student_guardian`) with strict tenant-local code uniqueness and composite tenant foreign keys. It is additive and safe for non-empty databases.
 
 `0004_students_module.sql` widens the `school_module_config.module_name` CHECK to accept `STUDENTS` (hand-written table rebuild, since drizzle-kit does not emit CHECK constraints) and backfills an enabled `STUDENTS` row for every school that lacks one, so already-setup schools surface the students module too.
 
@@ -197,13 +199,21 @@ SQLite migration files live in `packages/db/migrations/sqlite`.
 
 `0006_import_batch.sql` adds the `import_batch` table that records each confirmed Excel import (kind, import identifier, filename, row counts) with a unique `(school_id, import_identifier)` index - the backbone of import idempotency (Phase 3.4). Import previews themselves are never persisted; they live in an in-memory store on the sidecar with a 30-minute TTL.
 
-`0014_classes_data_model.sql` (originally `0009_gifted_kronos.sql`) adds the Phase 4 classes and curriculum data model (roadmap §10.1): five new tenant-scoped tables with composite `(school_id, id)` foreign keys and partial unique indexes - `subject` (school catalogue with code, localized names, category), `classroom` (cohort/section within an academic year and class level, year-local code), `class_subject` (subject/coefficient/teacher assignment per classroom, required/optional policy), `class_enrollment` (student ↔ classroom for a year with a controlled status; the partial unique index enforces at most one `ACTIVE` enrollment per student/year), and `student_subject_enrollment` (explicit links to optional class-subjects). `0015_class_level_id_unique.sql` (originally `0010_slippery_mother_askani.sql`) adds the `(school_id, id)` unique index on `class_level` that SQLite requires for the composite tenant foreign keys from `classroom`. `0013_student_guardian_primary_index.sql` (originally `0008_noisy_mephisto.sql`) recreates the per-student primary-link unique index so it ignores soft-deleted links. Domain CHECK constraints (subject category, coefficient ≥ 1, enrollment status, capacity ≥ 1) are enforced in both the migration and the source schema.
+`0007_import_batch_guardians.sql` follows the `0006` rebuild pattern to accept the `GUARDIANS` import kind (Phase 4.3), preserving all rows and indexes so confirmed-import history stays auditable.
+
+`0011_classes_import_kinds.sql` rebuilds `import_batch` so its `kind` CHECK accepts the three classes/curriculum import kinds (`SUBJECTS`, `CLASSROOMS`, `CLASS_SUBJECTS`, roadmap §9.4/§9.5), preserving all rows and indexes - confirmed-import history stays auditable for the new templates.
+
+`0012_classes_module.sql` registers the `CLASSES` school module (roadmap §9.4/§9.5): it rebuilds `school_module_config` so the `module_name` CHECK accepts `CLASSES` and backfills an enabled `CLASSES` row for every school that lacks one, so already-setup schools surface the classes & curriculum module as well.
+
+`0013_student_guardian_primary_index.sql` (originally `0008_noisy_mephisto.sql`) recreates the per-student primary-link unique index so it ignores soft-deleted links.
+
+`0014_classes_data_model.sql` (originally `0009_gifted_kronos.sql`) adds the classes and curriculum data model (roadmap §9.4/§9.5 and §10.4): five new tenant-scoped tables with composite `(school_id, id)` foreign keys and partial unique indexes - `subject` (school catalogue with code, localized names, category), `classroom` (cohort/section within an academic year and class level, year-local code), `class_subject` (subject/coefficient/teacher assignment per classroom, required/optional policy), `class_enrollment` (student ↔ classroom for a year with a controlled status; the partial unique index enforces at most one `ACTIVE` enrollment per student/year), and `student_subject_enrollment` (explicit links to optional class-subjects). Domain CHECK constraints (subject category, coefficient ≥ 1, enrollment status, capacity ≥ 1) are enforced in both the migration and the source schema.
+
+`0015_class_level_id_unique.sql` (originally `0010_slippery_mother_askani.sql`) adds the `(school_id, id)` unique index on `class_level` that SQLite requires for the composite tenant foreign keys from `classroom`.
 
 These three were renumbered (`0008`/`0009`/`0010` → `0013`/`0014`/`0015`) because their original journal `when` timestamps were lower than migrations already applied on pre-existing databases; drizzle's migrator compares each journal entry against the last-applied `created_at` and would have permanently skipped them on such databases (fresh databases applied everything in order and were unaffected). The renumbering gives them later `when` timestamps so already-set-up databases receive the DDL on the next boot, while fresh databases still run every entry in order.
 
-`0011_classes_import_kinds.sql` rebuilds `import_batch` so its `kind` CHECK accepts the three Phase 4.2/4.3 import kinds (`SUBJECTS`, `CLASSROOMS`, `CLASS_SUBJECTS`), preserving all rows and indexes - confirmed-import history stays auditable for the new templates.
-
-`0012_classes_module.sql` registers the `CLASSES` school module (roadmap §10.2): it rebuilds `school_module_config` so the `module_name` CHECK accepts `CLASSES` and backfills an enabled `CLASSES` row for every school that lacks one, so already-setup schools surface the classes & curriculum module as well.
+`0016_class_enrollment_consistency.sql` (CodeRabbit, PR 19) closes two Phase 4 enrolment integrity gaps: it enforces through BEFORE INSERT/UPDATE triggers that a `class_enrollment` row's `academic_year_id` always matches its classroom's academic year (SQLite cannot add composite foreign keys to an existing table), and it narrows `class_enrollment_school_classroom_student_unique` to `ACTIVE` rows only, so a transfer back to a previous classroom no longer collides with the retained `TRANSFERRED` history row.
 
 ## Seed Policy
 
