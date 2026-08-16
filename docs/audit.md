@@ -196,7 +196,7 @@
 
 ## 10. État de remédiation (mise à jour)
 
-Tous les findings de ce rapport ont été corrigés et vérifiés. Chaque item
+Les findings de ce rapport sont classés ci-dessous comme résolus, acceptés, hors périmètre ou à suivre. Chaque item
 ci-dessous indique le commit / la porte de vérification correspondante.
 
 ### 🔴 Dépendances — résolu

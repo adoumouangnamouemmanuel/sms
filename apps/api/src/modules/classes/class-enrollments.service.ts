@@ -498,7 +498,12 @@ function formatSchoolDate(instant: Date, timeZone = 'Africa/Ndjamena') {
 function escapeCsvCell(value: string) {
   const guarded = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
 
-  if (guarded.includes(';') || guarded.includes('"') || guarded.includes('\n')) {
+  if (
+    guarded.includes(';') ||
+   guarded.includes('"') ||
+   guarded.includes('\r') ||
+   guarded.includes('\n')
+ ) {
     return `"${guarded.replace(/"/g, '""')}"`;
   }
 

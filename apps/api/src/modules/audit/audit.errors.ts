@@ -24,6 +24,6 @@ export function auditForbidden() {
   return new AuditServiceError(
     'AUDIT_FORBIDDEN',
     403,
-    "L'acces au journal d'activite est reserve au chef d'etablissement."
+    "L'accès au journal d'activité est réservé au chef d'établissement."
   );
 }
