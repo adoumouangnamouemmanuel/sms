@@ -2,17 +2,29 @@
 
 > Offline-first school records and bulletin software for Chad, built to become a broader African school platform only after the core product is proven.
 
-| Field                | Value                                             |
-| -------------------- | ------------------------------------------------- |
-| Document             | Product and delivery roadmap                      |
-| Version              | 2.0                                               |
-| Date                 | 12 August 2026                                    |
-| Owner                | Emmanuel Ouang-namou Adoum                        |
-| Delivery model       | Solo founder/developer working with coding agents |
-| Initial market       | Private collèges and lycées in N'Djamena          |
-| Version 1 target     | Pilot launch after approximately 26 focused weeks |
-| Version 1 validation | One complete school term after pilot launch       |
-| Status               | Final implementation baseline                     |
+| Field                | Value                                              |
+| -------------------- | -------------------------------------------------- |
+| Document             | Product and delivery roadmap                       |
+| Version              | 2.1                                                |
+| Date                 | 16 August 2026                                     |
+| Owner                | Emmanuel Ouang-namou Adoum                         |
+| Delivery model       | Solo founder/developer working with coding agents  |
+| Initial market       | Private collèges and lycées in N'Djamena           |
+| Version 1 target     | Pilot launch after approximately 26 focused weeks  |
+| Version 1 validation | One complete school term after pilot launch        |
+| Status               | Revised baseline (academic configuration redesign) |
+
+> **Revision (16 August 2026):** the grading model was redesigned after reviewing real
+> bulletins from two Chadian schools (Espérance and Elie Tao Baydo). The single
+> subject-result assumption is replaced by a neutral, explicitly configured grading-policy
+> model: assessment types and instances, derived results, one weighted subject result,
+> configurable appreciation, and explicit scale/rounding policy. Phase 3 becomes _School &
+> academic configuration_, Phase 4 becomes _People, enrolment & teaching assignments_,
+> Phase 5 is **rebuilt** as _Assessment, grade entry & validation_, and Phase 6 becomes
+> _Official results, ranking & bulletins_. Canonical design:
+> `docs/academic/Academic_Configuration_Grading_Redesign.md`; sequenced structure:
+> `docs/academic/EduTrack_Updated_Partial_Roadmap.md`. Completed work stays checked; new
+> or reworked items are unchecked.
 
 ## 1. Product decision
 
@@ -30,8 +42,8 @@ At the end of Version 1, a pilot school must be able to:
 2. Configure its identity, academic year, terms, levels, classes, subjects and coefficients.
 3. Import or enter students, guardians and teachers.
 4. Enrol students and assign teachers to class-subjects.
-5. Enter and validate one official subject grade per student and term.
-6. Compute averages and class ranks deterministically.
+5. Configure a grading policy (assessment types, derived results, subject result, appreciation) and enter/validate per-student assessment results for a term.
+6. Compute subject results, averages, appreciations and class ranks deterministically.
 7. Finalize and print individual or class-wide official bulletins.
 8. Export operational data to Excel.
 9. Create, verify and restore local backups.
@@ -149,24 +161,41 @@ The sidecar binds only to loopback, validates the desktop origin/capability and 
 
 These decisions remove ambiguity from implementation. A pilot finding may change one only through an ADR before dependent production data exists.
 
-### 4.1 Grade model
+### 4.1 Grade model (revised by the academic configuration redesign)
 
-- Version 1 stores one official subject result per student, class-subject and term.
-- It does not manage homework, tests or exam components. Schools may calculate those externally and enter/import the official term subject result.
-- Accepted grades are `0.00` through `20.00`, inclusive.
+- EduTrack records what teachers actually enter: per-student results against **assessment
+  instances** (e.g. Devoir 1, Devoir 2, Composition) defined by a school-published grading
+  policy. It never hard-codes a number of devoirs, a universal scale, or school-specific
+  labels (`DEV_1`, `EVAL`, `Moy. Dev.`) as domain keys.
+- A grading policy explicitly defines the scale (a `/20` template is offered for Chad but
+  is never an implicit universal), pass threshold, decimal precision, rounding mode
+  (`HALF_UP` or `TRUNCATE`), assessment types (repeatable with min/max occurrences, or
+  single), derived results (V1 operation `MEAN`), exactly one official subject result with
+  weights, and the appreciation scale. Nothing is assumed when no published policy
+  resolves: grade entry is blocked for that scope.
+- Accepted grades are `0.00` through the configured scale maximum, inclusive. Persistence
+  keeps a physical CHECK upper bound at 2000 hundredths; the effective maximum comes from
+  the configured scale.
 - At input, comma and period are accepted as decimal separators.
 - At persistence boundaries, a grade is an integer hundredths value: `14.50 -> 1450`.
 - Coefficients are positive integers in Version 1.
-- Weighted total uses integer arithmetic.
-- Overall average is rounded half-up to two decimals.
-- `10.00` reaches the pass threshold; `9.99` does not.
-- Appreciation is represented by a code, translated in the UI and PDF.
+- Weighted totals use integer fixed-point arithmetic, never unbounded binary floating point.
+- Rounding/truncation happens only at explicitly defined domain boundaries, according to
+  the configured policy; intermediate precision follows the configured rule.
+- The pass threshold is configured per scale. For `/20` templates, `10.00` passes and
+  `9.99` does not.
+- Appreciation is configured per school (bands, labels, thresholds), versioned, and kept
+  distinct from Mention/admission/promotion unless explicitly designed.
 
-### 4.2 Missing and optional grades
+### 4.2 Missing, optional and non-graded results
 
-- Missing is distinct from zero.
+- A result can be `GRADED`, `MISSING`, `ABSENT`, `EXCUSED` or `NOT_APPLICABLE`. Zero is a
+  valid grade and never means missing; a blank UI state never silently becomes zero.
+- The effect of `ABSENT`/`EXCUSED` on averages is not invented: it requires an explicit
+  domain decision before calculation semantics are implemented.
 - A provisional preview may show an explicitly labelled incomplete result.
-- An official bulletin cannot be finalized while a required grade is missing or its subject submission is unvalidated.
+- An official bulletin cannot be finalized while a required result is missing or its subject
+  submission is unvalidated.
 - Optional subjects require explicit per-student subject enrolment.
 - An optional subject is included only for a student enrolled in it.
 
@@ -177,9 +206,12 @@ These decisions remove ambiguity from implementation. A pilot finding may change
 - A deterministic secondary sort by stable student code and ID controls display only; it does not break equal ranks.
 - Rankings are official within the same classroom and term. Version 1 does not publish school-wide rankings across incomparable levels.
 
-### 4.4 Result and bulletin lifecycles
+### 4.4 Policy, result and bulletin lifecycles
 
 ```text
+Grading policy:
+DRAFT -> PUBLISHED -> SUPERSEDED
+
 Grade submission:
 DRAFT -> SUBMITTED -> VALIDATED
    ^         |
@@ -195,6 +227,8 @@ DRAFT -> READY_FOR_REVIEW -> FINALIZED
              +------------- REOPENED
 ```
 
+- A policy version in use is immutable: edits create a new version and never retroactively
+  change existing grades, calculations, validations, transcripts or PDFs.
 - `READY_FOR_REVIEW` means all required subject submissions are validated and calculation succeeds.
 - Finalization freezes the official values used by the PDF.
 - Reopening requires SchoolMaster authorization, a reason and an audit event.
@@ -236,11 +270,11 @@ AI materially reduces implementation time but does not eliminate discovery, arch
 | ---------- | ---------------------------------------------- | ------------------: | ----------------: |
 | 0          | School discovery and pilot commitment          |             2 weeks |            Week 2 |
 | 1          | Foundation and deployment proof                |             2 weeks |            Week 4 |
-| 2          | School setup and authentication                |             2 weeks |            Week 6 |
-| 3          | Students, guardians, teachers and import       |             3 weeks |            Week 9 |
-| 4          | Classes, curriculum and enrolment              |             3 weeks |           Week 12 |
-| 5          | Grade entry and validation                     |             3 weeks |           Week 15 |
-| 6          | Calculation, ranking and bulletins             |             3 weeks |           Week 18 |
+| 2          | Authentication and authorization               |             2 weeks |            Week 6 |
+| 3          | School & academic configuration (NEW)          |             3 weeks |            Week 9 |
+| 4          | People, enrolment & teaching assignments       |             3 weeks |           Week 12 |
+| 5          | Assessment, grade entry & validation (rebuilt) |             3 weeks |           Week 15 |
+| 6          | Official results, ranking & bulletins          |             3 weeks |           Week 18 |
 | 7          | Export, backup, restore and hardening          |             2 weeks |           Week 20 |
 | 8          | Windows release candidate                      |             2 weeks |           Week 22 |
 | 9          | Pilot onboarding and launch                    |              1 week |           Week 23 |
@@ -261,7 +295,7 @@ Target: pilot launch in approximately six months of focused work and a validated
 - [ ] Obtain at least three anonymized student/grade spreadsheets.
 - [ ] Obtain at least three real bulletin templates from the target segment.
 - [ ] Document who enters grades, validates them, computes results and approves printing.
-- [ ] Confirm that Version 1 may store one official subject result per term.
+- [ ] Confirm the grading model the pilot uses: assessment types per subject (devoirs, composition, evaluation), how the subject result is derived, scale and pass threshold, appreciation bands, rounding, tie ranking and missing-result policy.
 - [ ] Confirm coefficient, appreciation, rounding, tie-ranking and missing-grade policies.
 - [ ] Confirm whether term bulletins use `ADMIS/AJOURNÉ` or another school-specific decision label.
 - [ ] Audit pilot hardware: Windows version, RAM, storage, printer and internet availability.
@@ -322,10 +356,10 @@ Do not freeze the grade schema until all of these are true:
 - [x] A migration and rollback/recovery exercise passes on non-empty data.
 - [x] The architecture does not require internet or a globally installed Node runtime.
 
-## 8. Phase 2 - School setup and authentication
+## 8. Phase 2 - Authentication and authorization
 
 **Duration:** 2 weeks
-**Outcome:** A SchoolMaster can log in locally and configure the school, year and terms without assistance.
+**Outcome:** A SchoolMaster can log in locally, roles and permissions are enforced, and the identity/authorization foundation is ready before permanent school configuration is exposed.
 
 ### 8.1 Authentication slice
 
@@ -337,6 +371,7 @@ Do not freeze the grade schema until all of these are true:
 - [x] Add SchoolMaster-driven local password reset for offline operation.
 - [x] Enforce tenant and role authorization in application services.
 - [x] Audit authentication-sensitive and role-management operations.
+- [x] Ship the dedicated access module: typed permission catalog and pure `can()` (deny-by-default), `GET /access/permissions` with teacher-scoped classroom ids, web-shell and dashboard gating (completed under the former §11.2).
 
 ### 8.2 Setup wizard slice
 
@@ -349,6 +384,11 @@ Do not freeze the grade schema until all of these are true:
 - [x] Save after every step and resume an incomplete setup.
 - [x] Show only implemented modules in navigation.
 
+> The setup wizard remains the onboarding path (checked above). Phase 3 (§9.11) extends it
+> into the full configuration onboarding with the same underlying services - no separate
+> onboarding-only implementation, and the school/term/level steps are reconciled with the
+> new configuration module instead of being duplicated.
+
 ### 8.3 Gate
 
 - [x] A new SchoolMaster completes setup offline in under 20 minutes using a usability script.
@@ -356,199 +396,278 @@ Do not freeze the grade schema until all of these are true:
 - [x] French validation, empty, error and recovery states are complete.
 - [x] Restarting during setup loses no confirmed step.
 
-## 9. Phase 3 - Students, guardians, teachers and import
+## 9. Phase 3 - School and academic configuration
 
 **Duration:** 3 weeks
-**Outcome:** A school can populate and maintain its essential people records quickly.
+**Outcome:** A SchoolMaster can describe how the school is structured and how academic results are produced before teachers enter grades.
 
-### 9.1 Data model
+> This is a **new** phase created by the academic configuration redesign. It absorbs the
+> levels/classrooms/subjects/curriculum work previously in the old Phase 4 and adds the
+> neutral grading-policy and appreciation model that grade entry depends on. Canonical
+> design: `docs/academic/Academic_Configuration_Grading_Redesign.md`. Existing setup-wizard
+> work (school profile, year, terms, levels - §8.2) and the subject/classroom/curriculum
+> tables from the former Phase 4 are reused and reconciled here, never duplicated.
 
-- [x] Add `student`, `guardian`, `student_guardian` and `teacher` migrations.
-- [x] Make student and employee codes unique within a school.
-- [x] Separate record status from login-account status.
-- [x] Preserve audit metadata and prevent destructive deletion of referenced records.
+### 9.1 Configuration foundation
 
-> Implementation note (9.1/9.2/9.3): the default student/teacher code is `{school.code}-{academicYearStart}-{NNI}` generated at the service layer (`POST /students` or `POST /teachers` without a `code`); an explicitly provided code - including from the Excel import (9.4) - overrides the default. Until a real NNI is available, the NNI segment falls back to a zero-padded per-school sequence (`NDS-DEMO-2026-001`, `002`, …) counting archived rows so codes are never reused. The exact NNI handling stays pending confirmation before the import slice.
+- [ ] Configuration module boundaries and one permanent `Configuration` area, also used by onboarding (no separate onboarding-only implementation).
+- [ ] Readiness/capability-gate model, enforced by the backend (UI gating alone is insufficient).
+- [ ] Versioning primitives and `DRAFT -> PUBLISHED -> SUPERSEDED` lifecycle where applicable.
+- [ ] Shared validation/error patterns and configuration audit events; French-first UX foundation.
 
-### 9.2 Student and guardian slice
+### 9.2 School profile
 
-- [x] Create searchable, paginated student list and profile views.
-- [x] Support name, date of birth, gender, contact, nationality, photo, code and status.
-- [x] Link several guardians to a student and siblings to the same guardian.
-- [x] Mark emergency and primary contacts.
+- [ ] Official name, short name, logo reference, contact/address and display language, reconciled with the setup-wizard profile step (§8.2).
+- [ ] The profile fields bulletins need (header lines, school identity) are available here; the bulletin designer itself is Phase 6.
+
+### 9.3 Academic year and periods
+
+- [ ] Academic-year lifecycle (`DRAFT -> ACTIVE -> CLOSED`), one active academic year per school.
+- [ ] School-defined period labels (1er/2e/3e Trimestre, Semestre 1/2, ...) with explicit ordering and configurable dates; reconcile the existing trimester/semester wizard step.
+
+### 9.4 Levels and classrooms
+
+- [ ] Level as academic-structure scope (6ème, Terminale, ...); classroom as operational cohort (6ème A, Terminale C).
+- [ ] Curriculum, coefficients and grading policy inherit from the level rather than being duplicated per classroom.
+- [ ] Reconcile the existing level/classroom tables and UI from the former Phase 4 with this model.
+
+### 9.5 Subjects and level curriculum
+
+- [ ] School-scoped subject catalogue: display name, short name, optional stable code, localization labels, active/archive state.
+- [ ] Level-subject applicability matrix (coefficient, required/optional, active) with backend validation of positive coefficients.
+- [ ] Reconcile existing `subject`/`class_subject`/coefficient work and the curriculum-copy flow.
+
+### 9.6 Subject groups / sections
+
+- [ ] School-defined subject groups (Matières littéraires, Matières scientifiques, Formation humaine, ...).
+- [ ] Membership, display order and the admission/promotion flag where enabled; intuitive assignment UX.
+- [ ] Membership is school configuration - never inferred permanently from a universal subject category.
+
+### 9.7 Grading policy domain model
+
+- [ ] `grading_policy`: versioned (`DRAFT -> PUBLISHED -> SUPERSEDED`, `logical_policy_id` groups versions), with scale, pass threshold, precision, rounding mode and effective academic scope.
+- [ ] Assessment type definitions: `SINGLE | REPEATABLE`, min/max occurrences, required flag, scale, display order.
+- [ ] Derived result definitions (V1 operation `MEAN`; architecture may anticipate `WEIGHTED_MEAN`, `SUM`, `BEST_N`, `DROP_LOWEST_N` without exposing them).
+- [ ] Exactly one official final subject result definition with weighted inputs.
+- [ ] Calculation-graph validation: reject cycles, missing sources, invalid weights and incompatible scales before publishing.
+- [ ] No hard-coded `DEV_1`/`EVAL`/`MOY_DEV` keys and no implicit defaults anywhere in the model.
+
+### 9.8 Grading policy builder UX
+
+- [ ] Template selection as editable starting points only (Devoirs + Composition, Contrôle continu + Composition, Note finale uniquement, Personnalisé) - never automatic defaults.
+- [ ] Visual calculation flow with human-readable node settings; no formula syntax required for standard use.
+- [ ] Advanced calculation options (precision/rounding) separated from common settings.
+- [ ] Live sandbox (`Tester cette politique`) and plain-language explanation generated from configuration.
+- [ ] Publish validation with actionable errors.
+
+### 9.9 Policy assignment and inheritance
+
+- [ ] Resolution: school default -> level -> level + subject; when no valid published policy resolves, grade entry is blocked for that scope.
+- [ ] UX: inherited-policy indicator, `Personnaliser pour cette matière`, `Revenir à la politique héritée` (reverting never deletes policy versions already used).
+- [ ] Tests prove deterministic resolution and no cross-school leakage.
+
+### 9.10 Appreciation configuration
+
+- [ ] Appreciation scales and bands (lower/upper bounds, fr/ar/en labels) with versioning.
+- [ ] Overlap/gap validation, reordering and live preview.
+- [ ] Kept distinct from Mention/admission/promotion until explicitly designed.
+
+### 9.11 Configuration onboarding wizard
+
+- [ ] Guided onboarding reusing the same components/services: Établissement -> Année scolaire -> Périodes -> Niveaux & classes -> Matières & coefficients -> Groupes de matières -> Politique de notation -> Appréciations -> Vérification.
+- [ ] A new SchoolMaster reaches a grade-entry-ready school without developer or database intervention.
+
+### 9.12 Configuration dashboard and readiness gates
+
+- [ ] Dashboard of completed areas, warnings, blocking problems and capability readiness (people/enrolment, grade entry, submission, transcript calculation, PDF).
+- [ ] Backend gates: classrooms need academic structure ready; curriculum needs levels + subjects; grade entry needs period + curriculum + published grading policy; transcript calculation needs validated submissions + valid calculation configuration.
+
+### 9.13 Phase 3 gate
+
+- [ ] Onboarding works end-to-end; a valid grading policy is published; policy inheritance resolves correctly; appreciation is configured.
+- [ ] Grade-entry readiness can be determined and invalid/unconfigured scope is blocked with actionable French messages.
+- [ ] Configuration survives restart; two-school isolation tests pass; no hard-coded three-devoir assumption remains in the production workflow.
+
+## 10. Phase 4 - People, enrolment and teaching assignments
+
+**Duration:** 3 weeks
+**Outcome:** The configured academic structure is populated with the people and operational relationships required for grade entry.
+
+> Renumbered from the former "Phase 3 - Students, guardians, teachers and import" plus the
+> enrolment/assignment slices of the former Phase 4. Completed work stays checked below;
+> only new or modified items are unchecked.
+
+### 10.1 Students and guardians (reuse)
+
+- [x] `student`, `guardian` and `student_guardian` migrations; codes unique within a school; record status separate from login-account status; audit metadata and no destructive deletion of referenced records.
+- [x] Searchable, paginated list and profile views; name, date of birth, gender, contact, nationality, photo, code and status.
+- [x] Link several guardians to a student and siblings to the same guardian; primary and emergency contacts.
 - [x] Archive and reactivate records with an audit reason.
 
-### 9.3 Teacher slice
+> Codes: `{school.code}-{academicYearStart}-{NNI}` generated at the service layer; an
+> explicit code (including from the Excel import) overrides the default. Until a real NNI
+> is available, the NNI segment falls back to a zero-padded per-school sequence counting
+> archived rows so codes are never reused.
 
-- [x] Create searchable teacher list and profile views.
-- [x] Store minimal Version 1 data: name, code, contact, specialization, hire date and status.
-- [x] Create or deactivate a Teacher login independently of the teacher record.
-- [x] Prevent deletion when historical assignments or grades exist.
+### 10.2 Teachers (reuse)
 
-> Implementation note (9.3): teachers ship as their own school module (`TEACHERS`, migration `0005`), gated exactly like `STUDENTS`. Codes follow the same `{school.code}-{academicYearStart}-{NNI}` rule (explicit codes from the Excel import override the default). Teacher logins are created from the record (`POST /teachers/:id/login`); the generated username/initial password are returned exactly once and never retrievable later. Record status and account status stay independent - an archived teacher keeps its login disabled. Deletion is prevented by the archive-only pattern plus the `teacher.user_id` restrict foreign key; future assignment/grade tables will extend the same tenant-scoped restrict rule.
-> TODO (9.3/9.4): when assignments/grades exist, block record archival too - the roadmap wording says "prevent deletion", and the archive-only model already satisfies it, but the UI should surface the reason once grade tables exist.
+- [x] `teacher` migration; minimal Version 1 data (name, code, contact, specialization, hire date, status).
+- [x] Searchable list and profile views; Teacher login created/deactivated independently of the teacher record; deletion prevented by the archive-only pattern plus restrict foreign keys.
+- [x] Teachers ship as their own school module (`TEACHERS`), gated exactly like `STUDENTS`.
 
-### 9.4 Import slice
+### 10.3 People import (reuse)
 
-- [x] Provide French student and teacher Excel templates.
-- [x] Implement `upload -> parse -> preview -> validate -> confirm -> transact -> report`.
-- [x] Never persist during preview.
-- [x] Show row-level French errors and download rejected rows.
-- [x] Use student/employee codes for identity; never merge on name alone.
-- [x] Protect exports from spreadsheet formula injection.
-- [x] Make confirmed imports idempotent through an import identifier.
+- [x] French student and teacher Excel templates (guardian template with optional student-code link column).
+- [x] `upload -> parse -> preview -> validate -> confirm -> transact -> report`; nothing persisted during preview; row-level French errors with rejected-rows CSV; formula-injection protection; confirmed imports idempotent through an import identifier.
+- [x] Codes (not names) establish identity; duplicate names remain valid.
 
-> Implementation note (9.4): the import slice ships as an in-app module behind the
-> same SCHOOL_MASTER gate - `POST /imports/preview/:kind` (multipart .xlsx), `POST /imports/confirm`,
-> `GET /imports/templates/:kind` (French template with README sheet) and
-> `GET /imports/errors/:importId` (rejected-rows CSV). Preview lives in an in-memory,
-> 30-minute TTL store - nothing touches the DB until confirm, which runs in a
-> transaction, skips rows whose code already exists, and records an `import_batch`
-> row (migration 0006) whose (school, import_identifier) unique index makes
-> re-confirming the same identifier a no-op. Row-level French errors cover required
-> fields, sex/date/email formats, and in-file duplicate codes; the errors CSV
-> prefixes formula-looking cells so Excel cannot execute them. Templates and
-> sample files live under `docs/import-templates/` (see `docs/import-guidelines.md`).
+> Implementation notes: `docs/import-guidelines.md`, `docs/import-templates/`, and the
+> deterministic 1,000-row gate in `apps/api/src/test/imports.gate.test.ts`. Completed
+> criteria: 1,000-row import without duplicate creation or partial corruption; idempotent
+> reimport; a non-developer finds, edits and archives a record without help.
 
-### 9.5 Gate
+### 10.4 Student enrolment (reuse)
 
-- [x] Import 1,000 representative student rows without duplicate creation or partial corruption.
-- [x] Reimporting the same confirmed file is safe and reported clearly.
-- [x] Duplicate names remain valid and distinguishable by code.
-- [x] A non-developer finds, edits and archives a record without help.
-
-> Implementation note (9.5): the automated acceptance criteria are locked in
-> `apps/api/src/test/imports.gate.test.ts`, which imports a deterministic
-> 1,000-row workbook (300 explicit codes, 680 auto-generated rows incl. 10
-> identical-name pairs, 20 invalid rows) and asserts: every valid row persists
-> with a code and both names (no partial corruption), no code is ever
-> duplicated within the school, explicit codes survive verbatim, generated
-> codes match `{school}-{year}-{NNI}`, the list endpoint agrees with the raw
-> count, re-confirming the same identifier is a clearly reported no-op, and
-> identical names stay distinguishable by code. The remaining criterion - a
-> non-developer finds, edits and archives a record - is a manual walkthrough:
-> Élèves → search by name or code → open the profile → Modifier → save →
-> Archiver (with reason) → the record reappears under Filtres → Statut: Archivés
-> and can be réactivé. All of it is SCHOOL_MASTER-only, so no help needed from
-> a developer.
-
-## 10. Phase 4 - Classes, curriculum and enrolment
-
-**Duration:** 3 weeks
-**Outcome:** One complete school year structure can be prepared for grade entry.
-
-### 10.1 Data model
-
-- [x] Add `subject`, `classroom`, `class_subject`, `class_enrollment` and `student_subject_enrollment`.
-- [x] Enforce tenant, academic-year and effective-date constraints.
-- [x] Store coefficients as positive integers and maximum grade as 20.00 policy.
-
-### 10.2 Curriculum slice
-
-- [x] Create a school subject catalogue with localized display names, codes and categories.
-- [x] Create classrooms for an academic year and level.
-- [x] Assign subjects, coefficients and teachers to classrooms.
-- [x] Mark a class-subject optional without automatically assigning every student.
-- [x] Enrol applicable students in optional subjects explicitly.
-- [x] Extend the preview/validation/import pipeline to subjects, classrooms, class-subjects, coefficients and assignments.
-- [x] Copy a curriculum from a previous class/year with review before confirmation.
-
-### 10.3 Enrolment slice
-
-- [x] Enrol one or many students in a classroom for the year.
-- [x] Prevent simultaneous active classroom enrolments for the same student/year.
+- [x] Enrol one or many students in a classroom for the year; one active classroom per student/year.
 - [x] Transfer with effective date and reason while preserving history.
-- [x] Show class roster, capacity and students missing an active class.
-- [x] Export a basic class register.
+- [x] Class roster, capacity and students missing an active class; basic class register export.
 
-### 10.4 Gate
+### 10.5 Teacher subject assignments (reuse, scope note)
 
-- [x] A SchoolMaster configures a realistic class and curriculum from a pilot fixture.
-- [x] Reimporting the same confirmed curriculum file is idempotent and does not duplicate assignments.
-- [x] Teacher assignment and optional-subject authorization tests pass.
-- [x] Transfer and historical-enrolment tests pass.
-- [x] The structure produces the exact subject rows expected on a reference bulletin.
+- [x] Assign teachers to class-subjects for the academic year - an operational concern, kept out of permanent academic configuration.
+- [ ] Roster and grade-entry contexts resolve deterministically from configured curriculum + assignments once Phase 3 configuration is in place.
 
-> Gate evidence lives in `docs/phase-4-gate.md` and `apps/api/src/test/phase4.gate.test.ts`.
+### 10.6 Phase 4 gate
 
-## 11. Phase 5 - Grade entry and validation
+- [x] Import gate: 1,000 rows without duplicates or partial corruption; reimport idempotent; duplicate names distinguishable by code.
+- [x] Teacher assignment and optional-subject authorization tests pass; transfer and historical-enrolment tests pass.
+- [x] A SchoolMaster configures a realistic class and curriculum from a pilot fixture (evidence: `docs/phase-4-gate.md`, `apps/api/src/test/phase4.gate.test.ts`).
+- [ ] Grade-entry contexts can be generated from configuration + operations (depends on Phase 3).
 
-**Duration:** 3 weeks
-**Outcome:** Teachers enter and validate a complete class’s official term results quickly and safely.
-
-### 11.1 Data model and lifecycle
-
-- [ ] Add `transcript`, `transcript_line` and `grade_submission` migrations.
-- [ ] Initialize transcripts idempotently for eligible student/class/term combinations.
-- [ ] Initialize only subjects applicable to each student.
-- [ ] Track entered-by, entered-at, updated-at and record version.
-- [ ] Track subject/class/term validation separately from individual grade rows.
-
-### 11.2 Teacher workflow
-
-- [ ] Limit teachers to assigned class-subjects.
-- [ ] Preselect the current term and remember the last valid working context.
-- [ ] Provide a keyboard-first table with predictable Tab and Enter navigation.
-- [ ] Accept `14,5` and `14.5`; normalize before validation.
-- [ ] Save each valid edit locally using a short debounce, not a 30-second risk window.
-- [ ] Show `Enregistrement…`, `Enregistré` and actionable failure states honestly.
-- [ ] Preserve unsaved input through transient UI failures.
-- [ ] Display missing, invalid, failing and complete states without relying only on color.
-- [ ] Validate the complete subject submission and lock it read-only.
-
-### 11.3 SchoolMaster controls
-
-- [ ] View validation progress by class and subject.
-- [ ] Reopen a validated submission only with a required reason.
-- [ ] Audit validation, reopening and grade changes.
-- [ ] Prevent edits to finalized transcripts until the authorized reopen flow completes.
-
-### 11.4 Gate
-
-- [ ] A teacher enters and validates 60 students using only keyboard navigation where practical.
-- [ ] Forced application closure after a confirmed save loses no grade.
-- [ ] Unauthorized teacher, student and cross-school access tests pass.
-- [ ] Boundary tests cover every grade threshold and decimal comma input.
-
-## 12. Phase 6 - Calculation, ranking and official bulletins
+## 11. Phase 5 - Assessment, grade entry and validation (REBUILT)
 
 **Duration:** 3 weeks
-**Outcome:** EduTrack produces official results identical to approved manual references.
+**Outcome:** Teachers administer configured assessment types, enter marks efficiently, obtain deterministic computed results, submit academically complete results, and SchoolMaster review/validation works.
 
-### 12.1 Calculation engine
+> This phase is **rebuilt** by the academic configuration redesign. The former single-result
+> implementation (old §11.1–§11.5, committed on the Phase 5 branch) is not the permanent
+> data model: `submission_result` is replaced by assessment instances + per-student
+> assessment results under a published grading policy. The engineering patterns proven
+> there are reused: authorization and tenant scoping, autosave, keyboard-first grid UX,
+> submission lifecycle with mandatory return/reopen reasons, audit events,
+> finalized-transcript locking, French-first errors, restart persistence, and the dedicated
+> access/permissions module (now recorded under §8.1).
 
-- [ ] Implement pure fixed-point appreciation, weighted-average, pass-threshold and ranking functions.
-- [ ] Use the exact policy in `sms.md` and the approved grading ADR.
-- [ ] Distinguish incomplete provisional previews from finalizable results.
-- [ ] Block official calculation/finalization when required submissions or grades are missing.
-- [ ] Store calculated values, policy version and computation timestamp.
-- [ ] Recalculate a class transactionally and idempotently.
-- [ ] Use competition ranking `1, 1, 3` for ties.
+### 11.0 Legacy Phase 5 rollback/reconciliation
 
-### 12.2 Review and finalization
+- [ ] Inspect existing migrations/schema/services/routes/UI/tests; identify reusable patterns; document the migration/reconciliation.
+- [ ] Remove the single-result source of truth; establish assessment-instance + student-assessment-result as the one target source of truth (no indefinite dual-write).
+- [ ] When migrating demo data, map legacy single results only to an explicitly configured single-result policy; never infer a universal policy.
 
-- [ ] Show class results with average, appreciation, rank and completeness.
-- [ ] Let the SchoolMaster review exceptions before finalization.
-- [ ] Finalize immutable official values in one transaction.
-- [ ] Require audited reopening to change a finalized result.
+### 11.1 Grade context and policy resolution
+
+- [ ] Given teacher + year + term + class + subject: authorize the teacher, resolve the roster, resolve the pinned published grading-policy version, expose assessment definitions and current instances, expose readiness.
+- [ ] Unconfigured scope cannot enter grades and receives an actionable French message.
+
+### 11.2 Assessment instance management
+
+- [ ] Create actual instances (Devoir 1..n, Composition, ...) per the resolved policy: repeatable creation with min/max enforcement (e.g. 2–6 devoirs), single-assessment rules, ordering, safe lifecycle, audit for deletion/closure once marks exist.
+
+### 11.3 Student assessment-result persistence
+
+- [ ] Per-student, per-assessment-instance results with states `GRADED | MISSING | ABSENT | EXCUSED | NOT_APPLICABLE`; zero persists as zero and is never confused with missing.
+- [ ] Optimistic concurrency, tenant-scoped uniqueness, scale-validated ranges, audit where required. `ABSENT`/`EXCUSED` calculation semantics require an explicit decision before use.
+
+### 11.4 Dynamic grade-entry grid
+
+- [ ] One editable column per actual assessment instance; read-only derived columns; final subject-result preview; keyboard-first; decimal comma/point normalization; autosave with honest persistence state; restart recovery; 60-student performance target.
+- [ ] Adding a fourth devoir adds the grade column without code/schema modification; never render the configured maximum number of columns up front.
+
+### 11.5 Shared calculation engine
+
+- [ ] Deterministic derived means, weighted final result, configured precision and rounding/truncation, range validation - pure shared domain functions used identically by UI preview and backend authoritative computation.
+- [ ] Shared fixtures produce identical results in domain/API/UI paths.
+
+### 11.6 Submission completeness engine
+
+- [ ] Policy-aware completeness: minimum assessment occurrences, required singles, per-student result completeness, valid states, successful derived calculations.
+- [ ] Machine-readable blocking reasons ("1 devoir sur un minimum de 2", "31 élèves sur 32 complets"), never a generic incomplete error.
+
+### 11.7 Teacher submission
+
+- [ ] `DRAFT -> SUBMITTED`: backend completeness re-check, transaction, audit, teacher editing locked, idempotent/retry-safe command semantics.
+
+### 11.8 SchoolMaster validation dashboard
+
+- [ ] Class/subject progress: teacher, policy, assessment coverage, student coverage, submission state, warnings.
+- [ ] Opening a submission shows policy summary, administered assessments, completeness, student results, computed derived values, warnings, history and actions (`Valider`, `Retourner à l'enseignant`).
+
+### 11.9 Return and resubmission
+
+- [ ] `SUBMITTED -> RETURNED -> SUBMITTED`: SchoolMaster reason required, teacher sees the reason, editing re-enabled, audit, completeness re-evaluated on resubmission.
+
+### 11.10 Validation
+
+- [ ] `SUBMITTED -> VALIDATED`: SchoolMaster only, backend authoritative, audit, validated grades locked from teacher edits, becomes eligible input for Phase 6.
+
+### 11.11 Reopening
+
+- [ ] `VALIDATED -> REOPENED -> SUBMITTED`: authorized SchoolMaster, mandatory reason, audit, downstream transcript/finalization locks respected, no silent recalculation of official records.
+
+### 11.12 Phase 5 gate
+
+- [ ] Full workflow works offline: configure policy -> create instances -> enter -> restart -> grades persist -> computed values match fixtures -> incomplete submission blocked with precise explanation -> return/resubmit/validate/reopen all audited.
+- [ ] Two schools with different labels/formulas remain fully isolated; the obsolete single-result assumption is absent from the production workflow; 60-student keyboard entry and forced-restart durability proven.
+
+## 12. Phase 6 - Official results, ranking and bulletins
+
+**Duration:** 3 weeks
+**Outcome:** EduTrack consumes validated Phase 5 data and produces reproducible official academic records identical to approved manual references. PDF layout must never drive the grade-entry data model.
+
+### 12.1 Official subject-result computation
+
+- [ ] Consume validated per-student assessment results and pinned policy versions; persist official subject-result snapshots.
+- [ ] No official computation from mutable draft grades; store calculated values, policy version and computation timestamp; recalculate a class transactionally and idempotently.
+
+### 12.2 Section and overall calculations
+
+- [ ] Subject coefficients, section/group subtotals, overall average, and admission average where configured (per §9.6 group configuration).
+- [ ] Missing/non-applicable inclusion rules only after explicit approval; deterministic fixed-point arithmetic throughout.
+
+### 12.3 Ranking and class statistics
+
+- [ ] Competition ranking `1, 1, 3`; deterministic display order for ties; subject/class averages and min/max where required; official ranking scope per classroom/term.
+
+### 12.4 Appreciation resolution
+
+- [ ] Resolve configured appreciation with the pinned applicable scale/version; snapshot official display values for reproducibility.
+- [ ] Keep appreciation distinct from Mention/admission/promotion unless explicitly designed.
+
+### 12.5 Transcript lifecycle
+
+- [ ] `DRAFT -> READY_FOR_REVIEW -> FINALIZED` with audited `REOPENED`; all required subject submissions validated before readiness; calculation succeeds; finalization freezes immutable official values in one transaction; reopening audited and recalculation explicit.
 - [ ] Do not automatically print `ADMIS/AJOURNÉ` unless enabled by the approved school policy.
 
-### 12.3 PDF engine
+### 12.6 Annual result model
 
-- [ ] Reproduce the school’s approved bulletin layout in French.
-- [ ] Include school identity, year, term, student, class, subjects, grade, coefficient, points, average, appreciation and rank.
-- [ ] Include physical director-signature and school-stamp areas.
-- [ ] Generate PDF values from persisted finalized results; never recalculate in PDF-only code.
-- [ ] Generate one student bulletin, a ZIP of individual bulletins and a combined class PDF.
-- [ ] Use filesystem-safe unique filenames based on student code, not name alone.
-- [ ] Mark provisional output visibly and prevent it from resembling a finalized official record.
+- [ ] Built from finalized term records, never re-entered manually; T1/T2/T3 are the actual per-term subject results, with school-specific annual presentation.
+- [ ] Exact annual policy and layout require explicit approval before implementation.
 
-### 12.4 Gate
+### 12.7 Bulletin configuration
 
-- [ ] At least three reference classes match independently calculated expected results exactly.
-- [ ] Boundary, tie, missing, optional-subject and zero-coefficient tests pass.
-- [ ] A 60-student combined PDF completes within the target performance budget.
-- [ ] A pilot administrator approves the printed layout and terminology.
+- [ ] Presentation configuration separate from academic calculation configuration: header, school identity, visible columns, labels, subject groups, rank/stat columns, appreciation, extra blocks, signatures/visa areas, term vs annual presentation.
+- [ ] Reproduce the school's approved bulletin layout in French, including physical director-signature and school-stamp areas; no unrestricted layout engine.
+
+### 12.8 PDF generation
+
+- [ ] Generate values from persisted finalized snapshots only; deterministic/repeatable output; one student bulletin, a ZIP of individual bulletins and a combined class PDF.
+- [ ] Filesystem-safe unique filenames based on student code, not name alone; mark provisional output visibly so it never resembles a finalized official record.
+
+### 12.9 Gate
+
+- [ ] A configured pilot school goes from validated grades to finalized official results and reproduces the same bulletin PDF without mutable-data drift.
+- [ ] At least three reference classes match independently calculated expected results exactly; boundary, tie, missing, optional-subject and zero-coefficient tests pass.
+- [ ] A 60-student combined PDF completes within the target performance budget; a pilot administrator approves the printed layout and terminology.
 
 ## 13. Phase 7 - Export, backup, restore and hardening
 
@@ -719,7 +838,7 @@ No free tier is assumed. Test a hybrid model of setup/data migration, annual sch
 
 ### 17.2 Mandatory grade fixtures
 
-Test `0`, `5.99`, `6`, `7.99`, `8`, `9.99`, `10`, `11.99`, `12`, `13.99`, `14`, `15.99`, `16`, `17.99`, `18` and `20`, plus comma input, missing values, duplicate names, optional subjects, ties and zero total coefficient.
+Test `0`, `5.99`, `6`, `7.99`, `8`, `9.99`, `10`, `11.99`, `12`, `13.99`, `14`, `15.99`, `16`, `17.99`, `18` and `20`, plus comma input, missing values, duplicate names, optional subjects, ties and zero total coefficient. Boundary values apply against the configured scale, appreciation bands and rounding mode once those are configurable (§9.7/§9.10); fixtures must also cover truncation vs half-up and every result state (`MISSING`, `ABSENT`, `EXCUSED`, `NOT_APPLICABLE`).
 
 ### 17.3 Performance budgets
 
