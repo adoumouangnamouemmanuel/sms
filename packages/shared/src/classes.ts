@@ -156,7 +156,9 @@ export const createSubjectGroupRequestSchema = z.object({
   displayOrder: z.number().int().min(1).max(200),
 });
 
-export const updateSubjectGroupRequestSchema = createSubjectGroupRequestSchema.partial();
+export const updateSubjectGroupRequestSchema = createSubjectGroupRequestSchema
+  .partial()
+  .extend({ recordVersion: z.number().int().positive().optional() });
 
 export const subjectGroupResponseSchema = z.object({
   id: z.uuid(),
@@ -488,6 +490,18 @@ export type StudentSubjectEnrollmentResponse = z.infer<
   typeof studentSubjectEnrollmentResponseSchema
 >;
 
+export type SaveLevelCurriculumRequest = z.infer<typeof saveLevelCurriculumRequestSchema>;
+export type LevelCurriculumEntryView = z.infer<typeof levelCurriculumEntryViewSchema>;
+export type LevelCurriculumView = z.infer<typeof levelCurriculumViewSchema>;
+export type LevelCurriculumsResponse = z.infer<typeof levelCurriculumsResponseSchema>;
+export type CreateSubjectGroupRequest = z.infer<typeof createSubjectGroupRequestSchema>;
+export type UpdateSubjectGroupRequest = z.infer<typeof updateSubjectGroupRequestSchema>;
+export type SubjectGroupResponse = z.infer<typeof subjectGroupResponseSchema>;
+export type SubjectGroupView = z.infer<typeof subjectGroupViewSchema>;
+export type SubjectGroupsResponse = z.infer<typeof subjectGroupsResponseSchema>;
+export type SetSubjectGroupMembersRequest = z.infer<typeof setSubjectGroupMembersRequestSchema>;
+export type SubjectGroupMemberView = z.infer<typeof subjectGroupMemberViewSchema>;
+export type SubjectGroupMembersResponse = z.infer<typeof subjectGroupMembersResponseSchema>;
 export type CurriculumCopyPreviewRequest = z.infer<typeof curriculumCopyPreviewRequestSchema>;
 export type CurriculumCopyPreviewResponse = z.infer<typeof curriculumCopyPreviewResponseSchema>;
 export type CurriculumCopyConfirmRequest = z.infer<typeof curriculumCopyConfirmRequestSchema>;
