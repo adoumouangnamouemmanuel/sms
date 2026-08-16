@@ -1,4 +1,10 @@
-import type { ConfigurationReadinessResponse } from '@edutrack/shared';
+import type {
+  AcademicYearStatusRequest,
+  AcademicYearWithTerms,
+  AcademicYearsResponse,
+  ConfigurationReadinessResponse,
+  CreateAcademicYearRequest,
+} from '@edutrack/shared';
 import { fetchWithTimeout } from '../../httpClient';
 import { createAuthHeaders } from '../auth';
 
@@ -54,6 +60,48 @@ export async function fetchConfigurationReadiness(
     method: 'GET',
     options,
   });
+}
+
+// ---------------------------------------------------------------------------
+// Academic years (roadmap §9.3)
+// ---------------------------------------------------------------------------
+
+/** Lists the school's academic years with their terms (readable by all staff). */
+export async function listAcademicYears(
+  apiBaseUrl: string,
+  options: ConfigurationRequestOptions = {}
+) {
+  return requestJson<AcademicYearsResponse>(apiBaseUrl, '/configuration/academic-years', {
+    method: 'GET',
+    options,
+  });
+}
+
+/** Creates a DRAFT academic year with its terms (SchoolMaster only). */
+export async function createAcademicYear(
+  apiBaseUrl: string,
+  input: CreateAcademicYearRequest,
+  options: ConfigurationRequestOptions = {}
+) {
+  return requestJson<AcademicYearWithTerms>(apiBaseUrl, '/configuration/academic-years', {
+    method: 'POST',
+    body: input,
+    options,
+  });
+}
+
+/** Activates or closes an academic year; activation rolls the school over. */
+export async function changeAcademicYearStatus(
+  apiBaseUrl: string,
+  yearId: string,
+  input: AcademicYearStatusRequest,
+  options: ConfigurationRequestOptions = {}
+) {
+  return requestJson<AcademicYearWithTerms>(
+    apiBaseUrl,
+    `/configuration/academic-years/${yearId}/status`,
+    { method: 'PUT', body: input, options }
+  );
 }
 
 interface RequestJsonOptions {

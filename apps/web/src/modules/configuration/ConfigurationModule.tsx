@@ -1,13 +1,18 @@
 import {
   CONFIGURATION_AREAS,
+  type AcademicYearStatusRequest,
+  type AcademicYearWithTerms,
+  type AcademicYearsResponse,
   type ConfigurationArea,
   type ConfigurationReadinessResponse,
   type ConfigurationReadinessStatus,
   type ConfigRequirement,
+  type CreateAcademicYearRequest,
   type SchoolCapability,
 } from '@edutrack/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AcademicYearsSection } from './AcademicYearsSection';
 import {
   ConfigurationApiError,
   fetchConfigurationReadiness,
@@ -26,6 +31,13 @@ export interface ConfigurationModuleProps {
 
 export interface ConfigurationClient {
   loadReadiness: () => Promise<ConfigurationReadinessResponse>;
+  /** Academic years (roadmap §9.3). Optional test seams - the real client uses the API. */
+  listAcademicYears?: () => Promise<AcademicYearsResponse>;
+  createAcademicYear?: (input: CreateAcademicYearRequest) => Promise<AcademicYearWithTerms>;
+  changeAcademicYearStatus?: (
+    yearId: string,
+    input: AcademicYearStatusRequest
+  ) => Promise<AcademicYearWithTerms>;
 }
 
 const AREA_ORDER: ConfigurationArea[] = [...CONFIGURATION_AREAS];
@@ -278,6 +290,14 @@ export function ConfigurationModule({
               })}
             </div>
           </section>
+
+          {/* ── Academic years ────────────────────────────────────────────── */}
+          <AcademicYearsSection
+            apiBaseUrl={apiBaseUrl}
+            {...(capabilityToken ? { capabilityToken } : {})}
+            {...(client ? { client } : {})}
+            {...(onSessionExpired ? { onSessionExpired } : {})}
+          />
 
           {/* ── Quick links ───────────────────────────────────────────────── */}
           <section className="space-y-3" aria-labelledby="configuration-links-title">
