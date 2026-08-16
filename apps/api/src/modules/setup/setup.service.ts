@@ -521,9 +521,8 @@ function assertModuleStepData(
       break;
     case 'grading':
       if (
-        repositories.policies
-          .listSummaries()
-          .filter((policy) => policy.status === 'PUBLISHED').length === 0
+        repositories.policies.listSummaries().filter((policy) => policy.status === 'PUBLISHED')
+          .length === 0
       ) {
         throw moduleStepDataRequired(
           'Publiez au moins une politique de notation avant de continuer (Politique de notation).'
@@ -531,9 +530,7 @@ function assertModuleStepData(
       }
       break;
     case 'appreciation':
-      if (
-        repositories.scales.list().filter((scale) => scale.status === 'PUBLISHED').length === 0
-      ) {
+      if (repositories.scales.list().filter((scale) => scale.status === 'PUBLISHED').length === 0) {
         throw moduleStepDataRequired(
           'Publiez au moins une échelle d\u2019appréciation avant de continuer (Appréciations).'
         );

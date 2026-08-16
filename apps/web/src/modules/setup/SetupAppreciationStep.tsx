@@ -1,8 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import {
-  AppreciationSection,
-  type AppreciationClient,
-} from '../configuration/AppreciationSection';
+import { AppreciationSection, type AppreciationClient } from '../configuration/AppreciationSection';
 import { WizardPrimaryButton, WizardSecondaryButton } from './SetupProfileStep';
 
 export interface SetupAppreciationStepProps {

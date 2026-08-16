@@ -445,48 +445,48 @@ Do not freeze the grade schema until all of these are true:
 
 ### 9.7 Grading policy domain model
 
-- [ ] `grading_policy`: versioned (`DRAFT -> PUBLISHED -> SUPERSEDED`, `logical_policy_id` groups versions), with scale, pass threshold, precision, rounding mode and effective academic scope.
-- [ ] Assessment type definitions: `SINGLE | REPEATABLE`, min/max occurrences, required flag, scale, display order.
-- [ ] Derived result definitions (V1 operation `MEAN`; architecture may anticipate `WEIGHTED_MEAN`, `SUM`, `BEST_N`, `DROP_LOWEST_N` without exposing them).
-- [ ] Exactly one official final subject result definition with weighted inputs.
-- [ ] Calculation-graph validation: reject cycles, missing sources, invalid weights and incompatible scales before publishing.
-- [ ] No hard-coded `DEV_1`/`EVAL`/`MOY_DEV` keys and no implicit defaults anywhere in the model.
+- [x] `grading_policy`: versioned (`DRAFT -> PUBLISHED -> SUPERSEDED`, `logical_policy_id` groups versions), with scale, pass threshold, precision, rounding mode and effective academic scope.
+- [x] Assessment type definitions: `SINGLE | REPEATABLE`, min/max occurrences, required flag, scale, display order.
+- [x] Derived result definitions (V1 operation `MEAN`; architecture may anticipate `WEIGHTED_MEAN`, `SUM`, `BEST_N`, `DROP_LOWEST_N` without exposing them).
+- [x] Exactly one official final subject result definition with weighted inputs.
+- [x] Calculation-graph validation: reject cycles, missing sources, invalid weights and incompatible scales before publishing.
+- [x] No hard-coded `DEV_1`/`EVAL`/`MOY_DEV` keys and no implicit defaults anywhere in the model.
 
 ### 9.8 Grading policy builder UX
 
-- [ ] Template selection as editable starting points only (Devoirs + Composition, Contrôle continu + Composition, Note finale uniquement, Personnalisé) - never automatic defaults.
-- [ ] Visual calculation flow with human-readable node settings; no formula syntax required for standard use.
-- [ ] Advanced calculation options (precision/rounding) separated from common settings.
-- [ ] Live sandbox (`Tester cette politique`) and plain-language explanation generated from configuration.
-- [ ] Publish validation with actionable errors.
+- [x] Template selection as editable starting points only (Devoirs + Composition, Contrôle continu + Composition, Note finale uniquement, Personnalisé) - never automatic defaults.
+- [x] Visual calculation flow with human-readable node settings; no formula syntax required for standard use.
+- [x] Advanced calculation options (precision/rounding) separated from common settings.
+- [x] Live sandbox (`Tester cette politique`) and plain-language explanation generated from configuration.
+- [x] Publish validation with actionable errors.
 
 ### 9.9 Policy assignment and inheritance
 
-- [ ] Resolution: school default -> level -> level + subject; when no valid published policy resolves, grade entry is blocked for that scope.
-- [ ] UX: inherited-policy indicator, `Personnaliser pour cette matière`, `Revenir à la politique héritée` (reverting never deletes policy versions already used).
-- [ ] Tests prove deterministic resolution and no cross-school leakage.
+- [x] Resolution: school default -> level -> level + subject; when no valid published policy resolves, grade entry is blocked for that scope.
+- [x] UX: inherited-policy indicator, `Personnaliser pour cette matière`, `Revenir à la politique héritée` (reverting never deletes policy versions already used).
+- [x] Tests prove deterministic resolution and no cross-school leakage.
 
 ### 9.10 Appreciation configuration
 
-- [ ] Appreciation scales and bands (lower/upper bounds, fr/ar/en labels) with versioning.
-- [ ] Overlap/gap validation, reordering and live preview.
-- [ ] Kept distinct from Mention/admission/promotion until explicitly designed.
+- [x] Appreciation scales and bands (lower/upper bounds, fr/ar/en labels) with versioning.
+- [x] Overlap/gap validation, reordering and live preview.
+- [x] Kept distinct from Mention/admission/promotion until explicitly designed.
 
 ### 9.11 Configuration onboarding wizard
 
-- [ ] Guided onboarding reusing the same components/services: Établissement -> Année scolaire -> Périodes -> Niveaux & classes -> Matières & coefficients -> Groupes de matières -> Politique de notation -> Appréciations -> Vérification.
-- [ ] A new SchoolMaster reaches a grade-entry-ready school without developer or database intervention.
+- [x] Guided onboarding reusing the same components/services: Établissement -> Année scolaire -> Périodes -> Niveaux & classes -> Matières & coefficients -> Groupes de matières -> Politique de notation -> Appréciations -> Vérification.
+- [x] A new SchoolMaster reaches a grade-entry-ready school without developer or database intervention.
 
 ### 9.12 Configuration dashboard and readiness gates
 
-- [ ] Dashboard of completed areas, warnings, blocking problems and capability readiness (people/enrolment, grade entry, submission, transcript calculation, PDF).
-- [ ] Backend gates: classrooms need academic structure ready; curriculum needs levels + subjects; grade entry needs period + curriculum + published grading policy; transcript calculation needs validated submissions + valid calculation configuration.
+- [x] Dashboard of completed areas, warnings, blocking problems and capability readiness (people/enrolment, grade entry, submission, transcript calculation, PDF).
+- [x] Backend gates: classrooms need academic structure ready; curriculum needs levels + subjects; grade entry needs period + curriculum + published grading policy; transcript calculation needs validated submissions + valid calculation configuration.
 
 ### 9.13 Phase 3 gate
 
-- [ ] Onboarding works end-to-end; a valid grading policy is published; policy inheritance resolves correctly; appreciation is configured.
-- [ ] Grade-entry readiness can be determined and invalid/unconfigured scope is blocked with actionable French messages.
-- [ ] Configuration survives restart; two-school isolation tests pass; no hard-coded three-devoir assumption remains in the production workflow.
+- [x] Onboarding works end-to-end; a valid grading policy is published; policy inheritance resolves correctly; appreciation is configured.
+- [x] Grade-entry readiness can be determined and invalid/unconfigured scope is blocked with actionable French messages.
+- [x] Configuration survives restart; two-school isolation tests pass; no hard-coded three-devoir assumption remains in the production workflow.
 
 ## 10. Phase 4 - People, enrolment and teaching assignments
 
