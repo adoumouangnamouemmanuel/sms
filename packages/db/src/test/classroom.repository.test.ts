@@ -117,8 +117,8 @@ describe('classroom repository', () => {
     const previousYearId = randomUUID();
     sqlite
       .prepare(
-        `INSERT INTO academic_year (id, school_id, label, start_date, end_date, is_current)
-         VALUES (?, ?, ?, ?, ?, 0)`
+        `INSERT INTO academic_year (id, school_id, label, start_date, end_date, is_current, status)
+         VALUES (?, ?, ?, ?, ?, 0, 'CLOSED')`
       )
       .run(previousYearId, firstSchool.id, '2025-2026', '2025-09-01', '2026-06-30');
     createClassLevelRepository(db, firstTenant).replaceActive(
