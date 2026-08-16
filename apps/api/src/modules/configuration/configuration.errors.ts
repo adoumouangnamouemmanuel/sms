@@ -1,6 +1,10 @@
 import type { ConfigRequirement, SchoolCapability } from '@edutrack/shared';
 
-export type ConfigurationErrorCode = 'CONFIGURATION_FAILED' | 'CONFIGURATION_NOT_READY';
+export type ConfigurationErrorCode =
+  | 'CONFIGURATION_FAILED'
+  | 'CONFIGURATION_NOT_READY'
+  | 'ACADEMIC_YEAR_NOT_FOUND'
+  | 'ACADEMIC_YEARS_FORBIDDEN';
 
 /** Public-safe configuration error with a stable API code. */
 export class ConfigurationServiceError extends Error {
@@ -27,8 +31,10 @@ export function configurationFailed() {
  * Backend capability gate rejection (design §23): the school's configuration
  * does not yet allow the requested operation, and the missing requirements
  * are returned so the UI can guide the SchoolMaster precisely.
- */
-export function configurationNotReady(capability: SchoolCapability, missing: ConfigRequirement[]) {
+ */ export function configurationNotReady(
+  capability: SchoolCapability,
+  missing: ConfigRequirement[]
+) {
   return new ConfigurationServiceError(
     'CONFIGURATION_NOT_READY',
     409,
@@ -37,5 +43,21 @@ export function configurationNotReady(capability: SchoolCapability, missing: Con
       capability,
       missing,
     }
+  );
+}
+
+export function academicYearNotFound() {
+  return new ConfigurationServiceError(
+    'ACADEMIC_YEAR_NOT_FOUND',
+    404,
+    'Année scolaire introuvable.'
+  );
+}
+
+export function academicYearsForbidden() {
+  return new ConfigurationServiceError(
+    'ACADEMIC_YEARS_FORBIDDEN',
+    403,
+    "La gestion des années scolaires est réservée au chef d'établissement."
   );
 }
