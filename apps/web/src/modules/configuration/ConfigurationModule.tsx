@@ -90,7 +90,7 @@ export function ConfigurationModule({
     return () => {
       cancelled = true;
     };
-  }, [apiBaseUrl, capabilityToken, client]);
+  }, [apiBaseUrl, capabilityToken, client, onSessionExpired]);
 
   const readyAreas = readiness?.areas.filter((area) => area.status === 'READY').length ?? 0;
 
@@ -153,7 +153,9 @@ export function ConfigurationModule({
           <p className="text-sm font-bold text-red-700">{t(errorKey)}</p>
           <button
             className="cursor-pointer rounded-xl bg-red-600 px-4 py-2 text-xs font-black text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              window.location.reload();
+            }}
             type="button"
           >
             {t('configuration.retry')}
