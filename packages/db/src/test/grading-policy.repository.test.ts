@@ -99,8 +99,14 @@ describe('grading-policy repositories (roadmap §9.7-§9.10)', () => {
   /** Assessment-type ids are client-generated; they must be present for the graph. */
   function configWithIds(): GradingPolicyConfig {
     const config = validConfig();
-    config.assessmentTypes[0] = { ...config.assessmentTypes[0]!, id: 'dev-1' };
-    config.assessmentTypes[1] = { ...config.assessmentTypes[1]!, id: 'comp-1' };
+    const devoir = config.assessmentTypes[0];
+    const composition = config.assessmentTypes[1];
+    if (devoir) {
+      config.assessmentTypes[0] = { ...devoir, id: 'dev-1' };
+    }
+    if (composition) {
+      config.assessmentTypes[1] = { ...composition, id: 'comp-1' };
+    }
     return config;
   }
 
@@ -114,7 +120,10 @@ describe('grading-policy repositories (roadmap §9.7-§9.10)', () => {
 
     const detail = repository.findDetail(policyId);
     expect(detail).not.toBeNull();
-    expect(detail!.header).toMatchObject({
+    if (!detail) {
+      throw new Error('Missing fixture: policy detail');
+    }
+    expect(detail.header).toMatchObject({
       id: policyId,
       version: 1,
       status: 'DRAFT',
@@ -124,19 +133,22 @@ describe('grading-policy repositories (roadmap §9.7-§9.10)', () => {
 
     // The returned ids are the persisted ones; the graph references resolve
     // to them (derived sources -> assessment types, subject inputs -> both).
-    const persisted = detail!.config;
+    const persisted = detail.config;
     const assessmentIds = persisted.assessmentTypes.map((item) => item.id);
     expect(assessmentIds).toHaveLength(2);
     expect(assessmentIds[0]).not.toBe('dev-1');
 
-    const derivedId = persisted.derivedResults[0]!.id;
-    expect(persisted.derivedResults[0]!.sourceDefinitionIds).toEqual([assessmentIds[0]]);
+    const derived = persisted.derivedResults[0];
+    if (!derived) {
+      throw new Error('Missing fixture: derived result');
+    }
+    expect(derived.sourceDefinitionIds).toEqual([assessmentIds[0]]);
     expect(persisted.subjectResult.inputs).toHaveLength(2);
     expect(persisted.subjectResult.inputs.map((input) => input.sourceDefinitionId)).toEqual([
-      derivedId,
+      derived.id,
       assessmentIds[1],
     ]);
-    expect(persisted.subjectResult.inputs[0]!.weight).toBe(5000);
+    expect(persisted.subjectResult.inputs[0]?.weight).toBe(5000);
   });
 
   it('replaces a draft config atomically and bumps the record version', () => {
@@ -148,12 +160,18 @@ describe('grading-policy repositories (roadmap §9.7-§9.10)', () => {
 
     const next = configWithIds();
     next.name = 'Politique révisée';
-    next.derivedResults[0]!.precision = 1;
+    const derived = next.derivedResults[0];
+    if (derived) {
+      derived.precision = 1;
+    }
     repository.replaceDraftConfig(policyId, next, fixedAt);
 
     const detail = repository.findDetail(policyId);
-    expect(detail!.config.name).toBe('Politique révisée');
-    expect(detail!.config.derivedResults[0]!.precision).toBe(1);
+    if (!detail) {
+      throw new Error('Missing fixture: policy detail');
+    }
+    expect(detail.config.name).toBe('Politique révisée');
+    expect(detail.config.derivedResults[0]?.precision).toBe(1);
 
     // Old children are soft-deleted, never hard-deleted.
     const oldRows = sqlite
@@ -195,10 +213,10 @@ describe('grading-policy repositories (roadmap §9.7-§9.10)', () => {
     );
     repository.publish(v2, 'user-1', fixedAt, v1);
 
-    expect(repository.findSummary(v1)!.status).toBe('PUBLISHED');
+    expect(repository.findSummary(v1)?.status).toBe('PUBLISHED');
     repository.supersede(v1, fixedAt);
-    expect(repository.findSummary(v1)!.status).toBe('SUPERSEDED');
-    expect(repository.findSummary(v2)!.status).toBe('PUBLISHED');
+    expect(repository.findSummary(v1)?.status).toBe('SUPERSEDED');
+    expect(repository.findSummary(v2)?.status).toBe('PUBLISHED');
   });
 
   it('replaces scopes and enforces one scope slot per type', () => {
@@ -268,8 +286,12 @@ describe('grading-policy repositories (roadmap §9.7-§9.10)', () => {
       { logicalPolicyId: 'policy-1', version: 1, createdBy: 'user-1', config: configWithIds() },
       fixedAt
     );
+    const firstPolicy = repository.listSummaries()[0];
+    if (!firstPolicy) {
+      throw new Error('Missing fixture: policy');
+    }
     repository.replaceScopes(
-      repository.listSummaries()[0]!.id,
+      firstPolicy.id,
       [{ scopeType: 'SCHOOL_DEFAULT', levelId: null, subjectId: null }],
       fixedAt
     );
@@ -305,9 +327,16 @@ describe('grading-policy repositories (roadmap §9.7-§9.10)', () => {
 
     const loaded = repository.find(scaleId);
     expect(loaded).not.toBeNull();
-    expect(loaded!.status).toBe('DRAFT');
-    expect(loaded!.bands).toHaveLength(3);
-    expect(loaded!.bands[0]).toMatchObject({ lowerBound: 1600, upperBound: 2000, labelFr: 'Très bien' });
+    if (!loaded) {
+      throw new Error('Missing fixture: appreciation scale');
+    }
+    expect(loaded.status).toBe('DRAFT');
+    expect(loaded.bands).toHaveLength(3);
+    expect(loaded.bands[0]).toMatchObject({
+      lowerBound: 1600,
+      upperBound: 2000,
+      labelFr: 'Très bien',
+    });
   });
 
   it('replaces draft bands without hard-deleting history', () => {
@@ -317,7 +346,10 @@ describe('grading-policy repositories (roadmap §9.7-§9.10)', () => {
     repository.replaceDraft(scaleId, { ...validScale(), name: 'Révisé' }, fixedAt);
 
     const loaded = repository.find(scaleId);
-    expect(loaded!.name).toBe('Révisé');
+    if (!loaded) {
+      throw new Error('Missing fixture: appreciation scale');
+    }
+    expect(loaded.name).toBe('Révisé');
     const oldRows = sqlite
       .prepare(
         `SELECT COUNT(*) AS value FROM appreciation_band
@@ -333,10 +365,10 @@ describe('grading-policy repositories (roadmap §9.7-§9.10)', () => {
     const v2 = repository.createDraft({ logicalScaleId: 'scale-1', version: 2, scale: validScale() });
 
     repository.publish(v1, fixedAt);
-    expect(repository.findLatestPublished()!.id).toBe(v1);
+    expect(repository.findLatestPublished()?.id).toBe(v1);
     repository.publish(v2, fixedAt);
-    expect(repository.findLatestPublished()!.id).toBe(v2);
-    expect(repository.find(v1)!.status).toBe('PUBLISHED');
+    expect(repository.findLatestPublished()?.id).toBe(v2);
+    expect(repository.find(v1)?.status).toBe('PUBLISHED');
   });
 
   it('never leaks another school appreciation data', () => {

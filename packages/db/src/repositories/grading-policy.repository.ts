@@ -1,6 +1,6 @@
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
-import type { GradingPolicyConfig } from '@edutrack/shared';
+import type { DerivedResultInput, GradingPolicyConfig } from '@edutrack/shared';
 import type { RepositoryExecutor, TenantContext } from './base.js';
 import { TenantScopedRepository } from './base.js';
 import {
@@ -342,12 +342,19 @@ export class GradingPolicyRepository extends TenantScopedRepository {
         .run();
     }
 
+    // Register every derived id first, then insert - a derived result may
+    // reference another derived result, so source resolution must see the
+    // whole id mapping (two-pass, design §11 DAG).
+    const derivedRows: { id: string; derived: DerivedResultInput }[] = [];
     for (const derived of config.derivedResults) {
       const id = randomUUID();
       if (derived.id) {
         clientIdToPersistedId.set(derived.id, id);
       }
+      derivedRows.push({ id, derived });
+    }
 
+    for (const { id, derived } of derivedRows) {
       this.db
         .insert(derivedResultDefinition)
         .values({

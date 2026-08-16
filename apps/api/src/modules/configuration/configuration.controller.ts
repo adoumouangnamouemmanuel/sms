@@ -236,8 +236,8 @@ export class ConfigurationController {
 
   readonly resolveGradingPolicy = async (request: FastifyRequest, reply: FastifyReply) => {
     const query = request.query as Record<string, string | undefined>;
-    const levelId = query['levelId'];
-    const subjectId = query['subjectId'] ?? null;
+    const levelId = query.levelId;
+    const subjectId = query.subjectId ?? null;
 
     if (!levelId) {
       return reply.code(400).send({
