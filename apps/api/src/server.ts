@@ -23,6 +23,10 @@ import {
   registerClassesRoutes,
   SubjectsService,
 } from './modules/classes/index.js';
+import {
+  ConfigurationService,
+  registerConfigurationRoutes,
+} from './modules/configuration/index.js';
 import { ImportsService, registerImportsRoutes } from './modules/imports/index.js';
 import {
   GuardiansService,
@@ -210,6 +214,10 @@ export function buildServer(options: BuildServerOptions = {}) {
       setupService: new SetupService(database, {
         ...(options.auth?.now ? { now: options.auth.now } : {}),
       }),
+    });
+    registerConfigurationRoutes(server, {
+      authService,
+      configurationService: new ConfigurationService(database),
     });
     registerPeopleRoutes(server, {
       authService,
