@@ -230,6 +230,16 @@ export function useClassesModule({ apiBaseUrl, capabilityToken, client }: UseCla
     };
   }, [apiBaseUrl, client, loadSubjects]);
 
+  useEffect(
+    () => () => {
+      if (searchDebounceRef.current !== null) {
+        window.clearTimeout(searchDebounceRef.current);
+        searchDebounceRef.current = null;
+      }
+    },
+    []
+  );
+
   const searchSubjects = useCallback(
     (query: string) => {
       if (searchDebounceRef.current !== null) {
@@ -336,16 +346,16 @@ export function useClassesModule({ apiBaseUrl, capabilityToken, client }: UseCla
 
   const searchClassrooms = useCallback(
     (query: string) => {
-      void loadClassrooms(query.trim(), 0, classrooms.status);
+      void loadClassrooms(query.trim(), 0, classrooms.status, undefined, classroomLevelFilter);
     },
-    [classrooms.status, loadClassrooms]
+    [classroomLevelFilter, classrooms.status, loadClassrooms]
   );
 
   const setClassroomsStatus = useCallback(
     (status: ClassRecordStatus) => {
-      void loadClassrooms(classrooms.search, 0, status);
+      void loadClassrooms(classrooms.search, 0, status, undefined, classroomLevelFilter);
     },
-    [classrooms.search, loadClassrooms]
+    [classroomLevelFilter, classrooms.search, loadClassrooms]
   );
 
   const setClassroomLevelFilter = useCallback(

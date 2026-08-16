@@ -37,10 +37,6 @@ export async function listTeachers(
     params.set('status', query.status);
   }
 
-  if (query.sex) {
-    params.set('sex', query.sex);
-  }
-
   return requestJson<PaginatedTeachersResponse>(apiBaseUrl, `/teachers?${params.toString()}`, {
     method: 'GET',
     options,

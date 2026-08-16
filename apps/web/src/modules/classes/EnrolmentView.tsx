@@ -294,7 +294,7 @@ export function EnrolmentView({
                 </label>
                 <button
                   className="h-11 cursor-pointer rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-bold text-slate-600 hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={isEnrolling || selected.size === 0}
+                  disabled={isEnrolling || selected.size === 0 || !classroomId}
                   onClick={() => {
                     void handleEnrol();
                   }}

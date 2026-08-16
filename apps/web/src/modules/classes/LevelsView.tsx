@@ -47,6 +47,7 @@ export function LevelsView({
   const [isSaving, setIsSaving] = useState(false);
   const [errorKey, setErrorKey] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [totalClassroomsState, setTotalClassrooms] = useState<number | null>(null);
 
   const loadClassroomCounts = useCallback(async () => {
     if (!apiBaseUrl && !client) {
@@ -54,14 +55,26 @@ export function LevelsView({
     }
 
     try {
-      const response = client
-        ? await client.listClassrooms({ limit: 100, offset: 0 }, requestOptions())
-        : await listClassrooms(apiBaseUrl ?? '', { limit: 100, offset: 0 }, requestOptions());
+      // Page through every classroom so the per-level totals are complete.
+      const pageSize = 100;
+      let offset = 0;
+      let response;
       const counts: Record<string, number> = {};
-      for (const item of response.items) {
-        counts[item.classroom.classLevelId] = (counts[item.classroom.classLevelId] ?? 0) + 1;
-      }
+
+      do {
+        response = client
+          ? await client.listClassrooms({ limit: pageSize, offset }, requestOptions())
+          : await listClassrooms(apiBaseUrl ?? '', { limit: pageSize, offset }, requestOptions());
+
+        for (const item of response.items) {
+          counts[item.classroom.classLevelId] = (counts[item.classroom.classLevelId] ?? 0) + 1;
+        }
+
+        offset += pageSize;
+      } while (response.items.length === pageSize);
+
       setPerLevelCounts(counts);
+      setTotalClassrooms(response.total);
     } catch {
       // Counts are decorative - a failure here must not block the levels UI.
     }
@@ -142,9 +155,12 @@ export function LevelsView({
     }
   };
 
+  // Prefer the API-provided total (exact even when the list is capped); fall
+  // back to the aggregated page counts only if no total was captured.
   const totalClassrooms = useMemo(
-    () => Object.values(perLevelCounts).reduce((sum, count) => sum + count, 0),
-    [perLevelCounts]
+    () =>
+      totalClassroomsState ?? Object.values(perLevelCounts).reduce((sum, count) => sum + count, 0),
+    [perLevelCounts, totalClassroomsState]
   );
 
   return (

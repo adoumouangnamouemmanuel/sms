@@ -416,6 +416,9 @@ function StudentsTab({
           sexFemale: t('students.sex.F'),
         }}
         onClassLevelChange={(classLevelId) => {
+          // A classroom belongs to a level: reset the dependent filter so the
+          // query can never combine an old classroom with the new level.
+          module.setStudentsClassroom(null);
           module.setStudentsClassLevel(classLevelId);
         }}
         onClassroomChange={(classroomId) => {

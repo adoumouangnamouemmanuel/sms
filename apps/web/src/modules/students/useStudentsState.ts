@@ -19,7 +19,7 @@ import type {
   UpdateStudentGuardianLinkRequest,
   UpdateStudentRequest,
 } from '@edutrack/shared';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   archiveGuardian as archiveGuardianRequest,
   archiveStudent as archiveStudentRequest,
@@ -161,6 +161,8 @@ export function useStudentsModule({
     [capabilityToken]
   );
 
+  const latestStudentsRequest = useRef(0);
+
   const loadStudents = useCallback(
     async (
       search: string,
@@ -174,6 +176,9 @@ export function useStudentsModule({
         return;
       }
 
+      // Guard against out-of-order responses: only the latest request may
+      // update the list, so rows always match the active filters.
+      const requestId = ++latestStudentsRequest.current;
       setStudentsList((previous) => ({ ...previous, isLoading: true, errorKey: null }));
 
       try {
@@ -204,6 +209,10 @@ export function useStudentsModule({
               requestOptions()
             );
 
+        if (latestStudentsRequest.current !== requestId) {
+          return;
+        }
+
         setStudentsList({
           items: page.items,
           errorKey: null,
@@ -219,6 +228,10 @@ export function useStudentsModule({
           total: page.total,
         });
       } catch (error) {
+        if (latestStudentsRequest.current !== requestId) {
+          return;
+        }
+
         setStudentsList((previous) => ({
           ...previous,
           errorKey: resolveStudentsErrorMessageKey(error),

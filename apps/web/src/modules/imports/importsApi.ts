@@ -5,7 +5,7 @@ import {
   type ImportKind,
   type ImportPreviewResponse,
 } from '@edutrack/shared';
-import { fetchWithTimeout } from '../../httpClient';
+import { fetchWithTimeout, LOCAL_REQUEST_TIMEOUT_MS } from '../../httpClient';
 import { createAuthHeaders } from '../auth';
 import { ImportsApiError } from './importsErrors';
 
@@ -30,16 +30,23 @@ export async function previewImport(
   let response: Response;
 
   try {
-    response = await fetchWithTimeout(fetcher, `${apiBaseUrl}/imports/preview/${kind}`, {
-      method: 'POST',
-      credentials: 'include',
-      // No Content-Type header: the browser sets the multipart boundary.
-      headers: {
-        ...createAuthHeaders(),
-        ...createSidecarHeaders(options.capabilityToken),
+    // Preview parses up to 10 MB synchronously on the API side: give it a
+    // dedicated budget instead of the default request timeout.
+    response = await fetchWithTimeout(
+      fetcher,
+      `${apiBaseUrl}/imports/preview/${kind}`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        // No Content-Type header: the browser sets the multipart boundary.
+        headers: {
+          ...createAuthHeaders(),
+          ...createSidecarHeaders(options.capabilityToken),
+        },
+        body: form,
       },
-      body: form,
-    });
+      LOCAL_REQUEST_TIMEOUT_MS * 2
+    );
   } catch {
     throw new ImportsApiError('LOCAL_SERVICE_UNAVAILABLE', 'Local service unavailable.', 0);
   }

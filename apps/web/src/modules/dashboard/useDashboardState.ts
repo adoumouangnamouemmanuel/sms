@@ -64,7 +64,6 @@ export function useDashboardState({
         ? {
             counts: await client.fetchCounts(tokenOptions),
             distribution: await client.fetchClassDistribution(academicYearId, tokenOptions),
-            activity: await client.fetchRecentActivity(tokenOptions),
           }
         : {
             counts: await fetchDashboardCounts(apiBaseUrl ?? '', tokenOptions),
@@ -73,12 +72,27 @@ export function useDashboardState({
               academicYearId,
               tokenOptions
             ),
-            activity: await fetchRecentActivity(apiBaseUrl ?? '', tokenOptions),
           };
 
       setCounts(next.counts);
       setClassDistribution(next.distribution);
-      setRecentActivity(next.activity);
+
+      // The activity timeline is secondary: its failure must not discard the
+      // counts and distribution that already loaded.
+      try {
+        const activity = client
+          ? await client.fetchRecentActivity(tokenOptions)
+          : await fetchRecentActivity(apiBaseUrl ?? '', tokenOptions);
+
+        setRecentActivity(activity);
+      } catch (activityError) {
+        if (isInvalidAccessToken(activityError)) {
+          setIsSessionExpired(true);
+          return;
+        }
+
+        setRecentActivity([]);
+      }
     } catch (error) {
       if (isInvalidAccessToken(error)) {
         setIsSessionExpired(true);

@@ -128,6 +128,7 @@ export function ClassroomsView({
           </span>
           <div className="flex flex-wrap gap-1.5">
             <button
+              aria-pressed={module.classroomLevelFilter === undefined}
               className={`cursor-pointer rounded-full px-3 py-1.5 text-[12px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
                 module.classroomLevelFilter === undefined
                   ? 'border border-teal-300 bg-teal-50 text-teal-700'
@@ -142,6 +143,7 @@ export function ClassroomsView({
             </button>
             {setupState.classLevels.map((level) => (
               <button
+                aria-pressed={module.classroomLevelFilter === level.id}
                 className={`cursor-pointer rounded-full px-3 py-1.5 text-[12px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
                   module.classroomLevelFilter === level.id
                     ? 'border border-teal-300 bg-teal-50 text-teal-700'

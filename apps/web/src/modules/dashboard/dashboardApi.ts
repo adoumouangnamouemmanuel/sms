@@ -78,29 +78,41 @@ export async function fetchClassDistribution(
   academicYearId: string | undefined,
   options: DashboardRequestOptions = {}
 ): Promise<ClassDistributionItem[]> {
-  const response = await listClassrooms(
-    apiBaseUrl,
-    {
-      limit: 100,
-      offset: 0,
-      status: 'active',
-      ...(academicYearId ? { academicYearId } : {}),
-    },
-    options
-  );
+const byLevel = new Map<string, ClassDistributionItem>();
+  const pageSize = 100;
+  let offset = 0;
 
-  const byLevel = new Map<string, ClassDistributionItem>();
+  // Page until the list is exhausted so tenants with more than 100 classrooms
+  // get complete per-level totals (the list endpoint caps a single page).
+  for (;;) {
+    const response = await listClassrooms(
+      apiBaseUrl,
+      {
+        limit: pageSize,
+        offset,
+        status: 'active',
+        ...(academicYearId ? { academicYearId } : {}),
+      },
+      options
+    );
 
-  for (const view of response.items) {
-    const entry = byLevel.get(view.classLevelCode) ?? {
-      levelCode: view.classLevelCode,
-      levelName: view.classLevelName,
-      classes: 0,
-      students: 0,
-    };
-    entry.classes += 1;
-    entry.students += view.activeEnrollmentCount;
-    byLevel.set(view.classLevelCode, entry);
+    for (const view of response.items) {
+      const entry = byLevel.get(view.classLevelCode) ?? {
+        levelCode: view.classLevelCode,
+        levelName: view.classLevelName,
+        classes: 0,
+        students: 0,
+      };
+      entry.classes += 1;
+      entry.students += view.activeEnrollmentCount;
+      byLevel.set(view.classLevelCode, entry);
+    }
+
+    if (response.items.length < pageSize) {
+      break;
+    }
+
+    offset += pageSize;
   }
 
   return [...byLevel.values()];
@@ -130,17 +142,37 @@ export async function fetchRecentActivity(
   }
 
   if (!response.ok) {
-    throw new Error('dashboard.activity.unavailable');
+    // Carry the API error code (e.g. INVALID_ACCESS_TOKEN) so the dashboard can
+    // route the user back to login instead of showing a generic failure.
+    throw await readApiError(response, 'dashboard.activity.unavailable');
   }
 
-  const payload = (await response.json()) as {
-    success: boolean;
-    data?: RecentAuditEventsResponse;
-  };
+  let payload: { success: boolean; data?: RecentAuditEventsResponse };
+
+  try {
+    payload = (await response.json()) as { success: boolean; data?: RecentAuditEventsResponse };
+  } catch {
+    throw new Error('dashboard.activity.unavailable');
+  }
 
   if (!payload.success || !payload.data) {
     throw new Error('dashboard.activity.unavailable');
   }
 
   return payload.data.items;
+}
+
+async function readApiError(response: Response, fallbackMessage: string) {
+  try {
+    const payload = (await response.json()) as { error?: { code?: string; message?: string } };
+    const error = new Error(payload.error?.message ?? fallbackMessage);
+
+    if (payload.error?.code) {
+      (error as Error & { code?: string }).code = payload.error.code;
+    }
+
+    return error;
+  } catch {
+    return new Error(fallbackMessage);
+  }
 }

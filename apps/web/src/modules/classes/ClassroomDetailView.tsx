@@ -475,24 +475,32 @@ export function ClassroomDetailView({
                         key={view.classSubject.id}
                         onRemoved={async () => {
                           if (!apiBaseUrl && !client) return;
-                          if (client) {
-                            await client.removeClassSubject(view.classSubject.id);
-                          } else {
-                            await removeClassSubjectPublic(
-                              apiBaseUrl ?? '',
-                              view.classSubject.id,
-                              requestOptions()
-                            );
+                          try {
+                            if (client) {
+                              await client.removeClassSubject(view.classSubject.id);
+                            } else {
+                              await removeClassSubjectPublic(
+                                apiBaseUrl ?? '',
+                                view.classSubject.id,
+                                requestOptions()
+                              );
+                            }
+                            await loadAll();
+                          } catch (error) {
+                            setErrorKey(resolveClassesErrorMessageKey(error));
                           }
-                          await loadAll();
                         }}
                         onUpdated={async (coefficient) => {
-                          await api.updateAssignment(
-                            view.classSubject.id,
-                            { coefficient, recordVersion: view.classSubject.recordVersion },
-                            requestOptions()
-                          );
-                          await loadAll();
+                          try {
+                            await api.updateAssignment(
+                              view.classSubject.id,
+                              { coefficient, recordVersion: view.classSubject.recordVersion },
+                              requestOptions()
+                            );
+                            await loadAll();
+                          } catch (error) {
+                            setErrorKey(resolveClassesErrorMessageKey(error));
+                          }
                         }}
                         view={view}
                       />
@@ -903,12 +911,12 @@ function AssignSubjectModal({
       if (!cancelled) {
         setSubjects(items);
       }
-    });
+    }).catch(() => undefined);
     void api.teachers(requestOptions).then((items) => {
       if (!cancelled) {
         setTeachers(items);
       }
-    });
+    }).catch(() => undefined);
     return () => {
       cancelled = true;
     };
@@ -1052,6 +1060,7 @@ function EnrolStudentsModal({
   >([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
+  const [submitErrorKey, setSubmitErrorKey] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -1131,9 +1140,14 @@ function EnrolStudentsModal({
             disabled={isSaving || selected.size === 0}
             onClick={() => {
               setIsSaving(true);
-              void onSubmit([...selected]).finally(() => {
-                setIsSaving(false);
-              });
+              setSubmitErrorKey(null);
+              void onSubmit([...selected])
+                .catch((error: unknown) => {
+                  setSubmitErrorKey(resolveClassesErrorMessageKey(error));
+                })
+                .finally(() => {
+                  setIsSaving(false);
+                });
             }}
             type="button"
           >
@@ -1141,6 +1155,11 @@ function EnrolStudentsModal({
           </button>
         </div>
       </div>
+      {submitErrorKey ? (
+        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] font-bold text-red-700">
+          {t(submitErrorKey)}
+        </p>
+      ) : null}
     </ModalShell>
   );
 }
@@ -1177,7 +1196,7 @@ function TransferModal({
       if (!cancelled) {
         setClassrooms(items);
       }
-    });
+    }).catch(() => undefined);
     return () => {
       cancelled = true;
     };
@@ -1405,7 +1424,7 @@ function CopyCurriculumModal({
       if (!cancelled) {
         setClassrooms(items);
       }
-    });
+    }).catch(() => undefined);
     return () => {
       cancelled = true;
     };
