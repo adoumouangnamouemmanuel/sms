@@ -109,17 +109,27 @@ describe('class-subject repository', () => {
     const first = createClassroomAndSubject(firstSchool.id);
     const second = createClassroomAndSubject(secondSchool.id);
 
-    // Same classroom (first) assigned twice is rejected; a second classroom is fine.
-    const otherClassroom = createClassroomRepository(db, firstTenant).list({ limit: 1 })[0];
-    if (!otherClassroom) {
-      throw new Error('fixture classroom missing');
-    }
+    // Same classroom (first) assigned twice is rejected; a second classroom in
+    // the same school accepts the same subject.
     const firstRepo = createClassSubjectRepository(db, firstTenant);
     firstRepo.create({
       classroomId: first.classroomId,
       subjectId: first.subjectId,
       coefficient: 4,
     });
+    const year = createAcademicYearRepository(db, firstTenant).findCurrent();
+    const level = createClassLevelRepository(db, firstTenant).listActive()[0];
+    const otherClassroom = createClassroomRepository(db, firstTenant).create({
+      academicYearId: year?.id ?? '',
+      classLevelId: level?.id ?? '',
+      code: '3E-B',
+    });
+    const sameSchool = firstRepo.create({
+      classroomId: otherClassroom.id,
+      subjectId: first.subjectId,
+      coefficient: 3,
+    });
+
     const secondRepo = createClassSubjectRepository(db, secondTenant);
     const crossSchool = secondRepo.create({
       classroomId: second.classroomId,
@@ -127,8 +137,9 @@ describe('class-subject repository', () => {
       coefficient: 2,
     });
 
+    expect(sameSchool.schoolId).toBe(firstSchool.id);
     expect(crossSchool.schoolId).toBe(secondSchool.id);
-    expect(firstRepo.count()).toBe(1);
+    expect(firstRepo.count()).toBe(2);
   });
 
   it('rejects a coefficient below 1 at the database level', () => {

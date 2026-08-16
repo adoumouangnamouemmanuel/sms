@@ -1,4 +1,4 @@
-import { and, asc, count, eq, isNotNull, isNull, like, or, sql } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, isNotNull, isNull, like, or, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { PersonSex } from '@edutrack/shared';
 import type { RepositoryExecutor, TenantContext } from './base.js';
@@ -99,6 +99,19 @@ export class StudentRepository extends TenantScopedRepository {
       .get();
   }
 
+  /** Batch lookup so roster-style reads never issue one query per student. */
+  findByIds(ids: string[]) {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    return this.db
+      .select(studentColumns)
+      .from(student)
+      .where(and(eq(student.schoolId, this.schoolId), inArray(student.id, ids)))
+      .all();
+  }
+
   findByIdWithClassroom(id: string) {
     const currentYearId = this.db
       .select({ id: academicYear.id })
@@ -125,13 +138,20 @@ export class StudentRepository extends TenantScopedRepository {
       .leftJoin(
         classEnrollment,
         and(
+          eq(classEnrollment.schoolId, this.schoolId),
           eq(classEnrollment.studentId, student.id),
           eq(classEnrollment.academicYearId, currentYearId ?? ''),
           eq(classEnrollment.status, 'ACTIVE'),
           isNull(classEnrollment.deletedAt)
         )
       )
-      .leftJoin(classroom, eq(classroom.id, classEnrollment.classroomId))
+      .leftJoin(
+        classroom,
+        and(
+          eq(classroom.schoolId, this.schoolId),
+          eq(classroom.id, classEnrollment.classroomId)
+        )
+      )
       .where(and(eq(student.id, id), eq(student.schoolId, this.schoolId)))
       .get();
 
@@ -225,13 +245,20 @@ export class StudentRepository extends TenantScopedRepository {
       .leftJoin(
         classEnrollment,
         and(
+          eq(classEnrollment.schoolId, this.schoolId),
           eq(classEnrollment.studentId, student.id),
           eq(classEnrollment.academicYearId, currentYearId ?? ''),
           eq(classEnrollment.status, 'ACTIVE'),
           isNull(classEnrollment.deletedAt)
         )
       )
-      .leftJoin(classroom, eq(classroom.id, classEnrollment.classroomId))
+      .leftJoin(
+        classroom,
+        and(
+          eq(classroom.schoolId, this.schoolId),
+          eq(classroom.id, classEnrollment.classroomId)
+        )
+      )
       .where(
         and(
           studentWhere(this.schoolId, search, options.status, options.sex),

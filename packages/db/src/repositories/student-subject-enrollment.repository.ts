@@ -75,7 +75,11 @@ export class StudentSubjectEnrollmentRepository extends TenantScopedRepository {
         and(
           eq(studentSubjectEnrollment.schoolId, this.schoolId),
           eq(studentSubjectEnrollment.classEnrollmentId, classEnrollmentId),
-          eq(studentSubjectEnrollment.classSubjectId, classSubjectId)
+          eq(studentSubjectEnrollment.classSubjectId, classSubjectId),
+          // Only live links count as duplicates: an archived link must not
+          // block re-enrolling the same optional subject.
+          eq(studentSubjectEnrollment.isActive, true),
+          isNull(studentSubjectEnrollment.deletedAt)
         )
       )
       .get();

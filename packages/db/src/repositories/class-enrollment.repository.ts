@@ -96,6 +96,24 @@ export class ClassEnrollmentRepository extends TenantScopedRepository {
       .get();
   }
 
+  /** All ACTIVE student ids for an academic year, for one-shot anti-join lookups. */
+  listActiveStudentIdsByYear(academicYearId: string) {
+    const rows = this.db
+      .select({ studentId: classEnrollment.studentId })
+      .from(classEnrollment)
+      .where(
+        and(
+          eq(classEnrollment.schoolId, this.schoolId),
+          eq(classEnrollment.academicYearId, academicYearId),
+          eq(classEnrollment.status, 'ACTIVE'),
+          isNull(classEnrollment.deletedAt)
+        )
+      )
+      .all();
+
+    return rows.map((row) => row.studentId);
+  }
+
   list(options: ListClassEnrollmentsOptions = {}) {
     const limit = options.limit ?? 50;
     const offset = options.offset ?? 0;
