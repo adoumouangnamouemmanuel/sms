@@ -1,6 +1,10 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ConfigurationReadinessResponse } from '@edutrack/shared';
+import type {
+  AcademicYearWithTerms,
+  AcademicYearsResponse,
+  ConfigurationReadinessResponse,
+} from '@edutrack/shared';
 import { describe, expect, it, vi } from 'vitest';
 import '../i18n';
 import {
@@ -70,12 +74,46 @@ const readinessFixture: ConfigurationReadinessResponse = {
 };
 
 function createClient(
-  state: ConfigurationReadinessResponse = readinessFixture
+  state: ConfigurationReadinessResponse = readinessFixture,
+  years: AcademicYearsResponse = yearsFixture
 ): ConfigurationClient {
   return {
     loadReadiness: vi.fn().mockResolvedValue(state),
+    listAcademicYears: vi.fn().mockResolvedValue(years),
   };
 }
+
+const yearsFixture: AcademicYearsResponse = {
+  years: [
+    {
+      id: '00000000-0000-4000-8000-000000000901',
+      schoolId: '00000000-0000-4000-8000-000000000101',
+      label: '2026-2027',
+      startDate: '2026-09-01',
+      endDate: '2027-06-30',
+      status: 'ACTIVE',
+      isCurrent: true,
+      terms: [
+        {
+          id: '00000000-0000-4000-8000-000000000911',
+          label: 'Trimestre 1',
+          termNumber: 1,
+          startDate: '2026-09-01',
+          endDate: '2026-12-19',
+          isCurrent: true,
+        },
+        {
+          id: '00000000-0000-4000-8000-000000000912',
+          label: 'Trimestre 2',
+          termNumber: 2,
+          startDate: '2027-01-04',
+          endDate: '2027-03-24',
+          isCurrent: false,
+        },
+      ],
+    },
+  ],
+};
 
 describe('ConfigurationModule', () => {
   it('renders French area cards with their statuses', async () => {
@@ -145,5 +183,85 @@ describe('ConfigurationModule', () => {
     expect(
       screen.getByRole('heading', { name: "Capacités de l'établissement" })
     ).toBeInTheDocument();
+  });
+});
+
+describe('ConfigurationModule academic years (roadmap §9.3)', () => {
+  it('lists the active year with its terms and the current badge', async () => {
+    render(<ConfigurationModule apiBaseUrl={null} client={createClient()} />);
+
+    expect(await screen.findByText('2026-2027')).toBeInTheDocument();
+    expect(screen.getByText(/Trimestre 1/)).toBeInTheDocument();
+    expect(screen.getByText('Trimestre 2')).toBeInTheDocument();
+    expect(screen.getByText('Année en cours')).toBeInTheDocument();
+    // The active year offers a close action, not an activate action.
+    expect(screen.getByRole('button', { name: 'Clôturer' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Activer' })).not.toBeInTheDocument();
+  });
+
+  it('activates a draft year through the client seam', async () => {
+    const user = userEvent.setup();
+    const draftYear: AcademicYearWithTerms = {
+      id: '00000000-0000-4000-8000-000000000902',
+      schoolId: '00000000-0000-4000-8000-000000000101',
+      label: '2027-2028',
+      startDate: '2027-09-01',
+      endDate: '2028-06-30',
+      status: 'DRAFT',
+      isCurrent: false,
+      terms: [
+        {
+          id: '00000000-0000-4000-8000-000000000921',
+          label: 'Trimestre 1',
+          termNumber: 1,
+          startDate: '2027-09-01',
+          endDate: '2027-12-19',
+          isCurrent: false,
+        },
+      ],
+    };
+    const changeStatus = vi.fn().mockResolvedValue({ ...draftYear, status: 'ACTIVE' });
+    const client: ConfigurationClient = {
+      loadReadiness: vi.fn().mockResolvedValue(readinessFixture),
+      listAcademicYears: vi.fn().mockResolvedValue({ years: [draftYear] }),
+      changeAcademicYearStatus: changeStatus,
+    };
+
+    render(<ConfigurationModule apiBaseUrl={null} client={client} />);
+
+    expect(await screen.findByText('2027-2028')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Activer' }));
+
+    await waitFor(() => {
+      expect(changeStatus).toHaveBeenCalledWith('00000000-0000-4000-8000-000000000902', {
+        status: 'ACTIVE',
+      });
+    });
+  });
+
+  it('opens the create-year modal and blocks submission until all dates are set', async () => {
+    const user = userEvent.setup();
+    const createAcademicYear = vi
+      .fn()
+      .mockResolvedValue(yearsFixture.years[0] as AcademicYearWithTerms);
+    const client: ConfigurationClient = {
+      loadReadiness: vi.fn().mockResolvedValue(readinessFixture),
+      listAcademicYears: vi.fn().mockResolvedValue({ years: [] }),
+      createAcademicYear,
+    };
+
+    render(<ConfigurationModule apiBaseUrl={null} client={client} />);
+
+    expect(await screen.findByText('Aucune année scolaire pour le moment.')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Nouvelle année' }));
+    expect(screen.getByRole('heading', { name: 'Nouvelle année scolaire' })).toBeInTheDocument();
+
+    await user.type(screen.getByPlaceholderText('Ex. 2026-2027'), '2027-2028');
+    await user.click(screen.getByRole('button', { name: 'Créer' }));
+
+    // Missing dates: the request must not fire and a French message guides the user.
+    await screen.findByText('Renseignez tous les champs requis.');
+    expect(createAcademicYear).not.toHaveBeenCalled();
   });
 });
