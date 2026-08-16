@@ -63,7 +63,7 @@ export class LevelCurriculumService {
       const levelSubjectRepository = createLevelSubjectRepository(transaction, tenant);
 
       const level = levelRepository.findById(input.levelId);
-      if (!level || !level.isActive) {
+      if (!level?.isActive) {
         throw levelCurriculumNotFound();
       }
 
