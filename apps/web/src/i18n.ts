@@ -14,6 +14,57 @@ const resources = {
         heading: 'Bienvenue sur EduTrack Africa',
         summary: 'Gérez les dossiers scolaires avec une session locale sécurisée.',
       },
+      configuration: {
+        title: 'Configuration',
+        loading: 'Chargement de la configuration...',
+        retry: 'Réessayer',
+        hero: {
+          eyebrow: 'Espace permanent',
+          subtitle:
+            'Préparez votre école avant la saisie des notes : profil, structure, notation et appréciations.',
+          readiness: '{{ready}} / {{total}} sections prêtes',
+          liveNote: "État calculé en direct à partir des données de l'école",
+        },
+        areas: {
+          title: 'Sections de configuration',
+          ready: 'Prête',
+          notReady: 'À configurer',
+          readyHint: 'Cette section est complète.',
+          notReadyHint: 'Complétez cette section pour débloquer les capacités liées.',
+        },
+        capabilities: {
+          title: "Capacités de l'établissement",
+          ready: 'Prête',
+          notReady: 'À compléter',
+          readyHint: 'Disponible.',
+          blockedBy: 'Dépend de : {{capability}}',
+        },
+        links: {
+          title: 'Accès rapide',
+          profile: "Profil de l'école",
+          structure: 'Structure académique',
+        },
+        requirements: {
+          SCHOOL_PROFILE_COMPLETE: "Complétez le profil de l'école.",
+          ACTIVE_ACADEMIC_YEAR: 'Définissez une année scolaire active.',
+          LEVELS_DEFINED: 'Ajoutez au moins un niveau.',
+          SUBJECTS_DEFINED: 'Ajoutez au moins une matière.',
+          CURRICULUM_DEFINED: 'Affectez des matières aux classes.',
+          GRADING_POLICY_PUBLISHED: 'Publiez une politique de notation.',
+          APPRECIATION_CONFIGURED: 'Configurez les appréciations.',
+          VALIDATED_SUBMISSIONS: 'Validez les soumissions de notes.',
+          BULLETIN_CONFIGURED: 'Configurez le bulletin.',
+        },
+        errors: {
+          failed: 'La configuration est temporairement indisponible. Réessayez.',
+          notReady: "La configuration de l'école ne permet pas encore cette opération.",
+          forbidden: "Vous n'êtes pas autorisé à accéder à cette configuration.",
+          localService: 'La session locale est indisponible. Réessayez.',
+          sessionExpired: 'La session locale est expirée. Reconnectez-vous.',
+          serviceUpdate: "Le service local doit être mis à jour. Redémarrez l'application.",
+          validation: 'Vérifiez les informations avant de continuer.',
+        },
+      },
       auth: {
         apiUnavailable: "Le service local n'est pas prêt. Réessayez dans un instant.",
         serviceStatus: {
@@ -122,6 +173,7 @@ const resources = {
         modules: {
           ACADEMIC_STRUCTURE: 'Structure académique',
           CLASSES: 'Classes & programmes',
+          CONFIGURATION: 'Configuration',
           SCHOOL_SETUP: 'Établissement',
           STUDENTS: 'Élèves',
           TEACHERS: 'Professeurs',
@@ -1115,6 +1167,7 @@ const resources = {
         modules: {
           ACADEMIC_STRUCTURE: 'الهيكل الأكاديمي',
           CLASSES: 'الأقسام والبرامج',
+          CONFIGURATION: 'الإعدادات',
           SCHOOL_SETUP: 'الإعداد',
           STUDENTS: 'الطلاب',
           TEACHERS: 'المدرسون',
@@ -2095,6 +2148,7 @@ const resources = {
         modules: {
           ACADEMIC_STRUCTURE: 'Academic structure',
           CLASSES: 'Classes & curriculum',
+          CONFIGURATION: 'Configuration',
           SCHOOL_SETUP: 'Setup',
           STUDENTS: 'Students',
           TEACHERS: 'Teachers',
