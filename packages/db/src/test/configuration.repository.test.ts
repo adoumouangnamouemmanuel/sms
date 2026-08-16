@@ -8,7 +8,7 @@ import type { EduTrackDatabase } from '../client.js';
 import { createConfigurationRepository } from '../repositories/configuration.repository.js';
 import { createTenantContext } from '../repositories/base.js';
 import * as schema from '../schema.sqlite.js';
-import { foundationSeed, seedFoundation } from '../seeds.js';
+import { seedFoundation } from '../seeds.js';
 
 const migrationsDir = fileURLToPath(new URL('../../migrations/sqlite/', import.meta.url));
 const firstSchoolId = '00000000-0000-4000-8000-000000000101';
