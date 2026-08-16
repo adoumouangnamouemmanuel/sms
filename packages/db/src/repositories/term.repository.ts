@@ -33,6 +33,39 @@ export class TermRepository extends TenantScopedRepository {
       .all();
   }
 
+  /** Clears the current-term flag school-wide (year rollover, roadmap §9.3). */
+  clearCurrentTerms(updatedAt: string) {
+    this.db
+      .update(term)
+      .set({ isCurrent: false, updatedAt })
+      .where(and(eq(term.schoolId, this.schoolId), eq(term.isCurrent, true)))
+      .run();
+  }
+
+  /** Marks the first term of a year as the school's current term. */
+  markFirstTermCurrent(academicYearId: string, updatedAt: string) {
+    const firstTerm = this.db
+      .select({ id: term.id })
+      .from(term)
+      .where(
+        and(
+          eq(term.schoolId, this.schoolId),
+          eq(term.academicYearId, academicYearId),
+          isNull(term.deletedAt)
+        )
+      )
+      .orderBy(asc(term.termNumber))
+      .get();
+
+    if (firstTerm) {
+      this.db
+        .update(term)
+        .set({ isCurrent: true, updatedAt })
+        .where(and(eq(term.schoolId, this.schoolId), eq(term.id, firstTerm.id)))
+        .run();
+    }
+  }
+
   replaceForAcademicYear(academicYearId: string, terms: SetupTermInput[], updatedAt: string) {
     const activeNumbers = new Set(terms.map((item) => item.termNumber));
     const existingTerms = this.db
