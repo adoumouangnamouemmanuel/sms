@@ -20,10 +20,13 @@ import {
   ClassroomsService,
   ClassSubjectsService,
   CurriculumService,
+  LevelCurriculumService,
   registerClassesRoutes,
+  SubjectGroupsService,
   SubjectsService,
 } from './modules/classes/index.js';
 import {
+  AcademicYearsService,
   ConfigurationService,
   registerConfigurationRoutes,
 } from './modules/configuration/index.js';
@@ -218,6 +221,9 @@ export function buildServer(options: BuildServerOptions = {}) {
     registerConfigurationRoutes(server, {
       authService,
       configurationService: new ConfigurationService(database),
+      academicYearsService: new AcademicYearsService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
     });
     registerPeopleRoutes(server, {
       authService,
@@ -240,6 +246,12 @@ export function buildServer(options: BuildServerOptions = {}) {
     registerClassesRoutes(server, {
       authService,
       subjectsService: new SubjectsService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+      levelCurriculumService: new LevelCurriculumService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+      subjectGroupsService: new SubjectGroupsService(database, {
         ...(options.auth?.now ? { now: options.auth.now } : {}),
       }),
       classroomsService: new ClassroomsService(database, {
