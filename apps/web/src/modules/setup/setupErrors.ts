@@ -18,6 +18,7 @@ const SETUP_API_ERROR_MESSAGE_KEYS = {
   INVALID_SETUP_STEP: 'setup.errors.invalidStep',
   INVALID_TERMS: 'setup.errors.invalidTerms',
   LOCAL_SERVICE_UNAVAILABLE: 'setup.errors.localService',
+  MODULE_STEP_DATA_REQUIRED: 'setup.errors.moduleStepData',
   SCHOOL_NOT_FOUND: 'setup.errors.generic',
   VALIDATION_ERROR: 'setup.errors.validation',
 } as const;

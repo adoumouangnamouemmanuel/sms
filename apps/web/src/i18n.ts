@@ -309,6 +309,7 @@ const resources = {
           invalidStep: "Enregistrez d'abord l'étape précédente.",
           invalidTerms: 'Les périodes scolaires sont invalides.',
           localService: "Le service local n'est pas disponible.",
+          moduleStepData: 'Complétez cette étape (ajoutez ou publiez les éléments demandés) avant de continuer.',
           sessionExpired: 'La session locale est expirée. Reconnectez-vous.',
           validation: 'Vérifiez les champs du formulaire avant de continuer.',
         },
@@ -364,6 +365,11 @@ const resources = {
         },
         stepNavigation: 'Étapes de configuration',
         steps: {
+          appreciation: {
+            body: 'Définissez les appréciations attribuées aux moyennes officielles (Excellent, Bien, …).',
+            short: 'Appréciations',
+            title: 'Appréciations',
+          },
           calendar: {
             body: 'Créez l’année scolaire courante, choisissez le découpage et vérifiez les dates.',
             short: 'Année et périodes',
@@ -374,6 +380,16 @@ const resources = {
             short: 'Niveaux',
             title: 'Niveaux de classe',
           },
+          grading: {
+            body: 'Choisissez un modèle de politique de notation et publiez-le : il débloque la saisie des notes.',
+            short: 'Politique de notation',
+            title: 'Politique de notation',
+          },
+          groups: {
+            body: 'Regroupez les matières (littéraires, scientifiques, …) pour l’organisation des bulletins.',
+            short: 'Groupes de matières',
+            title: 'Groupes de matières',
+          },
           profile: {
             body: 'Renseignez l’identité officielle utilisée dans les écrans et les documents.',
             short: 'Identité',
@@ -383,6 +399,11 @@ const resources = {
             body: 'Vérifiez les éléments enregistrés avant d’activer la navigation de base.',
             short: 'Validation',
             title: 'Récapitulatif',
+          },
+          subjects: {
+            body: 'Créez le catalogue de matières et fixez leurs coefficients par niveau.',
+            short: 'Matières et coefficients',
+            title: 'Matières et coefficients',
           },
         },
         subtitle: 'Chaque étape est enregistrée dans SQLite avant de passer à la suivante.',
@@ -1414,6 +1435,11 @@ const resources = {
         },
         stepNavigation: 'خطوات الإعداد',
         steps: {
+          appreciation: {
+            body: 'حدد التقديرات المطابقة للمعدلات الرسمية (ممتاز، جيد، ...).',
+            short: 'التقديرات',
+            title: 'التقديرات',
+          },
           calendar: {
             body: 'أنشئ السنة الدراسية الحالية واختر التقسيم وتحقق من التواريخ.',
             short: 'السنة والفترات',
@@ -1424,6 +1450,16 @@ const resources = {
             short: 'المستويات',
             title: 'مستويات الصفوف',
           },
+          grading: {
+            body: 'اختر نموذج سياسة التنقيط وانشره لتفعيل إدخال العلامات.',
+            short: 'سياسة التنقيط',
+            title: 'سياسة التنقيط',
+          },
+          groups: {
+            body: 'جمّع المواد (أدبية، علمية، ...) لتنظيم النشرات.',
+            short: 'مجموعات المواد',
+            title: 'مجموعات المواد',
+          },
           profile: {
             body: 'أدخل هوية المدرسة الرسمية المستخدمة في الشاشات والوثائق.',
             short: 'الهوية',
@@ -1433,6 +1469,11 @@ const resources = {
             body: 'راجع العناصر المحفوظة قبل تفعيل التنقل الأساسي.',
             short: 'المراجعة',
             title: 'الملخص',
+          },
+          subjects: {
+            body: 'أنشئ قائمة المواد وحدد معاملاتها لكل مستوى.',
+            short: 'المواد والمعاملات',
+            title: 'المواد والمعاملات',
           },
         },
         subtitle: 'يتم حفظ كل خطوة في SQLite قبل الانتقال إلى الخطوة التالية.',
@@ -2451,6 +2492,11 @@ const resources = {
         },
         stepNavigation: 'Setup steps',
         steps: {
+          appreciation: {
+            body: 'Define the appreciation bands assigned to official averages (Excellent, Good, ...).',
+            short: 'Appreciations',
+            title: 'Appreciations',
+          },
           calendar: {
             body: 'Create the current academic year, choose the structure, and verify dates.',
             short: 'Year and periods',
@@ -2461,6 +2507,16 @@ const resources = {
             short: 'Levels',
             title: 'Class levels',
           },
+          grading: {
+            body: 'Choose a grading-policy template and publish it: it unlocks grade entry.',
+            short: 'Grading policy',
+            title: 'Grading policy',
+          },
+          groups: {
+            body: 'Group subjects (literary, scientific, ...) to organise the reports.',
+            short: 'Subject groups',
+            title: 'Subject groups',
+          },
           profile: {
             body: 'Enter the official identity used across screens and documents.',
             short: 'Identity',
@@ -2470,6 +2526,11 @@ const resources = {
             body: 'Review the saved elements before enabling the base navigation.',
             short: 'Review',
             title: 'Summary',
+          },
+          subjects: {
+            body: 'Create the subject catalogue and set their coefficients per level.',
+            short: 'Subjects and coefficients',
+            title: 'Subjects and coefficients',
           },
         },
         subtitle: 'Each step is saved to SQLite before moving to the next one.',

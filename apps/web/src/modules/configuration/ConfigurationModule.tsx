@@ -3,11 +3,18 @@ import {
   type AcademicYearStatusRequest,
   type AcademicYearWithTerms,
   type AcademicYearsResponse,
+  type AppreciationScaleInput,
+  type AppreciationScaleView,
+  type AppreciationScalesResponse,
   type ConfigurationArea,
   type ConfigurationReadinessResponse,
   type ConfigurationReadinessStatus,
   type ConfigRequirement,
   type CreateAcademicYearRequest,
+  type GradingPoliciesResponse,
+  type GradingPolicyConfig,
+  type GradingPolicyDetailResponse,
+  type PolicyScopeAssignment,
   type SchoolCapability,
   type SetupSchoolProfileRequest,
   type SetupStateResponse,
@@ -15,6 +22,8 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AcademicYearsSection } from './AcademicYearsSection';
+import { AppreciationSection } from './AppreciationSection';
+import { GradingPolicySection } from './GradingPolicySection';
 import { SchoolProfileSection } from './SchoolProfileSection';
 import {
   ConfigurationApiError,
@@ -46,6 +55,22 @@ export interface ConfigurationClient {
   ) => Promise<AcademicYearWithTerms>;
   /** School profile (roadmap §9.2) - optional test seam. */
   saveProfile?: (input: SetupSchoolProfileRequest) => Promise<SetupStateResponse>;
+  /** Grading policies (roadmap §9.7-§9.9) - optional test seams. */
+  listGradingPolicies?: () => Promise<GradingPoliciesResponse>;
+  createGradingPolicy?: (config: GradingPolicyConfig) => Promise<GradingPolicyDetailResponse>;
+  updateGradingPolicy?: (policyId: string, config: GradingPolicyConfig) => Promise<GradingPolicyDetailResponse>;
+  publishGradingPolicy?: (policyId: string) => Promise<GradingPolicyDetailResponse>;
+  duplicateGradingPolicy?: (policyId: string) => Promise<GradingPolicyDetailResponse>;
+  assignPolicyScopes?: (
+    policyId: string,
+    scopes: PolicyScopeAssignment[]
+  ) => Promise<GradingPolicyDetailResponse>;
+  /** Appreciation scales (roadmap §9.10) - optional test seams. */
+  listAppreciationScales?: () => Promise<AppreciationScalesResponse>;
+  createAppreciationScale?: (input: AppreciationScaleInput) => Promise<AppreciationScaleView>;
+  updateAppreciationScale?: (scaleId: string, input: AppreciationScaleInput) => Promise<AppreciationScaleView>;
+  publishAppreciationScale?: (scaleId: string) => Promise<AppreciationScaleView>;
+  duplicateAppreciationScale?: (scaleId: string) => Promise<AppreciationScaleView>;
 }
 
 const AREA_ORDER: ConfigurationArea[] = [...CONFIGURATION_AREAS];
@@ -326,6 +351,65 @@ export function ConfigurationModule({
             apiBaseUrl={apiBaseUrl}
             {...(capabilityToken ? { capabilityToken } : {})}
             {...(client ? { client } : {})}
+            {...(onSessionExpired ? { onSessionExpired } : {})}
+          />
+
+          {/* ── Grading policy ────────────────────────────────────────────── */}
+          <GradingPolicySection
+            apiBaseUrl={apiBaseUrl}
+            {...(capabilityToken ? { capabilityToken } : {})}
+            {...(client
+              ? {
+                  client: {
+                    ...(client.listGradingPolicies
+                      ? { list: client.listGradingPolicies }
+                      : {}),
+                    ...(client.createGradingPolicy
+                      ? { create: client.createGradingPolicy }
+                      : {}),
+                    ...(client.updateGradingPolicy
+                      ? { update: client.updateGradingPolicy }
+                      : {}),
+                    ...(client.publishGradingPolicy
+                      ? { publish: client.publishGradingPolicy }
+                      : {}),
+                    ...(client.duplicateGradingPolicy
+                      ? { duplicate: client.duplicateGradingPolicy }
+                      : {}),
+                    ...(client.assignPolicyScopes
+                      ? { assignScopes: client.assignPolicyScopes }
+                      : {}),
+                  },
+                }
+              : {})}
+            {...(onSessionExpired ? { onSessionExpired } : {})}
+          />
+
+          {/* ── Appreciation ──────────────────────────────────────────────── */}
+          <AppreciationSection
+            apiBaseUrl={apiBaseUrl}
+            {...(capabilityToken ? { capabilityToken } : {})}
+            {...(client
+              ? {
+                  client: {
+                    ...(client.listAppreciationScales
+                      ? { list: client.listAppreciationScales }
+                      : {}),
+                    ...(client.createAppreciationScale
+                      ? { create: client.createAppreciationScale }
+                      : {}),
+                    ...(client.updateAppreciationScale
+                      ? { update: client.updateAppreciationScale }
+                      : {}),
+                    ...(client.publishAppreciationScale
+                      ? { publish: client.publishAppreciationScale }
+                      : {}),
+                    ...(client.duplicateAppreciationScale
+                      ? { duplicate: client.duplicateAppreciationScale }
+                      : {}),
+                  },
+                }
+              : {})}
             {...(onSessionExpired ? { onSessionExpired } : {})}
           />
 

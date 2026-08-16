@@ -2,8 +2,16 @@ import type {
   AcademicYearStatusRequest,
   AcademicYearWithTerms,
   AcademicYearsResponse,
+  AppreciationScaleInput,
+  AppreciationScaleView,
+  AppreciationScalesResponse,
+  AssignPolicyScopesRequest,
   ConfigurationReadinessResponse,
   CreateAcademicYearRequest,
+  GradingPoliciesResponse,
+  GradingPolicyConfig,
+  GradingPolicyDetailResponse,
+  ResolvedPolicyResponse,
 } from '@edutrack/shared';
 import { fetchWithTimeout } from '../../httpClient';
 import { createAuthHeaders } from '../auth';
@@ -102,6 +110,180 @@ export async function changeAcademicYearStatus(
     `/configuration/academic-years/${yearId}/status`,
     { method: 'PUT', body: input, options }
   );
+}
+
+// ---------------------------------------------------------------------------
+// Grading policies (roadmap §9.7-§9.9)
+// ---------------------------------------------------------------------------
+
+/** Lists the school's grading policies with their scope assignments. */
+export async function listGradingPolicies(
+  apiBaseUrl: string,
+  options: ConfigurationRequestOptions = {}
+) {
+  return requestJson<GradingPoliciesResponse>(apiBaseUrl, '/grading-policies', {
+    method: 'GET',
+    options,
+  });
+}
+
+/** Loads one policy's full document with its scopes. */
+export async function fetchGradingPolicyDetail(
+  apiBaseUrl: string,
+  policyId: string,
+  options: ConfigurationRequestOptions = {}
+) {
+  return requestJson<GradingPolicyDetailResponse>(apiBaseUrl, `/grading-policies/${policyId}`, {
+    method: 'GET',
+    options,
+  });
+}
+
+/** Creates a new DRAFT policy (SchoolMaster only). */
+export async function createGradingPolicy(
+  apiBaseUrl: string,
+  config: GradingPolicyConfig,
+  options: ConfigurationRequestOptions = {}
+) {
+  return requestJson<GradingPolicyDetailResponse>(apiBaseUrl, '/grading-policies', {
+    method: 'POST',
+    body: config,
+    options,
+  });
+}
+
+/** Replaces a DRAFT policy's whole document (SchoolMaster only). */
+export async function updateGradingPolicy(
+  apiBaseUrl: string,
+  policyId: string,
+  config: GradingPolicyConfig,
+  options: ConfigurationRequestOptions = {}
+) {
+  return requestJson<GradingPolicyDetailResponse>(apiBaseUrl, `/grading-policies/${policyId}`, {
+    method: 'PUT',
+    body: config,
+    options,
+  });
+}
+
+/** Publishes a draft after domain validation (SchoolMaster only). */
+export async function publishGradingPolicy(
+  apiBaseUrl: string,
+  policyId: string,
+  options: ConfigurationRequestOptions = {}
+) {
+  return requestJson<GradingPolicyDetailResponse>(apiBaseUrl, `/grading-policies/${policyId}/publish`, {
+    method: 'POST',
+    options,
+  });
+}
+
+/** Creates the next DRAFT version of a policy (SchoolMaster only). */
+export async function duplicateGradingPolicy(
+  apiBaseUrl: string,
+  policyId: string,
+  options: ConfigurationRequestOptions = {}
+) {
+  return requestJson<GradingPolicyDetailResponse>(apiBaseUrl, `/grading-policies/${policyId}/duplicate`, {
+    method: 'POST',
+    options,
+  });
+}
+
+/** Replaces a policy's scope assignments atomically (SchoolMaster only). */
+export async function assignPolicyScopes(
+  apiBaseUrl: string,
+  policyId: string,
+  input: AssignPolicyScopesRequest,
+  options: ConfigurationRequestOptions = {}
+) {
+  return requestJson<GradingPolicyDetailResponse>(apiBaseUrl, `/grading-policies/${policyId}/scopes`, {
+    method: 'PUT',
+    body: input,
+    options,
+  });
+}
+
+/** Resolves the published policy covering a (level, subject) scope. */
+export async function resolveGradingPolicy(
+  apiBaseUrl: string,
+  levelId: string,
+  subjectId: string | null,
+  options: ConfigurationRequestOptions = {}
+) {
+  const query = subjectId
+    ? `levelId=${encodeURIComponent(levelId)}&subjectId=${encodeURIComponent(subjectId)}`
+    : `levelId=${encodeURIComponent(levelId)}`;
+  return requestJson<ResolvedPolicyResponse>(apiBaseUrl, `/grading-policies/resolved?${query}`, {
+    method: 'GET',
+    options,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Appreciation scales (roadmap §9.10)
+// ---------------------------------------------------------------------------
+
+/** Lists the school's appreciation scales with their bands. */
+export async function listAppreciationScales(
+  apiBaseUrl: string,
+  options: ConfigurationRequestOptions = {}
+) {
+  return requestJson<AppreciationScalesResponse>(apiBaseUrl, '/appreciation-scales', {
+    method: 'GET',
+    options,
+  });
+}
+
+/** Creates a DRAFT appreciation scale (SchoolMaster only). */
+export async function createAppreciationScale(
+  apiBaseUrl: string,
+  input: AppreciationScaleInput,
+  options: ConfigurationRequestOptions = {}
+) {
+  return requestJson<AppreciationScaleView>(apiBaseUrl, '/appreciation-scales', {
+    method: 'POST',
+    body: input,
+    options,
+  });
+}
+
+/** Replaces a DRAFT scale (SchoolMaster only). */
+export async function updateAppreciationScale(
+  apiBaseUrl: string,
+  scaleId: string,
+  input: AppreciationScaleInput,
+  options: ConfigurationRequestOptions = {}
+) {
+  return requestJson<AppreciationScaleView>(apiBaseUrl, `/appreciation-scales/${scaleId}`, {
+    method: 'PUT',
+    body: input,
+    options,
+  });
+}
+
+/** Publishes a draft scale after band validation (SchoolMaster only). */
+export async function publishAppreciationScale(
+  apiBaseUrl: string,
+  scaleId: string,
+  options: ConfigurationRequestOptions = {}
+) {
+  return requestJson<AppreciationScaleView>(apiBaseUrl, `/appreciation-scales/${scaleId}/publish`, {
+    method: 'POST',
+    options,
+  });
+}
+
+/** Creates the next DRAFT version of a scale (SchoolMaster only). */
+export async function duplicateAppreciationScale(
+  apiBaseUrl: string,
+  scaleId: string,
+  options: ConfigurationRequestOptions = {}
+) {
+  return requestJson<AppreciationScaleView>(apiBaseUrl, `/appreciation-scales/${scaleId}/duplicate`, {
+    method: 'POST',
+    options,
+  });
 }
 
 interface RequestJsonOptions {

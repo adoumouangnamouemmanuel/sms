@@ -8,7 +8,16 @@ import type {
   TermSystem,
 } from '@edutrack/shared';
 
-export const setupStepOrder: SetupStepId[] = ['profile', 'calendar', 'classLevels', 'review'];
+export const setupStepOrder: SetupStepId[] = [
+  'profile',
+  'calendar',
+  'classLevels',
+  'subjects',
+  'groups',
+  'grading',
+  'appreciation',
+  'review',
+];
 
 export const defaultClassLevels: SetupClassLevelInput[] = [
   { code: '6E', name: 'Sixi\u00e8me', displayOrder: 1, isExamYear: false },

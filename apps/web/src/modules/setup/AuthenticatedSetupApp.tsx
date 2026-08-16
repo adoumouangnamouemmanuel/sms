@@ -131,12 +131,16 @@ export function AuthenticatedSetupApp({
           {!isCompleted && setup.state ? (
             <SetupWizard
               activeStep={activeStep ?? setup.state.nextStep}
+              apiBaseUrl={apiBaseUrl}
+              {...(capabilityToken ? { capabilityToken } : {})}
               errorKey={setup.errorKey}
               isSaving={setup.isSaving}
+              onAdvanceStep={setup.advanceStep}
               onComplete={setup.complete}
               onSaveCalendar={setup.saveCalendar}
               onSaveClassLevels={setup.saveClassLevels}
               onSaveProfile={setup.saveProfile}
+              onSessionExpired={onLoggedOut}
               setActiveStep={setActiveStep}
               state={setup.state}
             />

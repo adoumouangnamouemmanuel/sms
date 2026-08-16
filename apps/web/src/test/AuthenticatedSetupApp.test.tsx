@@ -50,6 +50,63 @@ describe('AuthenticatedSetupApp', () => {
     expect(await screen.findByRole('heading', { name: 'Calendrier scolaire' })).toBeInTheDocument();
   });
 
+  it('guides through the module steps and advances the setup status', async () => {
+    const userSession = userEvent.setup();
+    const pendingState = createSetupState({ setupStatus: 'PENDING', nextStep: 'profile' });
+    const profileState = createSetupState({
+      setupStatus: 'PROFILE_COMPLETED',
+      nextStep: 'calendar',
+    });
+    const calendarState = createSetupState({
+      setupStatus: 'CALENDAR_COMPLETED',
+      nextStep: 'classLevels',
+    });
+    const classLevelsState = createSetupState({
+      setupStatus: 'CLASS_LEVELS_COMPLETED',
+      nextStep: 'subjects',
+    });
+    const subjectsState = createSetupState({
+      setupStatus: 'SUBJECTS_COMPLETED',
+      nextStep: 'groups',
+    });
+
+    const advanceStep = vi.fn().mockResolvedValue(subjectsState);
+    const setupClient = createSetupClient({
+      advanceStep,
+      getState: vi.fn().mockResolvedValue(pendingState),
+      saveCalendar: vi.fn().mockResolvedValue(calendarState),
+      saveClassLevels: vi.fn().mockResolvedValue(classLevelsState),
+      saveProfile: vi.fn().mockResolvedValue(profileState),
+    });
+
+    render(
+      <AuthenticatedSetupApp
+        apiBaseUrl="http://127.0.0.1:49152"
+        onLoggedOut={vi.fn()}
+        setupClient={setupClient}
+        user={user}
+      />
+    );
+
+    // Walk the wizard to the subjects step (profile -> calendar -> levels).
+    expect(await screen.findByRole('heading', { name: 'Profil de l’école' })).toBeInTheDocument();
+    await userSession.click(screen.getByRole('button', { name: 'Continuer' }));
+    await userSession.click(screen.getByRole('button', { name: 'Enregistrer et continuer' }));
+
+    await userSession.click(await screen.findByRole('button', { name: 'Enregistrer et continuer' }));
+    await userSession.click(await screen.findByRole('button', { name: 'Enregistrer et continuer' }));
+
+    expect(await screen.findByRole('heading', { name: 'Matières et coefficients' })).toBeInTheDocument();
+
+    // Advancing calls the setup advance endpoint and moves to the next step.
+    await userSession.click(screen.getByRole('button', { name: 'Enregistrer et continuer' }));
+    expect(advanceStep).toHaveBeenCalledWith(
+      { step: 'subjects' },
+      expect.any(Object)
+    );
+    expect(await screen.findByRole('heading', { name: 'Groupes de matières' })).toBeInTheDocument();
+  });
+
   it('shows French validation errors for empty required fields', async () => {
     const userSession = userEvent.setup();
     const pendingState = createSetupState({ setupStatus: 'PENDING', nextStep: 'profile' });
@@ -160,6 +217,7 @@ function createSetupClient(overrides: Partial<SetupClient>): SetupClient {
   const fallbackState = createSetupState({});
 
   return {
+    advanceStep: () => Promise.resolve(fallbackState),
     complete: () => Promise.resolve(fallbackState),
     getState: () => Promise.resolve(fallbackState),
     saveCalendar: () => Promise.resolve(fallbackState),

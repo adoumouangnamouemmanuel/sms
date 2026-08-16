@@ -156,10 +156,15 @@ describe('grading-policy builder (roadmap §9.8)', () => {
 
     // One sandbox input per assessment type (Devoir, Composition).
     const inputs = screen.getAllByPlaceholderText('Ex. 12,50');
-    await user.clear(inputs[0]!);
-    await user.type(inputs[0]!, '12');
-    await user.clear(inputs[1]!);
-    await user.type(inputs[1]!, '14');
+    const devoirInput = inputs[0];
+    const compositionInput = inputs[1];
+    if (!devoirInput || !compositionInput) {
+      throw new Error('Expected two sandbox inputs.');
+    }
+    await user.clear(devoirInput);
+    await user.type(devoirInput, '12');
+    await user.clear(compositionInput);
+    await user.type(compositionInput, '14');
 
     // Derived mean = 12.00; subject = (12 + 14)/2 = 13.00 => PASS.
     await screen.findByText(formatHundredths(1300));
@@ -178,8 +183,12 @@ describe('grading-policy builder (roadmap §9.8)', () => {
 
     // Break the weights: 50% + 0% = 50%.
     const weightInputs = screen.getAllByLabelText('Pondération (%)');
-    await user.clear(weightInputs[1]!);
-    await user.type(weightInputs[1]!, '0');
+    const compositionWeight = weightInputs[1];
+    if (!compositionWeight) {
+      throw new Error('Expected a composition weight input.');
+    }
+    await user.clear(compositionWeight);
+    await user.type(compositionWeight, '0');
 
     await screen.findByText(/Total des pondérations : 50 %/);
     const publishButton = screen.getByRole('button', { name: 'Publier' });
@@ -201,8 +210,14 @@ describe('grading-policy builder (roadmap §9.8)', () => {
     await user.click(screen.getByRole('button', { name: /Note finale uniquement/ }));
     await user.click(screen.getByRole('button', { name: 'Créer' }));
 
-    await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
-    const config = create.mock.calls[0]![0] as { name: string; scaleMax: number };
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledTimes(1);
+    });
+    const firstCall = create.mock.calls[0];
+    if (!firstCall) {
+      throw new Error('Expected a create call.');
+    }
+    const config = firstCall[0] as { name: string; scaleMax: number };
     expect(config.name).toBe('Note finale');
     expect(config.scaleMax).toBe(20);
   });
@@ -222,8 +237,14 @@ describe('grading-policy builder (roadmap §9.8)', () => {
     await user.click(within(dialog).getByRole('button', { name: /Devoirs \+ Composition/ }));
     await user.click(within(dialog).getByRole('button', { name: 'Créer' }));
 
-    await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
-    const config = create.mock.calls[0]![0] as {
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledTimes(1);
+    });
+    const firstCall = create.mock.calls[0];
+    if (!firstCall) {
+      throw new Error('Expected a create call.');
+    }
+    const config = firstCall[0] as {
       assessmentTypes: { id: string }[];
       derivedResults: { id: string; sourceDefinitionIds: string[] }[];
       subjectResult: { inputs: { sourceDefinitionId: string; weight: number }[] };
@@ -237,12 +258,19 @@ describe('grading-policy builder (roadmap §9.8)', () => {
     const allIds = [...typeIds, ...derivedIds];
     expect(typeIds).toHaveLength(2);
     expect(derivedIds).toHaveLength(1);
-    expect(derivedIds[0]).not.toBe(typeIds[0]);
-    expect(derivedIds[0]).not.toBe(typeIds[1]);
+    const firstDerivedId = derivedIds[0];
+    const firstTypeId = typeIds[0];
+    const secondTypeId = typeIds[1];
+    const firstDerived = config.derivedResults[0];
+    if (!firstDerivedId || !firstTypeId || !secondTypeId || !firstDerived) {
+      throw new Error('Expected a fully wired template graph.');
+    }
+    expect(firstDerivedId).not.toBe(firstTypeId);
+    expect(firstDerivedId).not.toBe(secondTypeId);
 
-    expect(config.derivedResults[0]!.sourceDefinitionIds).toEqual([typeIds[0]!]);
+    expect(firstDerived.sourceDefinitionIds).toEqual([firstTypeId]);
     expect(config.subjectResult.inputs.map((input) => input.sourceDefinitionId).sort()).toEqual(
-      [derivedIds[0]!, typeIds[1]!].sort()
+      [firstDerivedId, secondTypeId].sort()
     );
     expect(config.subjectResult.inputs.map((input) => input.weight).sort()).toEqual([5000, 5000]);
     expect(allIds.every((id) => !id.startsWith('tpl-'))).toBe(true);
@@ -266,12 +294,20 @@ describe('appreciation editor (roadmap §9.10)', () => {
 
     // Create a gap: 18.00-20.00, 10.00-15.99, 0-9.99.
     const fromInputs = screen.getAllByLabelText('À partir de');
-    await user.clear(fromInputs[0]!);
-    await user.type(fromInputs[0]!, '18');
+    const firstFrom = fromInputs[0];
+    if (!firstFrom) {
+      throw new Error('Expected a lower-bound input.');
+    }
+    await user.clear(firstFrom);
+    await user.type(firstFrom, '18');
     await user.keyboard('{Enter}');
     const toInputs = screen.getAllByLabelText(/Jusqu.à/);
-    await user.clear(toInputs[1]!);
-    await user.type(toInputs[1]!, '15,99');
+    const secondTo = toInputs[1];
+    if (!secondTo) {
+      throw new Error('Expected an upper-bound input.');
+    }
+    await user.clear(secondTo);
+    await user.type(secondTo, '15,99');
     await user.keyboard('{Enter}');
 
     await screen.findByText(/Il manque une tranche/i);
@@ -309,7 +345,9 @@ describe('appreciation editor (roadmap §9.10)', () => {
     const publishButton = screen.getByRole('button', { name: 'Publier' });
     expect(publishButton).toBeEnabled();
     await user.click(publishButton);
-    await waitFor(() => expect(publish).toHaveBeenCalledWith(scaleId));
+    await waitFor(() => {
+      expect(publish).toHaveBeenCalledWith(scaleId);
+    });
   });
 });
 
