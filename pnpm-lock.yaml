@@ -65,6 +65,9 @@ importers:
       '@edutrack/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@edutrack/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@edutrack/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -189,7 +192,11 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/domain: {}
+  packages/domain:
+    dependencies:
+      '@edutrack/shared':
+        specifier: workspace:*
+        version: link:../shared
 
   packages/shared:
     dependencies:
