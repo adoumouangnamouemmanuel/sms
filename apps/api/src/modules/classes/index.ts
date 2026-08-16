@@ -6,4 +6,6 @@ export * from './class-enrollments.service.js';
 export * from './class-subjects.service.js';
 export * from './classrooms.service.js';
 export * from './curriculum.service.js';
+export * from './level-curriculum.service.js';
+export * from './subject-groups.service.js';
 export * from './subjects.service.js';
