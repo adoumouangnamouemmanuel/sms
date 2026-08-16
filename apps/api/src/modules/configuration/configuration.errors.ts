@@ -4,7 +4,8 @@ export type ConfigurationErrorCode =
   | 'CONFIGURATION_FAILED'
   | 'CONFIGURATION_NOT_READY'
   | 'ACADEMIC_YEAR_NOT_FOUND'
-  | 'ACADEMIC_YEARS_FORBIDDEN';
+  | 'ACADEMIC_YEARS_FORBIDDEN'
+  | 'ACADEMIC_YEAR_INVALID_TRANSITION';
 
 /** Public-safe configuration error with a stable API code. */
 export class ConfigurationServiceError extends Error {
@@ -59,5 +60,13 @@ export function academicYearsForbidden() {
     'ACADEMIC_YEARS_FORBIDDEN',
     403,
     "La gestion des années scolaires est réservée au chef d'établissement."
+  );
+}
+
+export function academicYearInvalidTransition() {
+  return new ConfigurationServiceError(
+    'ACADEMIC_YEAR_INVALID_TRANSITION',
+    400,
+    "Le changement de statut demandé n'est pas autorisé pour cette année scolaire."
   );
 }

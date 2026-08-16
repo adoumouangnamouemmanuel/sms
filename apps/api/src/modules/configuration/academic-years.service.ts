@@ -16,7 +16,11 @@ import type {
   CreateAcademicYearRequest,
 } from '@edutrack/shared';
 import type { AuthenticatedUser, RequestAuditContext } from '../auth/index.js';
-import { academicYearNotFound, academicYearsForbidden } from './configuration.errors.js';
+import {
+  academicYearInvalidTransition,
+  academicYearNotFound,
+  academicYearsForbidden,
+} from './configuration.errors.js';
 
 export interface AcademicYearsServiceOptions {
   now?: () => Date;
@@ -110,7 +114,11 @@ export class AcademicYearsService {
         throw academicYearNotFound();
       }
 
-      assertAcademicYearStatusTransition(current.status, input.status);
+      try {
+        assertAcademicYearStatusTransition(current.status, input.status);
+      } catch {
+        throw academicYearInvalidTransition();
+      }
 
       if (input.status === 'ACTIVE') {
         // Rollover: close the previous ACTIVE year before activating the new one.
