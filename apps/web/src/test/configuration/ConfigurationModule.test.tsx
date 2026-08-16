@@ -7,11 +7,11 @@ import type {
   SetupStateResponse,
 } from '@edutrack/shared';
 import { describe, expect, it, vi } from 'vitest';
-import '../i18n';
+import '../../i18n';
 import {
   ConfigurationModule,
   type ConfigurationClient,
-} from '../modules/configuration/ConfigurationModule';
+} from '../../modules/configuration/ConfigurationModule';
 
 const setupStateFixture: SetupStateResponse = {
   school: {
@@ -111,7 +111,10 @@ function createClient(
   };
 }
 
-function renderModule(client: ConfigurationClient, props: Partial<Parameters<typeof ConfigurationModule>[0]> = {}) {
+function renderModule(
+  client: ConfigurationClient,
+  props: Partial<Parameters<typeof ConfigurationModule>[0]> = {}
+) {
   return render(
     <ConfigurationModule
       apiBaseUrl={null}
@@ -278,17 +281,16 @@ describe('ConfigurationModule academic years (roadmap §9.3)', () => {
 
   it('shows the school profile and saves edits through the client seam', async () => {
     const user = userEvent.setup();
-    const saveProfile = vi
-      .fn()
-      .mockResolvedValue({ ...setupStateFixture, school: { ...setupStateFixture.school, motto: 'Réussite et discipline' } });
+    const saveProfile = vi.fn().mockResolvedValue({
+      ...setupStateFixture,
+      school: { ...setupStateFixture.school, motto: 'Réussite et discipline' },
+    });
     const client = createClient();
     client.saveProfile = saveProfile;
 
     renderModule(client);
 
-    expect(
-      await screen.findByRole('heading', { name: "Profil de l'école" })
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: "Profil de l'école" })).toBeInTheDocument();
     expect(screen.getAllByText('Ecole Demo').length).toBeGreaterThanOrEqual(1);
 
     await user.click(screen.getByRole('button', { name: 'Modifier' }));

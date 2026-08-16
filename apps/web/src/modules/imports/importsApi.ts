@@ -5,7 +5,7 @@ import {
   type ImportKind,
   type ImportPreviewResponse,
 } from '@edutrack/shared';
-import { fetchWithTimeout, LOCAL_REQUEST_TIMEOUT_MS } from '../../httpClient';
+import { fetchWithTimeout, LOCAL_REQUEST_TIMEOUT_MS } from '../../lib/httpClient';
 import { createAuthHeaders } from '../auth';
 import { ImportsApiError } from './importsErrors';
 

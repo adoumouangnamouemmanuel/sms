@@ -7,9 +7,9 @@ import type {
   TeacherResponse,
 } from '@edutrack/shared';
 import { describe, expect, it, vi } from 'vitest';
-import '../i18n';
-import { TeachersModule } from '../modules/teachers/TeachersModule';
-import type { TeachersClient } from '../modules/teachers/useTeachersState';
+import '../../i18n';
+import { TeachersModule } from '../../modules/teachers/TeachersModule';
+import type { TeachersClient } from '../../modules/teachers/useTeachersState';
 
 const teacher: TeacherResponse = {
   id: '00000000-0000-4000-8000-000000000501',

@@ -3,7 +3,7 @@ import {
   type RecentAuditEvent,
   type RecentAuditEventsResponse,
 } from '@edutrack/shared';
-import { fetchWithTimeout } from '../../httpClient';
+import { fetchWithTimeout } from '../../lib/httpClient';
 import { createAuthHeaders } from '../auth';
 import { listClassrooms } from '../classes/classesApi';
 import { listGuardians, listStudents } from '../students/studentsApi';

@@ -35,7 +35,7 @@ import {
   type UpdateSubjectGroupRequest,
   type UpdateSubjectRequest,
 } from '@edutrack/shared';
-import { fetchWithTimeout } from '../../httpClient';
+import { fetchWithTimeout } from '../../lib/httpClient';
 import { createAuthHeaders } from '../auth';
 import { ClassesApiError } from './classesErrors';
 

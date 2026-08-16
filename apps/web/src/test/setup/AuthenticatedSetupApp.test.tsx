@@ -2,9 +2,9 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { SetupStateResponse } from '@edutrack/shared';
 import { describe, expect, it, vi } from 'vitest';
-import '../i18n';
-import { AuthenticatedSetupApp } from '../modules/setup/AuthenticatedSetupApp';
-import type { SetupClient } from '../modules/setup/useSetupState';
+import '../../i18n';
+import { AuthenticatedSetupApp } from '../../modules/setup/AuthenticatedSetupApp';
+import type { SetupClient } from '../../modules/setup/useSetupState';
 
 const user = {
   id: '00000000-0000-4000-8000-000000000201',
@@ -93,17 +93,20 @@ describe('AuthenticatedSetupApp', () => {
     await userSession.click(screen.getByRole('button', { name: 'Continuer' }));
     await userSession.click(screen.getByRole('button', { name: 'Enregistrer et continuer' }));
 
-    await userSession.click(await screen.findByRole('button', { name: 'Enregistrer et continuer' }));
-    await userSession.click(await screen.findByRole('button', { name: 'Enregistrer et continuer' }));
+    await userSession.click(
+      await screen.findByRole('button', { name: 'Enregistrer et continuer' })
+    );
+    await userSession.click(
+      await screen.findByRole('button', { name: 'Enregistrer et continuer' })
+    );
 
-    expect(await screen.findByRole('heading', { name: 'Matières et coefficients' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Matières et coefficients' })
+    ).toBeInTheDocument();
 
     // Advancing calls the setup advance endpoint and moves to the next step.
     await userSession.click(screen.getByRole('button', { name: 'Enregistrer et continuer' }));
-    expect(advanceStep).toHaveBeenCalledWith(
-      { step: 'subjects' },
-      expect.any(Object)
-    );
+    expect(advanceStep).toHaveBeenCalledWith({ step: 'subjects' }, expect.any(Object));
     expect(await screen.findByRole('heading', { name: 'Groupes de matières' })).toBeInTheDocument();
   });
 

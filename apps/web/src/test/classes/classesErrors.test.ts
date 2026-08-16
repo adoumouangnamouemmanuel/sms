@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import i18n from '../i18n';
-import { ClassesApiError, resolveClassesErrorMessageKey } from '../modules/classes/classesErrors';
+import i18n from '../../i18n';
+import {
+  ClassesApiError,
+  resolveClassesErrorMessageKey,
+} from '../../modules/classes/classesErrors';
 
 describe('resolveClassesErrorMessageKey', () => {
   it('maps known API error codes to their i18n keys', () => {

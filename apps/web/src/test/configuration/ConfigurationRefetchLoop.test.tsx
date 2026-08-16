@@ -2,11 +2,11 @@ import { render, screen } from '@testing-library/react';
 import { useEffect, useState } from 'react';
 import type { ConfigurationReadinessResponse } from '@edutrack/shared';
 import { describe, expect, it, vi } from 'vitest';
-import '../i18n';
+import '../../i18n';
 import {
   ConfigurationModule,
   type ConfigurationClient,
-} from '../modules/configuration/ConfigurationModule';
+} from '../../modules/configuration/ConfigurationModule';
 
 const readinessFixture: ConfigurationReadinessResponse = {
   areas: [

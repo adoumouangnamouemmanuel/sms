@@ -2,8 +2,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { PublicAuthUser, SetupStateResponse } from '@edutrack/shared';
 import { describe, expect, it, vi } from 'vitest';
-import '../i18n';
-import { SettingsModule, type SettingsClient } from '../modules/settings/SettingsModule';
+import '../../i18n';
+import { SettingsModule, type SettingsClient } from '../../modules/settings/SettingsModule';
 
 const user: PublicAuthUser = {
   id: '00000000-0000-4000-8000-000000000901',

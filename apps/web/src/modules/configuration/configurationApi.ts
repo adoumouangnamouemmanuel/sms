@@ -13,7 +13,7 @@ import type {
   GradingPolicyDetailResponse,
   ResolvedPolicyResponse,
 } from '@edutrack/shared';
-import { fetchWithTimeout } from '../../httpClient';
+import { fetchWithTimeout } from '../../lib/httpClient';
 import { createAuthHeaders } from '../auth';
 
 type Fetcher = typeof fetch;
@@ -172,10 +172,14 @@ export async function publishGradingPolicy(
   policyId: string,
   options: ConfigurationRequestOptions = {}
 ) {
-  return requestJson<GradingPolicyDetailResponse>(apiBaseUrl, `/grading-policies/${policyId}/publish`, {
-    method: 'POST',
-    options,
-  });
+  return requestJson<GradingPolicyDetailResponse>(
+    apiBaseUrl,
+    `/grading-policies/${policyId}/publish`,
+    {
+      method: 'POST',
+      options,
+    }
+  );
 }
 
 /** Creates the next DRAFT version of a policy (SchoolMaster only). */
@@ -184,10 +188,14 @@ export async function duplicateGradingPolicy(
   policyId: string,
   options: ConfigurationRequestOptions = {}
 ) {
-  return requestJson<GradingPolicyDetailResponse>(apiBaseUrl, `/grading-policies/${policyId}/duplicate`, {
-    method: 'POST',
-    options,
-  });
+  return requestJson<GradingPolicyDetailResponse>(
+    apiBaseUrl,
+    `/grading-policies/${policyId}/duplicate`,
+    {
+      method: 'POST',
+      options,
+    }
+  );
 }
 
 /** Replaces a policy's scope assignments atomically (SchoolMaster only). */
@@ -197,11 +205,15 @@ export async function assignPolicyScopes(
   input: AssignPolicyScopesRequest,
   options: ConfigurationRequestOptions = {}
 ) {
-  return requestJson<GradingPolicyDetailResponse>(apiBaseUrl, `/grading-policies/${policyId}/scopes`, {
-    method: 'PUT',
-    body: input,
-    options,
-  });
+  return requestJson<GradingPolicyDetailResponse>(
+    apiBaseUrl,
+    `/grading-policies/${policyId}/scopes`,
+    {
+      method: 'PUT',
+      body: input,
+      options,
+    }
+  );
 }
 
 /** Resolves the published policy covering a (level, subject) scope. */
@@ -280,10 +292,14 @@ export async function duplicateAppreciationScale(
   scaleId: string,
   options: ConfigurationRequestOptions = {}
 ) {
-  return requestJson<AppreciationScaleView>(apiBaseUrl, `/appreciation-scales/${scaleId}/duplicate`, {
-    method: 'POST',
-    options,
-  });
+  return requestJson<AppreciationScaleView>(
+    apiBaseUrl,
+    `/appreciation-scales/${scaleId}/duplicate`,
+    {
+      method: 'POST',
+      options,
+    }
+  );
 }
 
 interface RequestJsonOptions {

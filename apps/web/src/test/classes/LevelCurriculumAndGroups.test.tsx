@@ -6,10 +6,10 @@ import type {
   SubjectGroupView,
 } from '@edutrack/shared';
 import { describe, expect, it, vi } from 'vitest';
-import '../i18n';
-import { LevelCurriculumView } from '../modules/classes/LevelCurriculumView';
-import { SubjectGroupsView } from '../modules/classes/SubjectGroupsView';
-import type { ClassesClient } from '../modules/classes/useClassesState';
+import '../../i18n';
+import { LevelCurriculumView } from '../../modules/classes/LevelCurriculumView';
+import { SubjectGroupsView } from '../../modules/classes/SubjectGroupsView';
+import type { ClassesClient } from '../../modules/classes/useClassesState';
 
 const levelSixId = '00000000-0000-4000-8000-00000000b101';
 const subjectMathId = '00000000-0000-4000-8000-00000000b501';

@@ -7,7 +7,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { type LogoutClient } from '../auth';
-import type { DesktopDeploymentStatus } from '../../desktopStatus';
+import type { DesktopDeploymentStatus } from '../../lib/desktopStatus';
 import { MainAppShell } from '../app';
 import { SetupWizard } from './SetupWizard';
 import { useSetupState, type SetupClient } from './useSetupState';

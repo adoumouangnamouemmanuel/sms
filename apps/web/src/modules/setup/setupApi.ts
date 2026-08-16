@@ -6,7 +6,7 @@ import {
   type SetupSchoolProfileRequest,
   type SetupStateResponse,
 } from '@edutrack/shared';
-import { fetchWithTimeout } from '../../httpClient';
+import { fetchWithTimeout } from '../../lib/httpClient';
 import { createAuthHeaders } from '../auth';
 import { SetupApiError } from './setupErrors';
 

@@ -58,7 +58,10 @@ export interface ConfigurationClient {
   /** Grading policies (roadmap §9.7-§9.9) - optional test seams. */
   listGradingPolicies?: () => Promise<GradingPoliciesResponse>;
   createGradingPolicy?: (config: GradingPolicyConfig) => Promise<GradingPolicyDetailResponse>;
-  updateGradingPolicy?: (policyId: string, config: GradingPolicyConfig) => Promise<GradingPolicyDetailResponse>;
+  updateGradingPolicy?: (
+    policyId: string,
+    config: GradingPolicyConfig
+  ) => Promise<GradingPolicyDetailResponse>;
   publishGradingPolicy?: (policyId: string) => Promise<GradingPolicyDetailResponse>;
   duplicateGradingPolicy?: (policyId: string) => Promise<GradingPolicyDetailResponse>;
   assignPolicyScopes?: (
@@ -68,7 +71,10 @@ export interface ConfigurationClient {
   /** Appreciation scales (roadmap §9.10) - optional test seams. */
   listAppreciationScales?: () => Promise<AppreciationScalesResponse>;
   createAppreciationScale?: (input: AppreciationScaleInput) => Promise<AppreciationScaleView>;
-  updateAppreciationScale?: (scaleId: string, input: AppreciationScaleInput) => Promise<AppreciationScaleView>;
+  updateAppreciationScale?: (
+    scaleId: string,
+    input: AppreciationScaleInput
+  ) => Promise<AppreciationScaleView>;
   publishAppreciationScale?: (scaleId: string) => Promise<AppreciationScaleView>;
   duplicateAppreciationScale?: (scaleId: string) => Promise<AppreciationScaleView>;
 }
@@ -361,15 +367,9 @@ export function ConfigurationModule({
             {...(client
               ? {
                   client: {
-                    ...(client.listGradingPolicies
-                      ? { list: client.listGradingPolicies }
-                      : {}),
-                    ...(client.createGradingPolicy
-                      ? { create: client.createGradingPolicy }
-                      : {}),
-                    ...(client.updateGradingPolicy
-                      ? { update: client.updateGradingPolicy }
-                      : {}),
+                    ...(client.listGradingPolicies ? { list: client.listGradingPolicies } : {}),
+                    ...(client.createGradingPolicy ? { create: client.createGradingPolicy } : {}),
+                    ...(client.updateGradingPolicy ? { update: client.updateGradingPolicy } : {}),
                     ...(client.publishGradingPolicy
                       ? { publish: client.publishGradingPolicy }
                       : {}),

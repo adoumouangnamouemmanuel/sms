@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { login, logout } from '../modules/auth/authApi';
-import type { AuthApiError } from '../modules/auth/authErrors';
+import { login, logout } from '../../modules/auth/authApi';
+import type { AuthApiError } from '../../modules/auth/authErrors';
 import {
   clearAccessToken,
   createAuthHeaders,
   getAccessToken,
   getAccessTokenExpiresAt,
-} from '../modules/auth/authSession';
+} from '../../modules/auth/authSession';
 
 const sessionResponse = {
   success: true,

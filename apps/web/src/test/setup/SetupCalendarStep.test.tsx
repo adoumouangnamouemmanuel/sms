@@ -2,8 +2,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { SetupCalendarRequest } from '@edutrack/shared';
 import { describe, expect, it, vi } from 'vitest';
-import '../i18n';
-import { SetupCalendarStep } from '../modules/setup/SetupCalendarStep';
+import '../../i18n';
+import { SetupCalendarStep } from '../../modules/setup/SetupCalendarStep';
 
 describe('SetupCalendarStep', () => {
   it('disables the primary action while any required date is empty', async () => {

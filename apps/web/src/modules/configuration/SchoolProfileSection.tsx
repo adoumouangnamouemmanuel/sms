@@ -297,9 +297,7 @@ function ProfileRow({ label, value }: { label: string; value: string | null }) {
       <div className="min-w-0">
         <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">{label}</p>
         {isEmpty ? (
-          <p className="text-[13px] font-bold italic text-slate-300">
-            {t('settings.emptyValue')}
-          </p>
+          <p className="text-[13px] font-bold italic text-slate-300">{t('settings.emptyValue')}</p>
         ) : (
           <p className="truncate text-[13px] font-black text-slate-800">{value}</p>
         )}

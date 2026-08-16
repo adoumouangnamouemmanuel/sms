@@ -1,7 +1,7 @@
 import { APP_NAME, type PublicAuthUser, type SchoolModuleName } from '@edutrack/shared';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { DesktopDeploymentStatus } from '../../desktopStatus';
+import type { DesktopDeploymentStatus } from '../../lib/desktopStatus';
 import { clearAccessToken, useLogoutAction, type LogoutClient } from '../auth';
 import type { SetupStateResponse } from '@edutrack/shared';
 import { lazy, Suspense } from 'react';

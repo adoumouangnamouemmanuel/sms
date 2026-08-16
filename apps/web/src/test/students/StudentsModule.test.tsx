@@ -10,9 +10,9 @@ import type {
   StudentResponse,
 } from '@edutrack/shared';
 import { describe, expect, it, vi } from 'vitest';
-import '../i18n';
-import { StudentsModule } from '../modules/students/StudentsModule';
-import type { StudentsClient } from '../modules/students/useStudentsState';
+import '../../i18n';
+import { StudentsModule } from '../../modules/students/StudentsModule';
+import type { StudentsClient } from '../../modules/students/useStudentsState';
 
 const minimalSetupState: SetupStateResponse = {
   school: {

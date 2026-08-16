@@ -3,10 +3,10 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ConfirmImportResponse, ImportPreviewResponse } from '@edutrack/shared';
 import { describe, expect, it, vi } from 'vitest';
-import '../i18n';
-import { ImportModal } from '../modules/imports/ImportModal';
-import { ImportsApiError } from '../modules/imports/importsErrors';
-import type { ImportsClient } from '../modules/imports/useImportState';
+import '../../i18n';
+import { ImportModal } from '../../modules/imports/ImportModal';
+import { ImportsApiError } from '../../modules/imports/importsErrors';
+import type { ImportsClient } from '../../modules/imports/useImportState';
 
 const preview: ImportPreviewResponse = {
   importId: 'preview-1',

@@ -6,16 +6,19 @@ import type {
   GradingPolicyDetailResponse,
 } from '@edutrack/shared';
 import { describe, expect, it, vi } from 'vitest';
-import '../i18n';
+import '../../i18n';
 import {
   AppreciationSection,
   type AppreciationClient,
-} from '../modules/configuration/AppreciationSection';
+} from '../../modules/configuration/AppreciationSection';
 import {
   GradingPolicySection,
   type GradingPolicyClient,
-} from '../modules/configuration/GradingPolicySection';
-import { formatHundredths, parseDecimalToHundredths } from '../modules/configuration/gradingFormat';
+} from '../../modules/configuration/GradingPolicySection';
+import {
+  formatHundredths,
+  parseDecimalToHundredths,
+} from '../../modules/configuration/gradingFormat';
 
 const policyId = '00000000-0000-4000-8000-00000000d001';
 const scaleId = '00000000-0000-4000-8000-00000000d101';
