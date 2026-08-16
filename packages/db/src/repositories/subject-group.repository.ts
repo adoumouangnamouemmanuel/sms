@@ -12,6 +12,7 @@ export interface SubjectGroupRecord {
   nameAr: string | null;
   displayOrder: number;
   isActive: boolean;
+  recordVersion: number;
 }
 
 export interface SubjectGroupWithCount extends SubjectGroupRecord {
@@ -46,6 +47,7 @@ export class SubjectGroupRepository extends TenantScopedRepository {
         nameAr: subjectGroup.nameAr,
         displayOrder: subjectGroup.displayOrder,
         isActive: subjectGroup.isActive,
+        recordVersion: subjectGroup.recordVersion,
         subjectCount: count(subjectGroupMember.id),
       })
       .from(subjectGroup)
@@ -71,7 +73,10 @@ export class SubjectGroupRepository extends TenantScopedRepository {
       .get();
   }
 
-  create(input: Omit<SubjectGroupRecord, 'id' | 'schoolId' | 'isActive'>, updatedAt: string) {
+  create(
+    input: Omit<SubjectGroupRecord, 'id' | 'schoolId' | 'isActive' | 'recordVersion'>,
+    updatedAt: string
+  ) {
     return this.db
       .insert(subjectGroup)
       .values({
@@ -238,4 +243,5 @@ const subjectGroupColumns = {
   nameAr: subjectGroup.nameAr,
   displayOrder: subjectGroup.displayOrder,
   isActive: subjectGroup.isActive,
+  recordVersion: subjectGroup.recordVersion,
 };
