@@ -5,6 +5,7 @@ export * from './class-enrollment.repository.js';
 export * from './class-level.repository.js';
 export * from './class-subject.repository.js';
 export * from './classroom.repository.js';
+export * from './configuration.repository.js';
 export * from './guardian.repository.js';
 export * from './import-batch.repository.js';
 export * from './refresh-session.repository.js';
