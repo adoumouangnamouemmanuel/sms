@@ -553,11 +553,13 @@ export function MainAppShell({
 }
 
 function ModuleLoadingFallback() {
+  const { t } = useTranslation();
+
   return (
     <div className="flex h-40 w-full items-center justify-center" role="status" aria-live="polite">
       <div className="flex flex-col items-center gap-3">
         <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-teal-200 border-t-teal-600" />
-        <p className="text-xs font-bold text-slate-400">Chargement…</p>
+        <p className="text-xs font-bold text-slate-400">{t('app.shell.loading')}</p>
       </div>
     </div>
   );

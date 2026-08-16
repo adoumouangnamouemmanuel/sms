@@ -199,6 +199,7 @@ const resources = {
           comingSoon: 'À venir',
           comingSoonLabel: 'Bientôt',
           dashboard: 'Tableau de bord',
+          loading: 'Chargement…',
           expand: 'Développer le menu',
           header: {
             notifications: 'Notifications',
@@ -306,6 +307,7 @@ const resources = {
         list: {
           allClassrooms: 'Toutes les classes',
           allLevels: 'Tous les niveaux',
+          allSexes: 'Tous',
           classLevel: 'Niveau',
           classroom: 'Classe',
           clearSearch: 'Effacer la recherche',
@@ -339,6 +341,7 @@ const resources = {
         status: {
           active: 'Actif',
           archived: 'Archivé',
+          notEnrolled: 'Non inscrit(e)',
         },
         tabs: {
           guardians: 'Responsables',
@@ -373,8 +376,10 @@ const resources = {
         },
         detail: {
           address: 'Adresse',
+          assignedClassrooms: 'Classes assignées',
           email: 'Email',
           hireDate: 'Date d’embauche',
+          noAssignedClassrooms: 'Aucune classe assignée',
           phone: 'Téléphone',
           specialization: 'Spécialité',
         },
@@ -1186,6 +1191,7 @@ const resources = {
           collapse: 'طي القائمة',
           comingSoon: 'قريباً',
           comingSoonLabel: 'قريباً',
+          loading: 'جار التحميل...',
           dashboard: 'لوحة التحكم',
           expand: 'توسيع القائمة',
           header: {
@@ -1294,6 +1300,7 @@ const resources = {
         list: {
           allClassrooms: 'جميع الأقسام',
           allLevels: 'جميع المستويات',
+          allSexes: 'الكل',
           classLevel: 'المستوى',
           classroom: 'القسم',
           clearSearch: 'مسح البحث',
@@ -1327,6 +1334,7 @@ const resources = {
         status: {
           active: 'نشط',
           archived: 'مؤرشف',
+          notEnrolled: 'غير مسجل(ة)',
         },
         tabs: {
           guardians: 'الأوصياء',
@@ -1361,8 +1369,10 @@ const resources = {
         },
         detail: {
           address: 'العنوان',
+          assignedClassrooms: 'الأقسام الموكلة',
           email: 'البريد الإلكتروني',
           hireDate: 'تاريخ التوظيف',
+          noAssignedClassrooms: 'لا يوجد قسم مكلف',
           phone: 'الهاتف',
           specialization: 'التخصص',
         },
@@ -2161,6 +2171,7 @@ const resources = {
           collapse: 'Collapse menu',
           comingSoon: 'Coming soon',
           comingSoonLabel: 'Coming soon',
+          loading: 'Loading…',
           dashboard: 'Dashboard',
           expand: 'Expand menu',
           header: {
@@ -2269,6 +2280,7 @@ const resources = {
         list: {
           allClassrooms: 'All classrooms',
           allLevels: 'All levels',
+          allSexes: 'All',
           classLevel: 'Level',
           classroom: 'Classroom',
           clearSearch: 'Clear search',
@@ -2302,6 +2314,7 @@ const resources = {
         status: {
           active: 'Active',
           archived: 'Archived',
+          notEnrolled: 'Not enrolled',
         },
         tabs: {
           guardians: 'Guardians',
@@ -2336,8 +2349,10 @@ const resources = {
         },
         detail: {
           address: 'Address',
+          assignedClassrooms: 'Assigned classes',
           email: 'Email',
           hireDate: 'Hire date',
+          noAssignedClassrooms: 'No assigned class',
           phone: 'Phone',
           specialization: 'Specialization',
         },
