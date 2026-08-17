@@ -182,7 +182,7 @@ describe('grading-policy builder (roadmap §9.8)', () => {
 
   it('saves and publishes through the real API when no client seam is provided', async () => {
     // Regression: the editor used to require the test-seam `client` for
-    // save/publish/duplicate/scopes — in the real app those buttons silently
+    // save/publish/duplicate/scopes - in the real app those buttons silently
     // did nothing. Now they fall back to the configuration API.
     const user = userEvent.setup();
     const calls: { method: string; url: string }[] = [];

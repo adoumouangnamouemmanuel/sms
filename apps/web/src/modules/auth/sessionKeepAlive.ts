@@ -10,7 +10,7 @@ import { getAccessTokenExpiresAt } from './authSession';
  * than 15 minutes after login returned INVALID_ACCESS_TOKEN and the app
  * logged the user out mid-flow (e.g. saving a subject group during setup).
  * This hook re-arms a timer from the token's own expiry on every refresh, so
- * a long session — the setup wizard included — never trips over an expired
+ * a long session - the setup wizard included - never trips over an expired
  * token. If a refresh itself fails with a real session error, the caller's
  * onSessionExpired runs; transient service failures retry on the next tick.
  */

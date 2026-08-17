@@ -56,7 +56,7 @@ export const fr = {
       saveProfile: 'Enregistrer',
       years: {
         title: 'Années scolaires',
-        hint: "Périodes et années de l'établissement — une seule année active.",
+        hint: "Périodes et années de l'établissement - une seule année active.",
         new: 'Nouvelle année',
         newTitle: 'Nouvelle année scolaire',
         current: 'Année en cours',
@@ -153,7 +153,7 @@ export const fr = {
         duplicate: 'Créer une nouvelle version',
         create: 'Créer',
         templateHint:
-          'Les modèles sont des points de départ modifiables — jamais des réglages automatiques.',
+          'Les modèles sont des points de départ modifiables - jamais des réglages automatiques.',
         issueNoTypes: 'Ajoutez au moins un type de note.',
         issueOccurrence: 'Le minimum d\u2019occurrences dépasse le maximum.',
         issueSingle: 'Un type unique ne peut avoir qu\u2019une occurrence.',
@@ -169,7 +169,7 @@ export const fr = {
       },
       appreciation: {
         title: 'Appréciations',
-        hint: 'Tranches et libellés attribués à la moyenne officielle — distincts de la mention.',
+        hint: 'Tranches et libellés attribués à la moyenne officielle - distincts de la mention.',
         new: 'Nouvelle échelle',
         empty:
           'Aucune échelle d\u2019appréciation. Les bulletins restent bloqués tant qu\u2019aucune échelle n\u2019est publiée.',
@@ -1164,7 +1164,7 @@ export const fr = {
         editTitle: 'Modifier le groupe',
         empty: 'Aucun groupe de matières pour le moment.',
         emptyHint: 'Créez des groupes comme Matières littéraires ou Matières scientifiques.',
-        hint: 'Groupes définis par l’école — jamais déduits d’une catégorie universelle.',
+        hint: 'Groupes définis par l’école - jamais déduits d’une catégorie universelle.',
         memberCount: '{{count}} matière(s)',
         membersHint: 'Ajoutez des matières et ordonnez-les. L’ordre devient l’ordre d’affichage.',
         membersTitle: 'Membres du groupe',

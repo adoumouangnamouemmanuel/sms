@@ -417,7 +417,7 @@ export function LevelCurriculumView({
                                 : t('classes.curriculumLevel.optional')}
                             </button>
                           ) : (
-                            <span className="text-[11px] font-semibold text-slate-300">—</span>
+                            <span className="text-[11px] font-semibold text-slate-300">-</span>
                           )}
                         </td>
                       </tr>

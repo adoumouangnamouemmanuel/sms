@@ -181,8 +181,8 @@ export function AcademicYearsSection({
                   ) : null}
                 </div>
                 <p className="mt-1 text-[12px] font-semibold text-slate-500">
-                  {year.startDate ? formatISODate(year.startDate) : '—'} →{' '}
-                  {year.endDate ? formatISODate(year.endDate) : '—'}
+                  {year.startDate ? formatISODate(year.startDate) : '-'} →{' '}
+                  {year.endDate ? formatISODate(year.endDate) : '-'}
                 </p>
                 <div className="mt-2.5 flex flex-wrap gap-1.5">
                   {year.terms.map((termItem) => (
@@ -234,7 +234,7 @@ export function AcademicYearsSection({
         <div className="rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50/40 p-8 text-center">
           <p className="text-sm font-black text-slate-500">{t('configuration.years.empty')}</p>
           <p className="mt-1 text-[12px] font-semibold text-slate-400">
-            {t('configuration.years.emptyHint', { active: activeYear?.label ?? '—' })}
+            {t('configuration.years.emptyHint', { active: activeYear?.label ?? '-' })}
           </p>
         </div>
       )}

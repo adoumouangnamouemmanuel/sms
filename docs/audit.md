@@ -1,8 +1,8 @@
-# EduTrack Africa — Audit complet
+# EduTrack Africa - Audit complet
 
 **Date :** 15 août 2026 · **Branche :** `feature/phase-4-classes` · **Méthode :** revue manuelle du code (API, Web, DB, Desktop), scans ciblés (secrets, XSS, SQL brut, i18n, migrations), `pnpm audit`, build de production.
 
-**Résumé :** le projet est globalement sain et bien durci (auth, CORS/capability, scoping locataire, audits, CI). **5 vulnérabilités de dépendances** (3 high / 1 moderate / 1 low — toutes à exploitabilité faible dans ce contexte localhost), 4 problèmes médiums (1 backend, 1 DB, 2 frontend), et plusieurs points bas/infos. Aucune fuite de secret, aucun sink XSS, aucune injection SQL via entrée utilisateur.
+**Résumé :** le projet est globalement sain et bien durci (auth, CORS/capability, scoping locataire, audits, CI). **5 vulnérabilités de dépendances** (3 high / 1 moderate / 1 low - toutes à exploitabilité faible dans ce contexte localhost), 4 problèmes médiums (1 backend, 1 DB, 2 frontend), et plusieurs points bas/infos. Aucune fuite de secret, aucun sink XSS, aucune injection SQL via entrée utilisateur.
 
 ---
 
@@ -33,29 +33,29 @@
 
 **Fix proposé (S1–S5) :** une branche dédiée « dependabot/security » :
 
-1. `fastify` → `^5.7.2` (l'usage est minimal : pas de plugins, CORS manuel, hooks `onRequest`/`onClose`, `reply.code().send()`. Risque de breaking changes faible — vérifier `FastifyServerOptions`, les types de `reply.header`, et le logger).
-2. `drizzle-orm` → `^0.45.2` (saut majeur 0.30 → 0.45 : vérifier l'API `drizzle()`/better-sqlite3, `onConflictDoUpdate`, `sql\`\``, le migrator `drizzle-orm/better-sqlite3/migrator` — le code source est stable et sans plugins exotiques, mais tout le package db doit être re-vérifié).
+1. `fastify` → `^5.7.2` (l'usage est minimal : pas de plugins, CORS manuel, hooks `onRequest`/`onClose`, `reply.code().send()`. Risque de breaking changes faible - vérifier `FastifyServerOptions`, les types de `reply.header`, et le logger).
+2. `drizzle-orm` → `^0.45.2` (saut majeur 0.30 → 0.45 : vérifier l'API `drizzle()`/better-sqlite3, `onConflictDoUpdate`, `sql\`\``, le migrator `drizzle-orm/better-sqlite3/migrator` - le code source est stable et sans plugins exotiques, mais tout le package db doit être re-vérifié).
 3. Passer la porte complète : 266 tests + typecheck + lint + format + `build:sidecar` (la migration du journal et le bundling pkg doivent rester verts).
 
 ---
 
 ## 3. Findings backend / API
 
-### B1 — 🟡 Médium : pas de `setErrorHandler` global
+### B1 - 🟡 Médium : pas de `setErrorHandler` global
 
 - **Où :** `apps/api/src/server.ts` (aucun `setErrorHandler`/`setNotFoundHandler`).
 - **Problème :** une exception non attrapée sort du contrôleur → réponse 500 Fastify par défaut : enveloppe incohérente avec le reste (`{success:false,...}`) et stack trace exposée en dev.
 - **Fix :** handler central qui journalise rouge (pino redact déjà configuré) et renvoie `{ success: false, error: { code: 'INTERNAL_ERROR', message: "Une erreur interne est survenue." } }` en 500. Effort : faible (≈ 30 lignes + 1 test).
 
-### B2 — 🟢 Info : import/export dupliqué de `CAPABILITY_HEADER`
+### B2 - 🟢 Info : import/export dupliqué de `CAPABILITY_HEADER`
 
 - **Où :** `apps/api/src/server.ts` lignes 19–20 (`export { CAPABILITY_HEADER } from './sidecar-contract.js'` suivi d'un `import` du même symbole).
 - **Fix :** garder un seul `import` + un `export` explicite si l'export est utilisé par `index.ts`. Cosmétique.
 
-### ✅ B3 — Vérifié bon
+### ✅ B3 - Vérifié bon
 
 - Validation zod sur **tous** les bodies (login, refresh, reset, change, et tous les modules) ; erreurs de validation enveloppées avec champs.
-- Scoping locataire : toutes les requêtes repos passent par `this.schoolId` (réparé aussi pour l'audit module et les compteurs de tests d'import — threads CodeRabbit résolus).
+- Scoping locataire : toutes les requêtes repos passent par `this.schoolId` (réparé aussi pour l'audit module et les compteurs de tests d'import - threads CodeRabbit résolus).
 - Transactions drizzle pour les écritures multi-étapes ; `record_version` + 409 sur les entités classes.
 - Audit trail append-only avec `actorUserId`, `correlationId`, métadonnées sérialisées.
 - Import Excel : preview uniquement, rien n'est persisté avant confirmation ; doublons détectés par code/identité.
@@ -66,24 +66,24 @@
 
 ## 4. Findings sécurité (hors dépendances)
 
-### S6 — 🟡 Médium : token de capability exposé au WebView
+### S6 - 🟡 Médium : token de capability exposé au WebView
 
 - **Où :** `apps/desktop/src-tauri/src/lib.rs` (`capability_token` renvoyé par `deployment_status`, nécessaire au fonctionnement).
 - **Problème :** une XSS dans le WebView obtiendrait le token + accès complet à l'API locale (lecture/écriture de la base). **Atténuations en place :** CSP `script-src 'self'`, aucun contenu distant chargé, aucun sink XSS trouvé (F5), token aléatoire 256 bits par lancement.
 - **Fix (durcissement optionnel) :** limiter la durée de vie du token (rotation), ou exposer un token _per-window_ non réutilisable ; garder la CSP comme ceinture principale. Effort : faible-moyen.
 
-### S7 — 🟢 Bas : pas de rate limiting sur `/auth/login`
+### S7 - 🟢 Bas : pas de rate limiting sur `/auth/login`
 
 - **Où :** `apps/api/src/modules/auth`.
 - **Problème :** pas de throttling par IP. **Atténué :** verrouillage compte (5 essais / 15 min) + binding loopback uniquement.
 - **Fix (optionnel) :** petit délai exponentiel côté service ou compteur global simple. Effort : faible.
 
-### S8 — 🟢 Info : `access-token-secret` stocké en clair
+### S8 - 🟢 Info : `access-token-secret` stocké en clair
 
 - **Où :** `apps/desktop/src-tauri/src/lib.rs` → `%APPDATA%\EduTrack\access-token-secret`.
-- **Note :** acceptable pour un desktop local mono-utilisateur (la base SQLite est elle-même en clair à côté). Sur Windows pas de chmod 0600 (fichier lisible par les processus du même utilisateur uniquement — cohérent avec le reste). Aucune action requise ; à documenter si multi-utilisateurs un jour.
+- **Note :** acceptable pour un desktop local mono-utilisateur (la base SQLite est elle-même en clair à côté). Sur Windows pas de chmod 0600 (fichier lisible par les processus du même utilisateur uniquement - cohérent avec le reste). Aucune action requise ; à documenter si multi-utilisateurs un jour.
 
-### ✅ S9 — Vérifié bon
+### ✅ S9 - Vérifié bon
 
 - bcrypt cost 12 + hash factice identique pour comptes/schools inconnus (anti-timing).
 - Verrouillage 5 essais / 15 min avec `lockedUntil`.
@@ -98,19 +98,19 @@
 
 ## 5. Findings base de données
 
-### D1 — 🟡 Médium : aucun garde-fou contre la régression de l'ordre du journal de migrations
+### D1 - 🟡 Médium : aucun garde-fou contre la régression de l'ordre du journal de migrations
 
 - **Où :** `packages/db/migrations/sqlite/meta/_journal.json` + `packages/db/src/test/database-foundation.test.ts`.
-- **Contexte :** le bug d'ordre (`when` de 0008/0009/0010 < 0007) a fait sauter la création des tables classes sur les bases existantes — **réparé** (renumérotation 0013/0014/0015, journal strictement croissant, vérifié sur copie de ta base réelle).
+- **Contexte :** le bug d'ordre (`when` de 0008/0009/0010 < 0007) a fait sauter la création des tables classes sur les bases existantes - **réparé** (renumérotation 0013/0014/0015, journal strictement croissant, vérifié sur copie de ta base réelle).
 - **Risque de récurrence :** rien n'empêche un futur `drizzle-kit generate` de réintroduire un `when` hors ordre.
 - **Fix :** dans `database-foundation.test.ts`, ajouter une assertion : pour chaque entrée du journal, `when` strictement croissant ; + vérifier que le nombre de fichiers SQL == nombre d'entrées du journal. Effort : faible.
 
-### D2 — 🟢 Bas : dossier `migrations/` orphelin à la racine
+### D2 - 🟢 Bas : dossier `migrations/` orphelin à la racine
 
-- **Où :** `migrations/sqlite/meta/` (vide, non tracké — reliquat d'un `drizzle-kit generate`).
+- **Où :** `migrations/sqlite/meta/` (vide, non tracké - reliquat d'un `drizzle-kit generate`).
 - **Fix :** supprimer (`rmdir` récursif). Les vraies migrations vivent dans `packages/db/migrations/sqlite`. Effort : trivial.
 
-### ✅ D3 — Vérifié bon
+### ✅ D3 - Vérifié bon
 
 - WAL activé (`journal_mode = WAL` dans `client.ts` et `deployment.ts`).
 - Journal : 13 entrées, `when` strictement croissant, aucun hors-ordre.
@@ -122,66 +122,66 @@
 
 ## 6. Findings frontend
 
-### F1 — 🟡 Médium : aucun ErrorBoundary React
+### F1 - 🟡 Médium : aucun ErrorBoundary React
 
 - **Où :** aucune occurrence de `ErrorBoundary`/`componentDidCatch` dans `apps/web/src`.
 - **Problème :** un crash de rendu (donnée inattendue, bug) → **écran blanc** total, sans message ni récupération.
 - **Fix :** ErrorBoundary racine (autour de l'app) + message français + bouton « Recharger » ; éventuellement un par module. Effort : faible.
 
-### F2 — 🟡 Médium : un seul chunk JS de 690 kB (174 kB gzip) — pas de code-splitting
+### F2 - 🟡 Médium : un seul chunk JS de 690 kB (174 kB gzip) - pas de code-splitting
 
 - **Où :** `apps/web/vite.config.ts` (aucun `manualChunks`, aucun `React.lazy`).
 - **Preuve :** build de production → `index-*.js 690.23 kB │ gzip: 173.85 kB` + warning Vite « Some chunks are larger than 500 kB ». Les `import()` dynamiques de `dashboardApi.ts`/`teachersApi.ts` sont des **no-ops** (modules aussi importés statiquement).
 - **Impact :** démarrage plus lent sur machines modestes ; `xlsx` (lourd) est chargé dès le départ alors qu'il ne sert qu'au module Imports.
 - **Fix :** 1) `React.lazy` + `Suspense` par module (`students`, `teachers`, `classes`, `imports`, `dashboard`, `settings`) ; 2) `manualChunks` : `react`/`react-dom`, `i18next`, `xlsx` (chunk séparé chargé uniquement par Imports). Attendu : −30 à −50 % de JS initial. Effort : moyen.
 
-### F3 — 🟢 Bas : fetch sans timeout / AbortController
+### F3 - 🟢 Bas : fetch sans timeout / AbortController
 
 - **Où :** les 8 clients API (`authApi.ts`, `classesApi.ts`, `dashboardApi.ts`, `importsApi.ts`, …) utilisent `fetch` nu.
 - **Problème :** si le sidecar est bloqué (crash partiel, DB verrouillée), un spinner tourne indéfiniment ; certains écrans ont « Réessayer » mais pas tous.
 - **Fix :** client partagé avec timeout (ex. 30 s) via `AbortController`, erreur « Service local indisponible » uniforme. Effort : faible.
 
-### F4 — 🟢 Bas : clé i18n manquante
+### F4 - 🟢 Bas : clé i18n manquante
 
-- **Où :** `apps/web/src/i18n.ts` — `common.date.placeholder` existe en `fr` (`JJ/MM/AAAA`) mais pas en `ar`/`en` (parité 379/378/378).
+- **Où :** `apps/web/src/i18n.ts` - `common.date.placeholder` existe en `fr` (`JJ/MM/AAAA`) mais pas en `ar`/`en` (parité 379/378/378).
 - **Fix :** ajouter la clé dans les deux blocs. Effort : trivial.
-- **Note :** la parité générale est excellente (aucune autre clé manquante, aucun clé orpheline `ar`/`en`), et le bug « raw i18n key » (`classes.errors.generic`) est corrigé — scan : plus aucune clé littérale invalide dans `t()`.
+- **Note :** la parité générale est excellente (aucune autre clé manquante, aucun clé orpheline `ar`/`en`), et le bug « raw i18n key » (`classes.errors.generic`) est corrigé - scan : plus aucune clé littérale invalide dans `t()`.
 
-### ✅ F5 — Vérifié bon
+### ✅ F5 - Vérifié bon
 
 - Aucun sink XSS : zéro `dangerouslySetInnerHTML`, `innerHTML`, `eval` dans `src` (hors tests).
 - Zéro `console.log` résiduel dans `src`.
 - Access token en mémoire uniquement ; en-têtes `Authorization` + capability gérés proprement.
 - Labels/aria sur les contrôles du shell (navigation, recherche, notifications, collapse).
-- Formats de date `JJ/MM/AAAA` (locale fr/td) — cohérent ; conventions d'UI codifiées dans ADR-008.
+- Formats de date `JJ/MM/AAAA` (locale fr/td) - cohérent ; conventions d'UI codifiées dans ADR-008.
 - Problème de re-render sur le changement de filtre Niveau/Classe : corrigé (conformité react-hooks, loader réécrit sans `setState` dans `effect`).
 
 ---
 
 ## 7. Findings docs / organisation / CI
 
-### O1 — 🟢 Bas : README ne documente pas les tests e2e
+### O1 - 🟢 Bas : README ne documente pas les tests e2e
 
 - **Où :** `README.md` vs `tests/e2e/web-smoke.spec.ts` + `pnpm test:e2e`.
 - **Fix :** ajouter 2 lignes (commande + prérequis Playwright). Effort : trivial.
 
-### O2 — 🟢 Info : `docs/import-templates/matieres_exemple.xlsx` modifié localement, non commité
+### O2 - 🟢 Info : `docs/import-templates/matieres_exemple.xlsx` modifié localement, non commité
 
-- Fichier modifié (mtime 19:08) par une ouverture/sauvegarde Excel de ta part — inchangé et non commité de notre côté. À committer toi-même si voulu.
+- Fichier modifié (mtime 19:08) par une ouverture/sauvegarde Excel de ta part - inchangé et non commité de notre côté. À committer toi-même si voulu.
 
-### ✅ O3 — Vérifié bon
+### ✅ O3 - Vérifié bon
 
 - Docs : ADR 001–011, `docs/database/schema.md`, `docs/import-guidelines.md`, templates d'import (élèves, professeurs, responsables, classes, matières, affectations), `docs/phase-4-gate.md`, `docs/SchoolMS_Roadmap.md` (cases 10.1–10.4 cochées), CHANGELOG à jour.
 - CI (`ci.yml`) : format → lint → typecheck → tests unitaires → build, puis job `playwright-smoke` avec Chromium. `secret-scan.yml` : gitleaks sur push/PR main+develop.
-- Organisation : `packages/db/src/{repositories,schema,migrations,seeds}` + `src/test/` groupé — cohérent avec la restructuration documentée.
+- Organisation : `packages/db/src/{repositories,schema,migrations,seeds}` + `src/test/` groupé - cohérent avec la restructuration documentée.
 
 ---
 
 ## 8. Plan d'action recommandé (par ordre)
 
-1. **Court terme (1 session)** : B1 (error handler global), F1 (ErrorBoundary), F4 (clé i18n), D2 (dossier orphelin), D1 (test d'ordre du journal), O1 (README e2e). — Tout est faible effort, tests inclus.
-2. **Moyen terme** : S1+S2+S3 (upgrade fastify 5.7.2 + drizzle 0.45.2) sur branche dédiée avec porte complète (266 tests + sidecar build). C'est le seul chantier à risque — à faire quand tu es prêt à vérifier le desktop.
-3. **Moyen terme** : F2 (code-splitting) — gain perceptible au démarrage.
+1. **Court terme (1 session)** : B1 (error handler global), F1 (ErrorBoundary), F4 (clé i18n), D2 (dossier orphelin), D1 (test d'ordre du journal), O1 (README e2e). - Tout est faible effort, tests inclus.
+2. **Moyen terme** : S1+S2+S3 (upgrade fastify 5.7.2 + drizzle 0.45.2) sur branche dédiée avec porte complète (266 tests + sidecar build). C'est le seul chantier à risque - à faire quand tu es prêt à vérifier le desktop.
+3. **Moyen terme** : F2 (code-splitting) - gain perceptible au démarrage.
 4. **Optionnel** : F3 (timeout fetch), S6 (rotation du token de capability), S7 (rate limiting login).
 
 ## 9. Méthode & commandes utilisées
@@ -199,7 +199,7 @@
 Les findings de ce rapport sont classés ci-dessous comme résolus, acceptés, hors périmètre ou à suivre. Chaque item
 ci-dessous indique le commit / la porte de vérification correspondante.
 
-### 🔴 Dépendances — résolu
+### 🔴 Dépendances - résolu
 
 - **S1/S2/S3 (fastify 4.29.1, find-my-way, content-type bypass)** : upgrade
   `fastify` → **5.12.0** + `@fastify/multipart` ligne compatible v5.
@@ -208,7 +208,7 @@ ci-dessous indique le commit / la porte de vérification correspondante.
   converties à la forme tableau.
 - **Vérification** : `pnpm audit --prod` → _No known vulnerabilities found_.
 
-### 🟡 Médiums — résolus
+### 🟡 Médiums - résolus
 
 - **B1 (pas de `setErrorHandler`)** : handler global + `setNotFoundHandler`
   dans `server.ts` (enveloppe `{success, error:{code,message}}` uniforme,
@@ -225,11 +225,11 @@ ci-dessous indique le commit / la porte de vérification correspondante.
   (`apps/web/src/httpClient.ts`), utilisé par les 9 call sites API.
 - **F4 (clé i18n manquante)** : `common.date` + `datePicker` ajoutés à `ar`/`en`.
 - **S6 (token de capability)** : conservé par conception (exigé par le
-  sidecar) ; atténué par CSP stricte et zéro sink XSS — documenté.
+  sidecar) ; atténué par CSP stricte et zéro sink XSS - documenté.
 - **O2 (fichier exemple modifié localement)** : à committer par l'utilisateur
-  si souhaité — hors périmètre.
+  si souhaité - hors périmètre.
 
-### 🟢 Bas / Bonus — résolus
+### 🟢 Bas / Bonus - résolus
 
 - **O1 (README e2e)** : déjà documenté (faux positif).
 - Tests web obsolètes (5) réalignés après refactors récents ; lint cassé dans
@@ -237,7 +237,7 @@ ci-dessous indique le commit / la porte de vérification correspondante.
 
 ### Vérification finale
 
-- **271 tests** (96 db + 104 api + 71 web) — verts.
+- **271 tests** (96 db + 104 api + 71 web) - verts.
 - Typecheck 0 erreur · lint 0 · format 0 · `pnpm audit --prod` 0 vulnérabilité.
 - Sidecar : build de prod + boot sur base neuve → 13/13 migrations,
   tables classes créées.

@@ -786,7 +786,7 @@ function GradingPolicyEditor({
             {t('configuration.grading.weightsTotal', {
               total: String(totalWeight / 100),
             })}
-            {!weightOk ? ` — ${t('configuration.grading.weightsWarning')}` : null}
+            {!weightOk ? ` - ${t('configuration.grading.weightsWarning')}` : null}
           </div>
         </div>
       </EditorCard>

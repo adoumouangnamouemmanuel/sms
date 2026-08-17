@@ -1,13 +1,13 @@
-# Phase 3.1 — Configuration Foundation (Plan for Review)
+# Phase 3.1 - Configuration Foundation (Plan for Review)
 
 **Branch:** `feature/phase-3-configuration`
 **Roadmap:** §9.1 (Configuration foundation)
 **Canonical design:** `docs/academic/Academic_Configuration_Grading_Redesign.md` (§2.1–2.5, §3, §22, §23)
-**Status:** Proposal — implement directly after review
+**Status:** Proposal - implement directly after review
 
 This phase builds the permanent, backend-enforced **configuration foundation** that every
 later Phase 3 section (3.2–3.11) plugs into. It deliberately does **not** implement any
-specific configuration screen yet — those are 3.2 (profile), 3.3 (year/periods), 3.4–3.6
+specific configuration screen yet - those are 3.2 (profile), 3.3 (year/periods), 3.4–3.6
 (structure), 3.7–3.10 (grading policy/appreciation).
 
 ---
@@ -98,7 +98,7 @@ into the schema CHECK through the existing `schoolModuleNames` re-export.
 
 ---
 
-## 4. Domain (`packages/domain/src/configuration.ts`) — pure, tested
+## 4. Domain (`packages/domain/src/configuration.ts`) - pure, tested
 
 ```ts
 export function evaluateConfigurationReadiness(
@@ -156,7 +156,7 @@ GET /configuration/readiness        -> { success, data: ConfigurationReadiness, 
 
 - **Auth:** any authenticated user may read readiness (teachers need the blocked-message
   UX at grade entry; SchoolMaster sees the full dashboard). The `assertCapability`
-  helper is exported for future service layers to gate mutations — backend only.
+  helper is exported for future service layers to gate mutations - backend only.
 - **Service:** `ConfigurationService.getReadiness(actor)` builds the snapshot through a
   new `ConfigurationRepository` (data layer owns the queries: school setup status,
   current academic year, level/subject/class-subject counts) and runs the pure domain
@@ -165,7 +165,7 @@ GET /configuration/readiness        -> { success, data: ConfigurationReadiness, 
   existing `classes.errors.ts` / `audit.errors.ts` pattern.
 - **Audit:** reads are not audited (noise). The action vocabulary for configuration
   mutations is fixed here so every later section writes consistent events:
-  `CONFIG_PROFILE_UPDATE`, `CONFIG_YEAR_CREATE`, `CONFIG_POLICY_PUBLISH`, … — documented
+  `CONFIG_PROFILE_UPDATE`, `CONFIG_YEAR_CREATE`, `CONFIG_POLICY_PUBLISH`, … - documented
   in this file, enforced from 3.2 onward.
 - Registered in `apps/api/src/server.ts` like other modules.
 
@@ -174,7 +174,7 @@ GET /configuration/readiness        -> { success, data: ConfigurationReadiness, 
 ## 6. Web (`apps/web/src/modules/configuration/`)
 
 - **Nav:** `CONFIGURATION` in `MODULE_NAV_CONFIG` (gear icon), rendered by
-  `MainAppShell` when the module is enabled — same mechanism as STUDENTS/CLASSES.
+  `MainAppShell` when the module is enabled - same mechanism as STUDENTS/CLASSES.
 - **`ConfigurationModule.tsx`:** the permanent Configuration area for V1 is a clean
   **readiness overview** (the substance of 3.1, styled with the established teal design
   language):
@@ -204,13 +204,13 @@ GET /configuration/readiness        -> { success, data: ConfigurationReadiness, 
 
 ## 8. Decisions to confirm
 
-1. **Readiness visible to all authenticated users** (teachers need blocked messages) —
+1. **Readiness visible to all authenticated users** (teachers need blocked messages) -
    OK, or SchoolMaster-only for V1?
 2. **`CONFIGURATION` as a school module** (nav-gated like CLASSES) vs. always-on core
    area? I recommend module (uniform mechanism, seed/migration backfills it on).
-3. **Capability catalog names** (`CLASSROOM_MANAGEMENT`, …) — stable machine codes;
+3. **Capability catalog names** (`CLASSROOM_MANAGEMENT`, …) - stable machine codes;
    French labels only at the UI layer. OK?
-4. **`DRAFT -> SUPERSEDED` allowed** (abandoned draft) — OK?
+4. **`DRAFT -> SUPERSEDED` allowed** (abandoned draft) - OK?
 
 ---
 
