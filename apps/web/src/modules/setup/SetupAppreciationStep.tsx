@@ -26,13 +26,7 @@ export function SetupAppreciationStep({
   const { t } = useTranslation();
 
   return (
-    <form
-      className="space-y-5"
-      onSubmit={(event) => {
-        event.preventDefault();
-        onSubmit();
-      }}
-    >
+    <div className="space-y-5">
       <AppreciationSection
         apiBaseUrl={apiBaseUrl}
         {...(capabilityToken !== undefined ? { capabilityToken } : {})}
@@ -42,8 +36,8 @@ export function SetupAppreciationStep({
 
       <div className="flex items-center justify-end gap-3 pt-1">
         <WizardSecondaryButton label={t('setup.actions.back')} onClick={onBack} />
-        <WizardPrimaryButton isSaving={isSaving} label={t('setup.actions.saveAndContinue')} />
+        <WizardPrimaryButton isSaving={isSaving} label={t('setup.actions.saveAndContinue')} onClick={onSubmit} />
       </div>
-    </form>
+    </div>
   );
 }
