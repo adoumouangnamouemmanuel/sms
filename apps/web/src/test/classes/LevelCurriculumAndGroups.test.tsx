@@ -64,26 +64,29 @@ const groupsFixture: SubjectGroupsResponse = {
   ],
 };
 
+const unexpectedClientCall = (): Promise<never> =>
+  Promise.reject(new Error('Unexpected ClassesClient method call'));
+
 function createClient(overrides: Partial<ClassesClient> = {}): ClassesClient {
   return {
-    archiveClassroom: () => Promise.resolve({} as never),
+    archiveClassroom: unexpectedClientCall,
     archiveSubject: () => Promise.resolve(subject(subjectMathId, 'MATH', 'Mathématiques')),
-    assignClassSubject: () => Promise.resolve({} as never),
+    assignClassSubject: unexpectedClientCall,
     confirmCurriculumCopy: () => Promise.resolve({ assigned: 1, skipped: 0 }),
-    createClassroom: () => Promise.resolve({} as never),
+    createClassroom: unexpectedClientCall,
     createSubject: () => Promise.resolve(subject(subjectMathId, 'MATH', 'Mathématiques')),
     enrolOptionalSubjects: () => Promise.resolve([]),
     enrolStudents: () => Promise.resolve({ classroomId: '', imported: 0, skipped: [] }),
     exportRegister: () => Promise.resolve({ classroomLabel: '', filename: '', content: '' }),
-    getClassroomRoster: () => Promise.resolve({} as never),
-    listStudentsMissingClass: () => Promise.resolve({} as never),
-    previewCurriculumCopy: () => Promise.resolve({} as never),
+    getClassroomRoster: unexpectedClientCall,
+    listStudentsMissingClass: unexpectedClientCall,
+    previewCurriculumCopy: unexpectedClientCall,
     transferStudent: () => Promise.resolve({ closed: {}, opened: {} }),
-    reactivateClassroom: () => Promise.resolve({} as never),
+    reactivateClassroom: unexpectedClientCall,
     reactivateSubject: () => Promise.resolve(subject(subjectMathId, 'MATH', 'Mathématiques')),
-    removeClassSubject: () => Promise.resolve({} as never),
-    updateClassroom: () => Promise.resolve({} as never),
-    updateClassSubject: () => Promise.resolve({} as never),
+    removeClassSubject: unexpectedClientCall,
+    updateClassroom: unexpectedClientCall,
+    updateClassSubject: unexpectedClientCall,
     updateSubject: () => Promise.resolve(subject(subjectMathId, 'MATH', 'Mathématiques')),
     listClassrooms: () => Promise.resolve({ items: [], total: 0, limit: 100, offset: 0 }),
     listClassSubjects: () => Promise.resolve([]),

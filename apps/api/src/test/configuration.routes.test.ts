@@ -20,7 +20,6 @@ import {
   CONFIG_REQUIREMENTS,
   configurationReadinessResponseSchema,
   type AuthTokenResponse,
-  type ConfigurationReadinessResponse,
   type ConfigurationSnapshot,
 } from '@edutrack/shared';
 import { buildServer } from '../server.js';
@@ -219,15 +218,13 @@ describe('configuration readiness routes', () => {
     });
 
     expect(response.statusCode).toBe(200);
-    const body = readJson(response) as ApiSuccess<ConfigurationReadinessResponse>;
-    expect(body.success).toBe(true);
-    expect(configurationReadinessResponseSchema.safeParse(body.data).success).toBe(true);
+    const body = readSuccessData(response, configurationReadinessResponseSchema);
 
-    const profile = body.data.areas.find((area) => area.area === 'SCHOOL_PROFILE');
+    const profile = body.areas.find((area) => area.area === 'SCHOOL_PROFILE');
     expect(profile?.label).toBe('Configuration générale');
     expect(profile?.status).toBe('NOT_READY');
 
-    const gradeEntry = body.data.capabilities.find(
+    const gradeEntry = body.capabilities.find(
       (capability) => capability.capability === 'GRADE_ENTRY'
     );
     expect(gradeEntry?.label).toBe('Saisir les notes');
@@ -244,8 +241,8 @@ describe('configuration readiness routes', () => {
     });
 
     expect(response.statusCode).toBe(200);
-    const body = readJson(response) as ApiSuccess<ConfigurationReadinessResponse>;
-    expect(body.data.capabilities.length).toBeGreaterThan(0);
+    const body = readSuccessData(response, configurationReadinessResponseSchema);
+    expect(body.capabilities.length).toBeGreaterThan(0);
   });
 
   it('reflects live configuration: structure ready, grade entry still blocked', async () => {
@@ -258,13 +255,13 @@ describe('configuration readiness routes', () => {
       headers: { authorization: `Bearer ${accessToken}` },
     });
 
-    const body = readJson(response) as ApiSuccess<ConfigurationReadinessResponse>;
-    const classroomManagement = body.data.capabilities.find(
+    const body = readSuccessData(response, configurationReadinessResponseSchema);
+    const classroomManagement = body.capabilities.find(
       (capability) => capability.capability === 'CLASSROOM_MANAGEMENT'
     );
     expect(classroomManagement?.status).toBe('READY');
 
-    const gradeEntry = body.data.capabilities.find(
+    const gradeEntry = body.capabilities.find(
       (capability) => capability.capability === 'GRADE_ENTRY'
     );
     expect(gradeEntry?.status).toBe('NOT_READY');
@@ -282,8 +279,8 @@ describe('configuration readiness routes', () => {
     });
 
     expect(response.statusCode).toBe(200);
-    const body = readJson(response) as ApiSuccess<ConfigurationReadinessResponse>;
-    const classroomManagement = body.data.capabilities.find(
+    const body = readSuccessData(response, configurationReadinessResponseSchema);
+    const classroomManagement = body.capabilities.find(
       (capability) => capability.capability === 'CLASSROOM_MANAGEMENT'
     );
     expect(classroomManagement?.status).toBe('NOT_READY');
@@ -336,7 +333,9 @@ describe('configuration readiness routes', () => {
     });
 
     expect(response.statusCode).toBe(200);
-    return (readJson(response) as ApiSuccess<AuthTokenResponse>).data.accessToken;
+    const envelope = readJson(response) as ApiSuccess<AuthTokenResponse>;
+    expect(envelope.success).toBe(true);
+    return envelope.data.accessToken;
   }
 });
 
@@ -412,10 +411,26 @@ function seedConfigurationFixture(sqlite: Database.Database, schoolId: string) {
     .run(classSubjectId, schoolId, classroomId, subjectId);
 }
 
-function readJson(response: { body: string }) {
-  const parsed: unknown = JSON.parse(response.body);
+function readJson(response: { body: string }): unknown {
+  return JSON.parse(response.body);
+}
 
-  return parsed;
+/**
+ * Parses a success envelope and validates the payload against its concrete
+ * schema at runtime, so a response-contract regression fails the assertion
+ * instead of being hidden by a broad cast (AGENTS.md §16).
+ */
+function readSuccessData<T>(
+  response: { body: string },
+  schema: { safeParse: (value: unknown) => { success: boolean; data: T } }
+): T {
+  const parsed: unknown = readJson(response);
+  const envelope = parsed as { success?: unknown; data?: unknown };
+  expect(envelope.success).toBe(true);
+
+  const result = schema.safeParse(envelope.data);
+  expect(result.success).toBe(true);
+  return result.data;
 }
 
 function applyAllMigrations(sqlite: Database.Database) {
