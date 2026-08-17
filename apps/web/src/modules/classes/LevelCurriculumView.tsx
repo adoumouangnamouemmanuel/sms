@@ -279,7 +279,9 @@ export function LevelCurriculumView({
                   }
                 }}
               >
-                <option disabled value="">Sélectionner un niveau...</option>
+                <option disabled value="">
+                  Sélectionner un niveau...
+                </option>
                 {levelOptions
                   .filter((l) => l.levelId !== selectedLevelId && l.entries.length > 0)
                   .map((item) => (
@@ -296,7 +298,7 @@ export function LevelCurriculumView({
           {levelOptions.map((item) => {
             const isSelected = item.levelId === selectedLevelId;
             const hasCurriculum = item.entries.length > 0;
-            
+
             return (
               <button
                 key={item.levelId}
@@ -305,15 +307,15 @@ export function LevelCurriculumView({
                     ? 'bg-slate-800 text-white shadow-md'
                     : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                 }`}
-                onClick={() => selectLevel(item.levelId)}
+                onClick={() => {
+                  selectLevel(item.levelId);
+                }}
                 type="button"
               >
                 {item.levelName}
                 {hasCurriculum && (
                   <span
-                    className={`h-2 w-2 rounded-full ${
-                      isSelected ? 'bg-teal-400' : 'bg-teal-500'
-                    }`}
+                    className={`h-2 w-2 rounded-full ${isSelected ? 'bg-teal-400' : 'bg-teal-500'}`}
                     title="Programme configuré"
                   />
                 )}

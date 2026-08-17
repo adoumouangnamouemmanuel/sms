@@ -447,11 +447,13 @@ function CreateYearModal({
                 }`}
                 key={count}
                 onClick={() => {
-                  setTermCount(count as 2 | 3);
+                  setTermCount(count);
                 }}
                 type="button"
               >
-                {count === 2 ? t('setup.calendar.systems.SEMESTER') : t('setup.calendar.systems.TRIMESTER')}
+                {count === 2
+                  ? t('setup.calendar.systems.SEMESTER')
+                  : t('setup.calendar.systems.TRIMESTER')}
               </button>
             ))}
           </div>
@@ -459,10 +461,7 @@ function CreateYearModal({
 
         <div className="grid gap-4 xl:grid-cols-3">
           {terms.slice(0, termCount).map((termItem, index) => (
-            <div
-              className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm"
-              key={index}
-            >
+            <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm" key={index}>
               <div className="mb-3 flex items-center justify-between gap-3">
                 <p className="text-sm font-black text-slate-900">
                   {t('configuration.years.period', { number: String(index + 1) })}

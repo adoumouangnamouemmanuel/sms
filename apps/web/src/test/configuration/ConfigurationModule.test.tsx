@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type {
   AcademicYearWithTerms,
@@ -167,7 +167,8 @@ describe('ConfigurationModule', () => {
     expect(screen.getByText('Configuration générale')).toBeInTheDocument();
     // The area card and the quick link both carry this label.
     expect(screen.getAllByText('Structure académique').length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText('Notation')).toBeInTheDocument();
+    // The tab and the area card both carry this label.
+    expect(screen.getAllByText('Notation').length).toBeGreaterThanOrEqual(2);
     // READY pills appear on the two ready areas and the two ready capabilities.
     expect(screen.getAllByText('Prête').length).toBe(4);
     expect(screen.getAllByText('À configurer').length).toBeGreaterThan(0);
@@ -205,12 +206,15 @@ describe('ConfigurationModule', () => {
 
     renderModule(createClient(), { onNavigate });
 
-    expect((await screen.findAllByText("Profil de l'école")).length).toBeGreaterThanOrEqual(2);
+    expect(await screen.findByText("Profil de l'école")).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: "Profil de l'école" }));
+    // The quick links live in the "Accès rapide" section; the tab bar also
+    // carries the same labels, so scope the click to the section.
+    const quickLinks = screen.getByRole('region', { name: 'Accès rapide' });
+    await user.click(within(quickLinks).getByRole('button', { name: "Profil de l'école" }));
     expect(onNavigate).toHaveBeenCalledWith('SCHOOL_SETUP');
 
-    await user.click(screen.getByRole('button', { name: 'Structure académique' }));
+    await user.click(within(quickLinks).getByRole('button', { name: 'Structure académique' }));
     expect(onNavigate).toHaveBeenCalledWith('CLASSES');
   });
 
@@ -227,8 +231,18 @@ describe('ConfigurationModule', () => {
 });
 
 describe('ConfigurationModule academic years (roadmap §9.3)', () => {
+  function tabsNav() {
+    return screen.getByRole('navigation', { name: 'Configuration tabs' });
+  }
+
+  async function openYearsTab(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(within(tabsNav()).getByRole('button', { name: 'Années académiques' }));
+  }
+
   it('lists the active year with its terms and the current badge', async () => {
+    const user = userEvent.setup();
     renderModule(createClient());
+    await openYearsTab(user);
 
     expect(await screen.findByText('2026-2027')).toBeInTheDocument();
     expect(screen.getByText(/Trimestre 1/)).toBeInTheDocument();
@@ -268,6 +282,7 @@ describe('ConfigurationModule academic years (roadmap §9.3)', () => {
     };
 
     renderModule(client);
+    await openYearsTab(user);
 
     expect(await screen.findByText('2027-2028')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Activer' }));
@@ -289,6 +304,7 @@ describe('ConfigurationModule academic years (roadmap §9.3)', () => {
     client.saveProfile = saveProfile;
 
     renderModule(client);
+    await user.click(within(tabsNav()).getByRole('button', { name: "Profil de l'école" }));
 
     expect(await screen.findByRole('heading', { name: "Profil de l'école" })).toBeInTheDocument();
     expect(screen.getAllByText('Ecole Demo').length).toBeGreaterThanOrEqual(1);
@@ -311,6 +327,7 @@ describe('ConfigurationModule academic years (roadmap §9.3)', () => {
     };
 
     renderModule(client);
+    await openYearsTab(user);
 
     expect(await screen.findByText('Aucune année scolaire pour le moment.')).toBeInTheDocument();
 

@@ -256,7 +256,9 @@ export function SubjectGroupsView({
 
       await refreshGroups();
       setSaveMembersSuccess(true);
-      setTimeout(() => setSaveMembersSuccess(false), 2500);
+      setTimeout(() => {
+        setSaveMembersSuccess(false);
+      }, 2500);
     } catch (error) {
       if (isInvalidAccessToken(error)) {
         onSessionExpired?.();
@@ -557,8 +559,8 @@ export function SubjectGroupsView({
                       {saveMembersSuccess
                         ? `✓ ${t('classes.saved', 'Enregistré')}`
                         : isSavingMembers
-                        ? t('classes.saving')
-                        : t('classes.save')}
+                          ? t('classes.saving')
+                          : t('classes.save')}
                     </button>
                   </div>
                 </>

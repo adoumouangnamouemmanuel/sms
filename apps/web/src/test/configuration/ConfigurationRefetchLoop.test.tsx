@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { useEffect, useState } from 'react';
 import type { ConfigurationReadinessResponse } from '@edutrack/shared';
 import { describe, expect, it, vi } from 'vitest';
@@ -119,7 +120,15 @@ describe('Configuration refetch loop regression', () => {
       listAcademicYears,
     };
 
+    const user = userEvent.setup();
     render(<FlakyShell client={client} />);
+
+    // The academic-years section lives behind the YEARS tab.
+    await user.click(
+      within(screen.getByRole('navigation', { name: 'Configuration tabs' })).getByRole('button', {
+        name: 'Années académiques',
+      })
+    );
 
     expect(await screen.findByText('2026-2027')).toBeInTheDocument();
 

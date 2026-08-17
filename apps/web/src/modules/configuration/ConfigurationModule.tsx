@@ -223,7 +223,9 @@ export function ConfigurationModule({
                   : 'bg-transparent text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
               }`}
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as ConfigTab)}
+              onClick={() => {
+                setActiveTab(tab.id as ConfigTab);
+              }}
               type="button"
             >
               {tab.label}
@@ -271,228 +273,237 @@ export function ConfigurationModule({
               <div className="space-y-6 animate-in fade-in duration-500">
                 {/* ── Areas ─────────────────────────────────────────────────────── */}
                 <section className="space-y-3" aria-labelledby="configuration-areas-title">
-            <div className="flex items-center gap-2">
-              <h2
-                className="text-sm font-black uppercase tracking-wider text-slate-500"
-                id="configuration-areas-title"
-              >
-                {t('configuration.areas.title')}
-              </h2>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {AREA_ORDER.map((area) => {
-                const state = readiness.areas.find((item) => item.area === area);
-
-                return state ? (
-                  <article
-                    className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
-                    key={area}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <h3 className="text-[15px] font-black text-slate-800">{state.label}</h3>
-                      <StatusPill status={state.status} label={areaStatusLabel(t, state.status)} />
-                    </div>
-                    <p className="mt-3 text-xs font-semibold leading-relaxed text-slate-500">
-                      {state.status === 'READY'
-                        ? t('configuration.areas.readyHint')
-                        : t('configuration.areas.notReadyHint')}
-                    </p>
-                  </article>
-                ) : null;
-              })}
-            </div>
-          </section>
-
-          {/* ── Capabilities ──────────────────────────────────────────────── */}
-          <section className="space-y-3" aria-labelledby="configuration-capabilities-title">
-            <div className="flex items-center gap-2">
-              <h2
-                className="text-sm font-black uppercase tracking-wider text-slate-500"
-                id="configuration-capabilities-title"
-              >
-                {t('configuration.capabilities.title')}
-              </h2>
-            </div>
-            <div className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm">
-              {CAPABILITY_ORDER.map((capability, index) => {
-                const state = readiness.capabilities.find((item) => item.capability === capability);
-
-                return state ? (
-                  <div
-                    className={`flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center sm:justify-between ${
-                      index > 0 ? 'border-t border-slate-100' : ''
-                    }`}
-                    key={capability}
-                  >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span
-                          aria-hidden="true"
-                          className={`h-2 w-2 shrink-0 rounded-full ${
-                            state.status === 'READY' ? 'bg-teal-500' : 'bg-amber-400'
-                          }`}
-                        />
-                        <h3 className="text-sm font-black text-slate-800">{state.label}</h3>
-                      </div>
-                      {state.status === 'NOT_READY' ? (
-                        <ul className="mt-1.5 space-y-1">
-                          {state.missing.map((requirement) => (
-                            <li
-                              className="flex items-start gap-1.5 text-xs font-semibold text-slate-500"
-                              key={requirement}
-                            >
-                              <span aria-hidden="true" className="mt-0.5 text-amber-500">
-                                •
-                              </span>
-                              <span>{requirementMessage(t, requirement)}</span>
-                            </li>
-                          ))}
-                          {state.blockedBy.map((blockedBy) => {
-                            const blockedLabel = readiness.capabilities.find(
-                              (item) => item.capability === blockedBy
-                            )?.label;
-
-                            return blockedLabel ? (
-                              <li
-                                className="flex items-start gap-1.5 text-xs font-semibold text-slate-500"
-                                key={`blocked-${blockedBy}`}
-                              >
-                                <span aria-hidden="true" className="mt-0.5 text-slate-400">
-                                  ↳
-                                </span>
-                                <span>
-                                  {t('configuration.capabilities.blockedBy', {
-                                    capability: blockedLabel,
-                                  })}
-                                </span>
-                              </li>
-                            ) : null;
-                          })}
-                        </ul>
-                      ) : (
-                        <p className="mt-1 text-xs font-semibold text-teal-600">
-                          {t('configuration.capabilities.readyHint')}
-                        </p>
-                      )}
-                    </div>
-                    <StatusPill
-                      status={state.status}
-                      label={capabilityStatusLabel(t, state.status)}
-                    />
+                  <div className="flex items-center gap-2">
+                    <h2
+                      className="text-sm font-black uppercase tracking-wider text-slate-500"
+                      id="configuration-areas-title"
+                    >
+                      {t('configuration.areas.title')}
+                    </h2>
                   </div>
-                ) : null;
-              })}
-            </div>
-          </section>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {AREA_ORDER.map((area) => {
+                      const state = readiness.areas.find((item) => item.area === area);
 
-          {/* ── Quick links ───────────────────────────────────────────────── */}
-          <section className="space-y-3" aria-labelledby="configuration-links-title">
-            <div className="flex items-center gap-2">
-              <h2
-                className="text-sm font-black uppercase tracking-wider text-slate-500"
-                id="configuration-links-title"
-              >
-                {t('configuration.links.title')}
-              </h2>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <button
-                className="cursor-pointer rounded-xl border border-slate-200/70 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition-all hover:border-teal-300 hover:text-teal-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-                onClick={() => onNavigate?.('SCHOOL_SETUP')}
-                type="button"
-              >
-                {t('configuration.links.profile')}
-              </button>
-              <button
-                className="cursor-pointer rounded-xl border border-slate-200/70 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition-all hover:border-teal-300 hover:text-teal-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-                onClick={() => onNavigate?.('CLASSES')}
-                type="button"
-              >
-                {t('configuration.links.structure')}
-              </button>
-            </div>
-          </section>
-        </div>
-      ) : null}
+                      return state ? (
+                        <article
+                          className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+                          key={area}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <h3 className="text-[15px] font-black text-slate-800">{state.label}</h3>
+                            <StatusPill
+                              status={state.status}
+                              label={areaStatusLabel(t, state.status)}
+                            />
+                          </div>
+                          <p className="mt-3 text-xs font-semibold leading-relaxed text-slate-500">
+                            {state.status === 'READY'
+                              ? t('configuration.areas.readyHint')
+                              : t('configuration.areas.notReadyHint')}
+                          </p>
+                        </article>
+                      ) : null;
+                    })}
+                  </div>
+                </section>
 
-          {/* ── School profile ────────────────────────────────────────────── */}
-          {activeTab === 'PROFILE' && setupState ? (
-            <SchoolProfileSection
-              apiBaseUrl={apiBaseUrl}
-              {...(capabilityToken ? { capabilityToken } : {})}
-              {...(client?.saveProfile ? { client: { saveProfile: client.saveProfile } } : {})}
-              {...(onSetupStateChange ? { onSetupStateChange } : {})}
-              {...(onSessionExpired ? { onSessionExpired } : {})}
-              setupState={setupState}
-            />
-          ) : null}
+                {/* ── Capabilities ──────────────────────────────────────────────── */}
+                <section className="space-y-3" aria-labelledby="configuration-capabilities-title">
+                  <div className="flex items-center gap-2">
+                    <h2
+                      className="text-sm font-black uppercase tracking-wider text-slate-500"
+                      id="configuration-capabilities-title"
+                    >
+                      {t('configuration.capabilities.title')}
+                    </h2>
+                  </div>
+                  <div className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+                    {CAPABILITY_ORDER.map((capability, index) => {
+                      const state = readiness.capabilities.find(
+                        (item) => item.capability === capability
+                      );
 
-          {/* ── Academic years ────────────────────────────────────────────── */}
-          {activeTab === 'YEARS' ? (
-            <AcademicYearsSection
-              apiBaseUrl={apiBaseUrl}
-              {...(capabilityToken ? { capabilityToken } : {})}
-              {...(client ? { client } : {})}
-              {...(onSessionExpired ? { onSessionExpired } : {})}
-            />
-          ) : null}
+                      return state ? (
+                        <div
+                          className={`flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center sm:justify-between ${
+                            index > 0 ? 'border-t border-slate-100' : ''
+                          }`}
+                          key={capability}
+                        >
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span
+                                aria-hidden="true"
+                                className={`h-2 w-2 shrink-0 rounded-full ${
+                                  state.status === 'READY' ? 'bg-teal-500' : 'bg-amber-400'
+                                }`}
+                              />
+                              <h3 className="text-sm font-black text-slate-800">{state.label}</h3>
+                            </div>
+                            {state.status === 'NOT_READY' ? (
+                              <ul className="mt-1.5 space-y-1">
+                                {state.missing.map((requirement) => (
+                                  <li
+                                    className="flex items-start gap-1.5 text-xs font-semibold text-slate-500"
+                                    key={requirement}
+                                  >
+                                    <span aria-hidden="true" className="mt-0.5 text-amber-500">
+                                      •
+                                    </span>
+                                    <span>{requirementMessage(t, requirement)}</span>
+                                  </li>
+                                ))}
+                                {state.blockedBy.map((blockedBy) => {
+                                  const blockedLabel = readiness.capabilities.find(
+                                    (item) => item.capability === blockedBy
+                                  )?.label;
 
-          {/* ── Grading policy ────────────────────────────────────────────── */}
-          {activeTab === 'GRADING' ? (
-            <GradingPolicySection
-              apiBaseUrl={apiBaseUrl}
-              {...(capabilityToken ? { capabilityToken } : {})}
-              {...(client
-                ? {
-                    client: {
-                      ...(client.listGradingPolicies ? { list: client.listGradingPolicies } : {}),
-                      ...(client.createGradingPolicy ? { create: client.createGradingPolicy } : {}),
-                      ...(client.updateGradingPolicy ? { update: client.updateGradingPolicy } : {}),
-                      ...(client.publishGradingPolicy
-                        ? { publish: client.publishGradingPolicy }
-                        : {}),
-                      ...(client.duplicateGradingPolicy
-                        ? { duplicate: client.duplicateGradingPolicy }
-                        : {}),
-                      ...(client.assignPolicyScopes
-                        ? { assignScopes: client.assignPolicyScopes }
-                        : {}),
-                    },
-                  }
-                : {})}
-              {...(onSessionExpired ? { onSessionExpired } : {})}
-            />
-          ) : null}
+                                  return blockedLabel ? (
+                                    <li
+                                      className="flex items-start gap-1.5 text-xs font-semibold text-slate-500"
+                                      key={`blocked-${blockedBy}`}
+                                    >
+                                      <span aria-hidden="true" className="mt-0.5 text-slate-400">
+                                        ↳
+                                      </span>
+                                      <span>
+                                        {t('configuration.capabilities.blockedBy', {
+                                          capability: blockedLabel,
+                                        })}
+                                      </span>
+                                    </li>
+                                  ) : null;
+                                })}
+                              </ul>
+                            ) : (
+                              <p className="mt-1 text-xs font-semibold text-teal-600">
+                                {t('configuration.capabilities.readyHint')}
+                              </p>
+                            )}
+                          </div>
+                          <StatusPill
+                            status={state.status}
+                            label={capabilityStatusLabel(t, state.status)}
+                          />
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                </section>
 
-          {/* ── Appreciation ──────────────────────────────────────────────── */}
-          {activeTab === 'APPRECIATION' ? (
-            <AppreciationSection
-              apiBaseUrl={apiBaseUrl}
-              {...(capabilityToken ? { capabilityToken } : {})}
-              {...(client
-                ? {
-                    client: {
-                      ...(client.listAppreciationScales
-                        ? { list: client.listAppreciationScales }
-                        : {}),
-                      ...(client.createAppreciationScale
-                        ? { create: client.createAppreciationScale }
-                        : {}),
-                      ...(client.updateAppreciationScale
-                        ? { update: client.updateAppreciationScale }
-                        : {}),
-                      ...(client.publishAppreciationScale
-                        ? { publish: client.publishAppreciationScale }
-                        : {}),
-                      ...(client.duplicateAppreciationScale
-                        ? { duplicate: client.duplicateAppreciationScale }
-                        : {}),
-                    },
-                  }
-                : {})}
-              {...(onSessionExpired ? { onSessionExpired } : {})}
-            />
-          ) : null}
+                {/* ── Quick links ───────────────────────────────────────────────── */}
+                <section className="space-y-3" aria-labelledby="configuration-links-title">
+                  <div className="flex items-center gap-2">
+                    <h2
+                      className="text-sm font-black uppercase tracking-wider text-slate-500"
+                      id="configuration-links-title"
+                    >
+                      {t('configuration.links.title')}
+                    </h2>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      className="cursor-pointer rounded-xl border border-slate-200/70 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition-all hover:border-teal-300 hover:text-teal-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+                      onClick={() => onNavigate?.('SCHOOL_SETUP')}
+                      type="button"
+                    >
+                      {t('configuration.links.profile')}
+                    </button>
+                    <button
+                      className="cursor-pointer rounded-xl border border-slate-200/70 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition-all hover:border-teal-300 hover:text-teal-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+                      onClick={() => onNavigate?.('CLASSES')}
+                      type="button"
+                    >
+                      {t('configuration.links.structure')}
+                    </button>
+                  </div>
+                </section>
+              </div>
+            ) : null}
+
+            {/* ── School profile ────────────────────────────────────────────── */}
+            {activeTab === 'PROFILE' && setupState ? (
+              <SchoolProfileSection
+                apiBaseUrl={apiBaseUrl}
+                {...(capabilityToken ? { capabilityToken } : {})}
+                {...(client?.saveProfile ? { client: { saveProfile: client.saveProfile } } : {})}
+                {...(onSetupStateChange ? { onSetupStateChange } : {})}
+                {...(onSessionExpired ? { onSessionExpired } : {})}
+                setupState={setupState}
+              />
+            ) : null}
+
+            {/* ── Academic years ────────────────────────────────────────────── */}
+            {activeTab === 'YEARS' ? (
+              <AcademicYearsSection
+                apiBaseUrl={apiBaseUrl}
+                {...(capabilityToken ? { capabilityToken } : {})}
+                {...(client ? { client } : {})}
+                {...(onSessionExpired ? { onSessionExpired } : {})}
+              />
+            ) : null}
+
+            {/* ── Grading policy ────────────────────────────────────────────── */}
+            {activeTab === 'GRADING' ? (
+              <GradingPolicySection
+                apiBaseUrl={apiBaseUrl}
+                {...(capabilityToken ? { capabilityToken } : {})}
+                {...(client
+                  ? {
+                      client: {
+                        ...(client.listGradingPolicies ? { list: client.listGradingPolicies } : {}),
+                        ...(client.createGradingPolicy
+                          ? { create: client.createGradingPolicy }
+                          : {}),
+                        ...(client.updateGradingPolicy
+                          ? { update: client.updateGradingPolicy }
+                          : {}),
+                        ...(client.publishGradingPolicy
+                          ? { publish: client.publishGradingPolicy }
+                          : {}),
+                        ...(client.duplicateGradingPolicy
+                          ? { duplicate: client.duplicateGradingPolicy }
+                          : {}),
+                        ...(client.assignPolicyScopes
+                          ? { assignScopes: client.assignPolicyScopes }
+                          : {}),
+                      },
+                    }
+                  : {})}
+                {...(onSessionExpired ? { onSessionExpired } : {})}
+              />
+            ) : null}
+
+            {/* ── Appreciation ──────────────────────────────────────────────── */}
+            {activeTab === 'APPRECIATION' ? (
+              <AppreciationSection
+                apiBaseUrl={apiBaseUrl}
+                {...(capabilityToken ? { capabilityToken } : {})}
+                {...(client
+                  ? {
+                      client: {
+                        ...(client.listAppreciationScales
+                          ? { list: client.listAppreciationScales }
+                          : {}),
+                        ...(client.createAppreciationScale
+                          ? { create: client.createAppreciationScale }
+                          : {}),
+                        ...(client.updateAppreciationScale
+                          ? { update: client.updateAppreciationScale }
+                          : {}),
+                        ...(client.publishAppreciationScale
+                          ? { publish: client.publishAppreciationScale }
+                          : {}),
+                        ...(client.duplicateAppreciationScale
+                          ? { duplicate: client.duplicateAppreciationScale }
+                          : {}),
+                      },
+                    }
+                  : {})}
+                {...(onSessionExpired ? { onSessionExpired } : {})}
+              />
+            ) : null}
           </div>
         ) : null}
       </div>
