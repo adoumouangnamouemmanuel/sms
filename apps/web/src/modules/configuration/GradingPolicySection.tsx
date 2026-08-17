@@ -21,6 +21,35 @@ import {
   parseWeightToHundredths,
 } from './gradingFormat';
 
+/**
+ * Mutable editor shape for one scope row. The API contract (shared) is a
+ * scopeType-discriminated union; the editor edits a flat row and normalizes
+ * to a conforming assignment before saving.
+ */
+export interface PolicyScopeDraft {
+  scopeType: PolicyScopeType;
+  levelId: string | null;
+  subjectId: string | null;
+}
+
+/**
+ * Normalizes a draft to the discriminated-union assignment (nulls by type).
+ * Returns null when the scope type requires an id the draft does not have yet
+ * (LEVEL needs a level, LEVEL_SUBJECT needs a level and a subject); callers
+ * must not send such rows.
+ */
+function normalizeScopeDraft(draft: PolicyScopeDraft): PolicyScopeAssignment | null {
+  if (draft.scopeType === 'SCHOOL_DEFAULT') {
+    return { scopeType: 'SCHOOL_DEFAULT', levelId: null, subjectId: null };
+  }
+  if (draft.scopeType === 'LEVEL') {
+    return draft.levelId ? { scopeType: 'LEVEL', levelId: draft.levelId, subjectId: null } : null;
+  }
+  return draft.levelId && draft.subjectId
+    ? { scopeType: 'LEVEL_SUBJECT', levelId: draft.levelId, subjectId: draft.subjectId }
+    : null;
+}
+
 /** Test seam: replaces the network client for component tests. */
 export interface GradingPolicyClient {
   list?: () => Promise<GradingPoliciesResponse>;
@@ -341,7 +370,7 @@ function GradingPolicyEditor({
     derivedResults: detail.policy.derivedResults,
     subjectResult: detail.policy.subjectResult,
   }));
-  const [scopes, setScopes] = useState<PolicyScopeAssignment[]>(() =>
+  const [scopes, setScopes] = useState<PolicyScopeDraft[]>(() =>
     detail.scopes.map((scope) => ({
       scopeType: scope.scopeType,
       levelId: scope.levelId,
@@ -450,10 +479,20 @@ function GradingPolicyEditor({
     setIsSaving(true);
     setErrorKey(null);
 
+    const normalized: PolicyScopeAssignment[] = [];
+    for (const draft of scopes) {
+      const assignment = normalizeScopeDraft(draft);
+      if (!assignment) {
+        setErrorKey('configuration.grading.scopeIncomplete');
+        return;
+      }
+      normalized.push(assignment);
+    }
+
     try {
       const result = client?.assignScopes
-        ? await client.assignScopes(detail.policy.id, scopes)
-        : await assignScopesViaApi(apiBaseUrl, detail.policy.id, scopes, capabilityToken);
+        ? await client.assignScopes(detail.policy.id, normalized)
+        : await assignScopesViaApi(apiBaseUrl, detail.policy.id, normalized, capabilityToken);
       onUpdated(result);
       setSaved(true);
     } catch (error) {
@@ -547,7 +586,6 @@ function GradingPolicyEditor({
             onChange={(hundredths) => {
               updateConfig({ passThreshold: hundredths });
             }}
-            scaleMax={config.scaleMax}
             value={config.passThreshold}
           />
         </Field>
@@ -648,10 +686,9 @@ function GradingPolicyEditor({
                 updateConfig({ derivedResults });
               }}
               derived={derived}
-              typeIds={config.assessmentTypes
-                .map((type) => type.id)
-                .filter((id): id is string => Boolean(id))}
-              typeNames={config.assessmentTypes}
+              sources={config.assessmentTypes.flatMap((type) =>
+                type.id ? [{ id: type.id, label: type.name || type.shortName || type.id }] : []
+              )}
             />
           ))}
           {!readOnly && !isPublished ? (
@@ -890,11 +927,18 @@ function TemplateModal({
     if (!template) {
       return;
     }
+
+    const thresholdHundredths = parseDecimalToHundredths(passThreshold);
+    if (thresholdHundredths === null) {
+      setErrorKey('configuration.grading.templateThresholdInvalid');
+      return;
+    }
+
     setIsCreating(true);
     setErrorKey(null);
 
     try {
-      const config = template.build(scaleMax, parseDecimalToHundredths(passThreshold, scaleMax));
+      const config = template.build(scaleMax, thresholdHundredths);
       // Resolve graph references: assessment-type and derived ids must be real
       // ids the server can map (the template fills them here).
       const withIds = resolveTemplateIds(config);
@@ -1026,7 +1070,7 @@ function Sandbox({ config, readOnly }: { config: GradingPolicyConfig; readOnly: 
               onChange={(event) => {
                 setMarks((current) => ({ ...current, [type.id ?? '']: event.target.value }));
               }}
-              placeholder="Ex. 12,50"
+              placeholder={t('configuration.grading.markPlaceholder')}
               value={marks[type.id ?? ''] ?? ''}
             />
           </label>
@@ -1220,15 +1264,13 @@ function DerivedResultRow({
   disabled,
   onChange,
   onRemove,
-  typeIds,
-  typeNames,
+  sources,
 }: {
   derived: DerivedResultInput;
   disabled: boolean;
   onChange: (next: DerivedResultInput) => void;
   onRemove: () => void;
-  typeIds: string[];
-  typeNames: AssessmentTypeInput[];
+  sources: { id: string; label: string }[];
 }) {
   const { t } = useTranslation();
 
@@ -1258,8 +1300,7 @@ function DerivedResultRow({
         <div className="sm:col-span-2">
           <Field label={t('configuration.grading.derivedSources')}>
             <div className="flex flex-wrap gap-2">
-              {typeIds.map((typeId, index) => {
-                const name = typeNames[index]?.name ?? typeNames[index]?.shortName ?? typeId;
+              {sources.map(({ id: typeId, label: name }) => {
                 const checked = derived.sourceDefinitionIds.includes(typeId);
                 return (
                   <label
@@ -1286,7 +1327,7 @@ function DerivedResultRow({
                   </label>
                 );
               })}
-              {typeIds.length === 0 ? (
+              {sources.length === 0 ? (
                 <p className="text-xs font-bold text-slate-400">
                   {t('configuration.grading.noTypesYet')}
                 </p>
@@ -1323,8 +1364,8 @@ function ScopeEditor({
   capabilityToken?: string;
   disabled: boolean;
   onSave: () => Promise<void>;
-  scopes: PolicyScopeAssignment[];
-  setScopes: (scopes: PolicyScopeAssignment[]) => void;
+  scopes: PolicyScopeDraft[];
+  setScopes: (scopes: PolicyScopeDraft[]) => void;
 }) {
   const { t } = useTranslation();
   const [levels, setLevels] = useState<{ id: string; label: string }[]>([]);
@@ -1383,10 +1424,24 @@ function ScopeEditor({
     };
   }, [apiBaseUrl, capabilityToken]);
 
-  const updateScope = (index: number, patch: Partial<PolicyScopeAssignment>) => {
+  const updateScope = (index: number, patch: Partial<PolicyScopeDraft>) => {
     setScopes(
       scopes.map((scope, scopeIndex) => (scopeIndex === index ? { ...scope, ...patch } : scope))
     );
+  };
+
+  // Switching the scope type must reset the ids the type does not use, so the
+  // saved assignment always satisfies the discriminated-union contract.
+  const handleScopeTypeChange = (index: number, scopeType: PolicyScopeType) => {
+    if (scopeType === 'SCHOOL_DEFAULT') {
+      updateScope(index, { scopeType, levelId: null, subjectId: null });
+      return;
+    }
+    if (scopeType === 'LEVEL') {
+      updateScope(index, { scopeType, subjectId: null });
+      return;
+    }
+    updateScope(index, { scopeType });
   };
 
   const levelOptions = (current: string | null) => {
@@ -1397,7 +1452,7 @@ function ScopeEditor({
 
   /** Subjects taught at the scope's level; falls back to every subject when
    *  no curriculum is configured yet (wizard before the Matières step). */
-  const subjectOptions = (scope: PolicyScopeAssignment) => {
+  const subjectOptions = (scope: PolicyScopeDraft) => {
     const current = scope.subjectId;
     const levelSubjectIds = scope.levelId ? (subjectsByLevel.get(scope.levelId) ?? null) : null;
     const pool =
@@ -1439,7 +1494,7 @@ function ScopeEditor({
             className={`${formSelectClassName} min-w-[180px] flex-1`}
             disabled={disabled}
             onChange={(event) => {
-              updateScope(index, { scopeType: event.target.value as PolicyScopeType });
+              handleScopeTypeChange(index, event.target.value as PolicyScopeType);
             }}
             value={scope.scopeType}
           >
@@ -1642,7 +1697,10 @@ function evaluateSandbox(
     if (!raw || raw.trim().length === 0) {
       return null; // sandbox needs a mark per type
     }
-    const hundredths = parseDecimalToHundredths(raw, config.scaleMax);
+    const hundredths = parseDecimalToHundredths(raw);
+    if (hundredths === null) {
+      return null; // sandbox needs a valid decimal mark per type
+    }
     converted.set(type.id, [hundredths]);
   }
 

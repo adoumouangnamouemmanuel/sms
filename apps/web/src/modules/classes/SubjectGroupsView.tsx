@@ -356,6 +356,12 @@ export function SubjectGroupsView({
                   onClick={() => {
                     setSelectedGroupId(group.id);
                   }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setSelectedGroupId(group.id);
+                    }
+                  }}
                   role="button"
                   tabIndex={0}
                 >
@@ -557,7 +563,7 @@ export function SubjectGroupsView({
                       type="button"
                     >
                       {saveMembersSuccess
-                        ? `✓ ${t('classes.saved', 'Enregistré')}`
+                        ? `✓ ${t('classes.saved')}`
                         : isSavingMembers
                           ? t('classes.saving')
                           : t('classes.save')}
@@ -730,7 +736,7 @@ function GroupFormModal({
               onChange={(event) => {
                 setNameEn(event.target.value);
               }}
-              placeholder="Ex. Science subjects"
+              placeholder={t('classes.groups.nameEnPlaceholder')}
               value={nameEn}
             />
           </label>
@@ -744,7 +750,7 @@ function GroupFormModal({
               onChange={(event) => {
                 setNameAr(event.target.value);
               }}
-              placeholder="المواد العلمية"
+              placeholder={t('classes.groups.nameArPlaceholder')}
               value={nameAr}
             />
           </label>

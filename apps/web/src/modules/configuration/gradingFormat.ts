@@ -5,12 +5,20 @@
  * period accepted, normalized once).
  */
 
-export function parseDecimalToHundredths(value: string, scaleMax?: number): number {
+/**
+ * Parse a decimal string (comma or period) to integer hundredths.
+ *
+ * Returns `null` for unparseable input instead of silently guessing a value:
+ * an empty or malformed field must never commit 0 or the scale maximum — the
+ * caller decides what "no value" means (AGENTS.md §9.1: zero is a valid grade
+ * and never means missing).
+ */
+export function parseDecimalToHundredths(value: string): number | null {
   const normalized = value.trim().replace(',', '.');
   const parsed = Number.parseFloat(normalized);
 
   if (!Number.isFinite(parsed)) {
-    return scaleMax !== undefined ? scaleMax * 100 : 0;
+    return null;
   }
 
   return Math.max(0, Math.round(parsed * 100));

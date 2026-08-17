@@ -107,6 +107,7 @@ export function ConfigurationModule({
   const [readiness, setReadiness] = useState<ConfigurationReadinessResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
 
   // The shell recreates onSessionExpired on every render; a ref keeps the
   // readiness fetch (and the page flash that comes with it) from re-running
@@ -154,7 +155,7 @@ export function ConfigurationModule({
     return () => {
       cancelled = true;
     };
-  }, [apiBaseUrl, capabilityToken, client]);
+  }, [apiBaseUrl, capabilityToken, client, reloadToken]);
 
   const readyAreas = readiness?.areas.filter((area) => area.status === 'READY').length ?? 0;
 
@@ -260,7 +261,7 @@ export function ConfigurationModule({
             <button
               className="cursor-pointer rounded-xl bg-red-600 px-4 py-2 text-xs font-black text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
               onClick={() => {
-                window.location.reload();
+                setReloadToken((token) => token + 1);
               }}
               type="button"
             >

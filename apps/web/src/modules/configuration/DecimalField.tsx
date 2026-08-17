@@ -21,7 +21,6 @@ export function DecimalField({
   min,
   onChange,
   placeholder,
-  scaleMax,
   value,
 }: {
   ariaLabel?: string;
@@ -31,8 +30,6 @@ export function DecimalField({
   min?: number;
   onChange: (hundredths: number) => void;
   placeholder?: string;
-  /** Used as the fallback value when the draft cannot be parsed. */
-  scaleMax?: number;
   value: number;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
@@ -46,7 +43,15 @@ export function DecimalField({
   }, [value]);
 
   const commit = (raw: string) => {
-    const parsed = parseDecimalToHundredths(raw, scaleMax);
+    const parsed = parseDecimalToHundredths(raw);
+
+    // Unparseable input (empty or malformed) must not silently become 0 or the
+    // scale maximum — revert to the last committed value instead.
+    if (parsed === null) {
+      setDraft(null);
+      return;
+    }
+
     const clamped =
       min !== undefined && max !== undefined
         ? Math.min(max * 100, Math.max(min * 100, parsed))

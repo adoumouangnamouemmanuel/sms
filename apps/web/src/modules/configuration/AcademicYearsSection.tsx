@@ -296,8 +296,6 @@ function YearStatusPill({ status }: { status: AcademicYearStatus }) {
 // Create-year modal
 // ---------------------------------------------------------------------------
 
-const DEFAULT_TERM_LABELS = ['Trimestre 1', 'Trimestre 2', 'Trimestre 3'];
-
 interface CreateYearModalProps {
   apiBaseUrl: string | null;
   client?: ConfigurationClient;
@@ -320,9 +318,9 @@ function CreateYearModal({
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [termCount, setTermCount] = useState(3);
-  const [terms, setTerms] = useState<DraftTermInput[]>(
-    DEFAULT_TERM_LABELS.map((termLabel, index) => ({
-      label: termLabel,
+  const [terms, setTerms] = useState<DraftTermInput[]>(() =>
+    Array.from({ length: 3 }, (_, index) => ({
+      label: t('configuration.years.defaultTermLabel', { number: String(index + 1) }),
       termNumber: index + 1,
       startDate: '',
       endDate: '',
@@ -448,6 +446,17 @@ function CreateYearModal({
                 key={count}
                 onClick={() => {
                   setTermCount(count);
+                  setTerms((current) =>
+                    current.map((termItem, index) => ({
+                      ...termItem,
+                      label: t(
+                        count === 2
+                          ? 'configuration.years.defaultSemesterLabel'
+                          : 'configuration.years.defaultTermLabel',
+                        { number: String(index + 1) }
+                      ),
+                    }))
+                  );
                 }}
                 type="button"
               >

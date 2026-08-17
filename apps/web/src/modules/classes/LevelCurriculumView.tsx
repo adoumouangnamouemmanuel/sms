@@ -1,5 +1,5 @@
 import type { LevelCurriculumsResponse, SubjectResponse } from '@edutrack/shared';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formInputClassName } from '../people/ui';
 import type { ClassesClient } from './useClassesState';
@@ -37,6 +37,12 @@ export function LevelCurriculumView({
   const [curriculums, setCurriculums] = useState<LevelCurriculumsResponse | null>(null);
   const [subjects, setSubjects] = useState<SubjectResponse[]>([]);
   const [selectedLevelId, setSelectedLevelId] = useState<string | null>(null);
+  // Mirrors the selection for load, which must stay stable (a changing dep
+  // would refetch and wipe unsaved edits on every level switch).
+  const selectedLevelIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    selectedLevelIdRef.current = selectedLevelId;
+  }, [selectedLevelId]);
   const [draft, setDraft] = useState<Record<string, { coefficient: number; isRequired: boolean }>>(
     {}
   );
@@ -70,19 +76,22 @@ export function LevelCurriculumView({
       setCurriculums(curriculumData);
       setSubjects(subjectPage.items);
 
-      const firstLevel = curriculumData.items[0];
-      setSelectedLevelId((current) => current ?? firstLevel?.levelId ?? null);
-
-      if (firstLevel) {
-        setDraft(
-          Object.fromEntries(
-            firstLevel.entries.map((entry) => [
-              entry.subjectId,
-              { coefficient: entry.coefficient, isRequired: entry.isRequired },
-            ])
-          )
-        );
-      }
+      // Keep the user's current selection on refetch (never reset to the first
+      // level): the draft below must match the level shown in the editor, or a
+      // save would write the wrong level's entries under the selected tab.
+      const nextLevelId = selectedLevelIdRef.current ?? curriculumData.items[0]?.levelId ?? null;
+      setSelectedLevelId(nextLevelId);
+      const activeLevel = curriculumData.items.find((item) => item.levelId === nextLevelId);
+      setDraft(
+        activeLevel
+          ? Object.fromEntries(
+              activeLevel.entries.map((entry) => [
+                entry.subjectId,
+                { coefficient: entry.coefficient, isRequired: entry.isRequired },
+              ])
+            )
+          : {}
+      );
     } catch (error) {
       if (isInvalidAccessToken(error)) {
         onSessionExpired?.();
@@ -107,6 +116,7 @@ export function LevelCurriculumView({
 
   const selectLevel = (levelId: string) => {
     setSelectedLevelId(levelId);
+    setRawCoefficients({});
     const next = curriculums?.items.find((item) => item.levelId === levelId);
     setDraft(
       next
@@ -132,11 +142,16 @@ export function LevelCurriculumView({
     setSaved(false);
   };
 
+  // Raw per-subject text keeps intermediate edits (empty field, "1" while
+  // typing "12") visible; the draft holds the clamped integer, and the save
+  // path rejects any coefficient below 1.
+  const [rawCoefficients, setRawCoefficients] = useState<Record<string, string>>({});
+
   const updateCoefficient = (subjectId: string, value: string) => {
-    const coefficient = Number.parseInt(value, 10);
-    if (Number.isNaN(coefficient) || coefficient < 1 || coefficient > 20) {
-      return;
-    }
+    setRawCoefficients((current) => ({ ...current, [subjectId]: value }));
+
+    const parsed = Number.parseInt(value, 10);
+    const coefficient = Number.isNaN(parsed) ? 0 : Math.min(Math.max(parsed, 0), 20);
 
     setDraft((current) => {
       const existing = current[subjectId];
@@ -164,6 +179,16 @@ export function LevelCurriculumView({
   const handleSave = async () => {
     if (!selectedLevelId) {
       setErrorKey('classes.errors.localService');
+      return;
+    }
+
+    // Block the save while any coefficient is missing or below 1: a cleared or
+    // half-typed field must not silently persist 0.
+    const invalidEntries = Object.entries(draft).filter(
+      ([, entry]) => entry.coefficient < 1 || entry.coefficient > 20
+    );
+    if (invalidEntries.length > 0) {
+      setErrorKey('classes.curriculumLevel.coefficientInvalid');
       return;
     }
 
@@ -280,7 +305,7 @@ export function LevelCurriculumView({
                 }}
               >
                 <option disabled value="">
-                  Sélectionner un niveau...
+                  {t('classes.curriculumLevel.copyFromPlaceholder')}
                 </option>
                 {levelOptions
                   .filter((l) => l.levelId !== selectedLevelId && l.entries.length > 0)
@@ -316,7 +341,7 @@ export function LevelCurriculumView({
                 {hasCurriculum && (
                   <span
                     className={`h-2 w-2 rounded-full ${isSelected ? 'bg-teal-400' : 'bg-teal-500'}`}
-                    title="Programme configuré"
+                    title={t('classes.curriculumLevel.configured')}
                   />
                 )}
               </button>
@@ -398,7 +423,7 @@ export function LevelCurriculumView({
                               updateCoefficient(subjectItem.id, event.target.value);
                             }}
                             type="number"
-                            value={entry?.coefficient ?? ''}
+                            value={rawCoefficients[subjectItem.id] ?? entry?.coefficient ?? ''}
                           />
                         </td>
                         <td className="px-4 py-3">

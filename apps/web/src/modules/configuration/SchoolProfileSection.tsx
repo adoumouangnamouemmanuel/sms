@@ -113,6 +113,10 @@ export function SchoolProfileSection({
             onClick={() => {
               setErrorKey(null);
               setSaved(false);
+              // Re-seed from the latest state: the parent may have refetched a
+              // newer profile while this section was in read-only mode, and a
+              // stale draft would silently revert those newer values on save.
+              setDraft(createProfileDraft(setupState));
               setIsEditing(true);
             }}
             type="button"

@@ -4,6 +4,7 @@ import {
   type AppreciationScaleView,
   type AppreciationScalesResponse,
 } from '@edutrack/shared';
+import type { TFunction } from 'i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formInputClassName, ModalShell } from '../people/ui';
@@ -312,7 +313,7 @@ function AppreciationEditor({
   };
 
   const handlePublish = async () => {
-    if (isPublished || !existing) {
+    if (isPublished) {
       return;
     }
     setIsSaving(true);
@@ -320,11 +321,25 @@ function AppreciationEditor({
     setFieldErrors({});
 
     try {
+      const input: AppreciationScaleInput = { name, scaleMax, bands };
+
+      // Create flow: save the draft first so there is something to publish,
+      // then publish the returned scale (publish on a never-saved draft would
+      // be a silent no-op).
+      let savedScale: AppreciationScaleView;
+      if (existing) {
+        savedScale = existing;
+      } else if (client?.create) {
+        savedScale = await client.create(input);
+      } else {
+        savedScale = await saveViaApi('create', apiBaseUrl ?? '', '', input, capabilityToken);
+      }
+
       const result = client?.publish
-        ? await client.publish(existing.id)
+        ? await client.publish(savedScale.id)
         : await (async () => {
             const { publishAppreciationScale } = await import('./configurationApi');
-            return publishAppreciationScale(apiBaseUrl ?? '', existing.id, {
+            return publishAppreciationScale(apiBaseUrl ?? '', savedScale.id, {
               ...(capabilityToken ? { capabilityToken } : {}),
             });
           })();
@@ -434,7 +449,6 @@ function AppreciationEditor({
                 onChange={(hundredths) => {
                   updateBand(index, { lowerBound: hundredths });
                 }}
-                scaleMax={scaleMax}
                 value={band.lowerBound}
               />
               <DecimalField
@@ -444,7 +458,6 @@ function AppreciationEditor({
                 onChange={(hundredths) => {
                   updateBand(index, { upperBound: hundredths });
                 }}
-                scaleMax={scaleMax}
                 value={band.upperBound}
               />
               <input
@@ -454,7 +467,7 @@ function AppreciationEditor({
                 onChange={(event) => {
                   updateBand(index, { labelFr: event.target.value });
                 }}
-                placeholder="Appréciation (fr)"
+                placeholder={t('configuration.appreciation.labelPlaceholder')}
                 value={band.labelFr}
               />
               <div className="flex items-center gap-1">
@@ -465,7 +478,7 @@ function AppreciationEditor({
                   onChange={(event) => {
                     updateBand(index, { shortLabel: event.target.value });
                   }}
-                  placeholder="Sigle"
+                  placeholder={t('configuration.appreciation.shortLabelPlaceholder')}
                   value={band.shortLabel}
                 />
                 {!isPublished ? (
@@ -556,7 +569,7 @@ function AppreciationEditor({
             {Object.values(fieldErrors).length > 0 ? (
               <ul className="mt-2 space-y-1 text-xs font-semibold">
                 {Object.entries(fieldErrors).map(([code, message]) => (
-                  <li key={code}>• {message}</li>
+                  <li key={code}>• {appreciationIssueMessage(t, code, message)}</li>
                 ))}
               </ul>
             ) : null}
@@ -595,6 +608,22 @@ function AppreciationEditor({
       </div>
     </ModalShell>
   );
+}
+
+/** Maps a domain band-issue code to its i18n key; falls back to the French message. */
+function appreciationIssueMessage(t: TFunction, code: string, message: string) {
+  const keyByCode: Record<string, string> = {
+    EMPTY_BANDS: 'configuration.appreciation.issueEmptyBands',
+    BAND_BOUNDS_INVERTED: 'configuration.appreciation.issueInverted',
+    BAND_OUT_OF_SCALE: 'configuration.appreciation.issueOutOfScale',
+    BAND_GAP: 'configuration.appreciation.issueGap',
+    BAND_OVERLAP: 'configuration.appreciation.issueOverlap',
+    BAND_TOP_UNREACHED: 'configuration.appreciation.issueTopUnreached',
+    BAND_BOTTOM_UNREACHED: 'configuration.appreciation.issueBottomUnreached',
+  };
+
+  const key = keyByCode[code];
+  return key ? t(key) : message;
 }
 
 function StatusPill({ status }: { status: AppreciationScaleView['status'] }) {
@@ -762,6 +791,9 @@ function bandWarnings(
 
 function findPreviewBand(bands: AppreciationBandInput[], average: string) {
   const hundredths = parseDecimalToHundredths(average);
+  if (hundredths === null) {
+    return null;
+  }
   const sorted = [...bands].sort((a, b) => b.lowerBound - a.lowerBound);
   return (
     sorted.find((band) => hundredths >= band.lowerBound && hundredths <= band.upperBound) ?? null
