@@ -65,7 +65,7 @@ export function AuthenticatedSetupApp({
     <main className="flex h-screen flex-col overflow-hidden bg-slate-50 font-sans text-slate-950">
       {/* Minimal Header */}
       <header className="shrink-0 border-b border-slate-200 bg-white">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-base font-black text-white shadow-sm">
               E
@@ -108,7 +108,7 @@ export function AuthenticatedSetupApp({
 
       {/* Main Content Area */}
       <section className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
-        <div className={`mx-auto flex w-full max-w-4xl flex-col ${isCompleted ? 'my-auto' : ''}`}>
+        <div className={`mx-auto flex w-full max-w-6xl flex-col ${isCompleted ? 'my-auto' : ''}`}>
           {setup.isLoading ? <SetupSkeleton /> : null}
 
           {!setup.isLoading && !setup.state ? (
