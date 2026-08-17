@@ -7,6 +7,9 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
+      '@edutrack/domain': fileURLToPath(
+        new URL('../../packages/domain/src/index.ts', import.meta.url)
+      ),
       '@edutrack/shared': fileURLToPath(
         new URL('../../packages/shared/src/index.ts', import.meta.url)
       ),
