@@ -60,7 +60,9 @@ describe('DashboardModule', () => {
     );
 
     expect(await screen.findByText('Bonjour, directeur')).toBeInTheDocument();
-    expect(screen.getByText('128')).toBeInTheDocument();
+    // The KPI cards arrive asynchronously (mock promises after a setTimeout(0)
+    // load); await the first one so the assertions cannot race the render.
+    expect(await screen.findByText('128')).toBeInTheDocument();
     expect(screen.getByText('9')).toBeInTheDocument();
     expect(screen.getByText('61')).toBeInTheDocument();
     // 4 + 1 + 0 archived records
