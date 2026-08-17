@@ -7,7 +7,6 @@ import type {
 } from '@edutrack/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DatePicker } from '../../components/DatePicker';
 import { formatISODate } from '../../components/dateFormat';
 import { formInputClassName, ModalCancelButton, ModalShell } from '../people/ui';
 import type { ConfigurationClient } from './ConfigurationModule';
@@ -382,6 +381,7 @@ function CreateYearModal({
     <ModalShell
       closeLabel={t('configuration.cancel')}
       onClose={onClose}
+      size="lg"
       title={t('configuration.years.newTitle')}
     >
       <form
@@ -391,110 +391,129 @@ function CreateYearModal({
           void handleSubmit();
         }}
       >
-        <label className="flex flex-col gap-2">
-          <span className="text-[13px] font-bold text-slate-800">
-            {t('configuration.years.label')} *
-          </span>
-          <input
-            className={formInputClassName}
-            onChange={(event) => {
-              setLabel(event.target.value);
-            }}
-            placeholder={t('configuration.years.labelPlaceholder')}
-            value={label}
-          />
-        </label>
-
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-4 md:grid-cols-3">
+          <label className="flex flex-col gap-2">
+            <span className="text-[13px] font-bold text-slate-800">
+              {t('configuration.years.label')} *
+            </span>
+            <input
+              className={formInputClassName}
+              onChange={(event) => {
+                setLabel(event.target.value);
+              }}
+              placeholder={t('configuration.years.labelPlaceholder')}
+              value={label}
+            />
+          </label>
           <label className="flex flex-col gap-2">
             <span className="text-[13px] font-bold text-slate-800">
               {t('configuration.years.startDate')} *
             </span>
-            <DatePicker onChange={setStartDate} value={startDate} />
+            <input
+              className={formInputClassName}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+              }}
+              type="date"
+              value={startDate}
+            />
           </label>
           <label className="flex flex-col gap-2">
             <span className="text-[13px] font-bold text-slate-800">
               {t('configuration.years.endDate')} *
             </span>
-            <DatePicker onChange={setEndDate} value={endDate} />
+            <input
+              className={formInputClassName}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+              }}
+              type="date"
+              value={endDate}
+            />
           </label>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-[13px] font-bold text-slate-800">
+        <div>
+          <p className="mb-3 text-[13px] font-bold text-slate-800">
             {t('configuration.years.termCount')}
-          </span>
-          <div className="flex rounded-xl border border-slate-200 bg-slate-50 p-1">
-            {[2, 3].map((count) => (
+          </p>
+          <div className="inline-grid grid-cols-2 rounded-xl border border-slate-200 bg-slate-100 p-1">
+            {[3, 2].map((count) => (
               <button
-                className={`cursor-pointer rounded-lg px-4 py-1.5 text-xs font-bold transition-colors ${
+                className={`cursor-pointer rounded-lg px-4 py-2 text-sm font-bold transition ${
                   termCount === count
-                    ? 'bg-teal-500 text-white shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800'
+                    ? 'bg-white text-teal-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-900'
                 }`}
                 key={count}
                 onClick={() => {
-                  setTermCount(count);
+                  setTermCount(count as 2 | 3);
                 }}
                 type="button"
               >
-                {count}
+                {count === 2 ? t('setup.calendar.systems.SEMESTER') : t('setup.calendar.systems.TRIMESTER')}
               </button>
             ))}
           </div>
         </div>
 
-        {terms.slice(0, termCount).map((termItem, index) => (
-          <div
-            className="space-y-3 rounded-2xl border border-slate-200/60 bg-slate-50/50 p-4"
-            key={index}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
-                {t('configuration.years.period', { number: String(index + 1) })}
-              </span>
+        <div className="grid gap-4 xl:grid-cols-3">
+          {terms.slice(0, termCount).map((termItem, index) => (
+            <div
+              className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm"
+              key={index}
+            >
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-sm font-black text-slate-900">
+                  {t('configuration.years.period', { number: String(index + 1) })}
+                </p>
+              </div>
+              <div className="space-y-3">
+                <label className="flex flex-col gap-2">
+                  <span className="text-[13px] font-bold text-slate-800">
+                    {t('configuration.years.periodLabel')} *
+                  </span>
+                  <input
+                    className={formInputClassName}
+                    onChange={(event) => {
+                      updateTerm(index, { label: event.target.value });
+                    }}
+                    placeholder={t('configuration.years.periodLabelPlaceholder', {
+                      number: String(index + 1),
+                    })}
+                    value={termItem.label}
+                  />
+                </label>
+                <label className="flex flex-col gap-2">
+                  <span className="text-[13px] font-bold text-slate-800">
+                    {t('configuration.years.startDate')} *
+                  </span>
+                  <input
+                    className={formInputClassName}
+                    onChange={(e) => {
+                      updateTerm(index, { startDate: e.target.value });
+                    }}
+                    type="date"
+                    value={termItem.startDate}
+                  />
+                </label>
+                <label className="flex flex-col gap-2">
+                  <span className="text-[13px] font-bold text-slate-800">
+                    {t('configuration.years.endDate')} *
+                  </span>
+                  <input
+                    className={formInputClassName}
+                    onChange={(e) => {
+                      updateTerm(index, { endDate: e.target.value });
+                    }}
+                    type="date"
+                    value={termItem.endDate}
+                  />
+                </label>
+              </div>
             </div>
-            <label className="flex flex-col gap-2">
-              <span className="text-[13px] font-bold text-slate-800">
-                {t('configuration.years.periodLabel')} *
-              </span>
-              <input
-                className={formInputClassName}
-                onChange={(event) => {
-                  updateTerm(index, { label: event.target.value });
-                }}
-                placeholder={t('configuration.years.periodLabelPlaceholder', {
-                  number: String(index + 1),
-                })}
-                value={termItem.label}
-              />
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="flex flex-col gap-2">
-                <span className="text-[13px] font-bold text-slate-800">
-                  {t('configuration.years.startDate')} *
-                </span>
-                <DatePicker
-                  onChange={(date) => {
-                    updateTerm(index, { startDate: date });
-                  }}
-                  value={termItem.startDate}
-                />
-              </label>
-              <label className="flex flex-col gap-2">
-                <span className="text-[13px] font-bold text-slate-800">
-                  {t('configuration.years.endDate')} *
-                </span>
-                <DatePicker
-                  onChange={(date) => {
-                    updateTerm(index, { endDate: date });
-                  }}
-                  value={termItem.endDate}
-                />
-              </label>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
 
         {localErrorKey ? (
           <p
