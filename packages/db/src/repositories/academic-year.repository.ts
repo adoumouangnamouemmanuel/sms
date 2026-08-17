@@ -108,7 +108,13 @@ export class AcademicYearRepository extends TenantScopedRepository {
         updatedAt,
         recordVersion: sql`${academicYear.recordVersion} + 1`,
       })
-      .where(and(eq(academicYear.schoolId, this.schoolId), eq(academicYear.isCurrent, true)))
+      .where(
+        and(
+          eq(academicYear.schoolId, this.schoolId),
+          eq(academicYear.isCurrent, true),
+          isNull(academicYear.deletedAt)
+        )
+      )
       .run();
   }
 

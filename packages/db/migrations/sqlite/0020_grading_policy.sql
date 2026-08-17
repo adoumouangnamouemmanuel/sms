@@ -145,6 +145,7 @@ CREATE TABLE `policy_scope` (
 	`record_version` integer DEFAULT 1 NOT NULL,
 	`deleted_at` text,
 	CONSTRAINT `policy_scope_type_check` CHECK(`scope_type` in ('SCHOOL_DEFAULT', 'LEVEL', 'LEVEL_SUBJECT')),
+	CONSTRAINT `policy_scope_shape_check` CHECK((`scope_type` = 'SCHOOL_DEFAULT' AND `class_level_id` IS NULL AND `subject_id` IS NULL) OR (`scope_type` = 'LEVEL' AND `class_level_id` IS NOT NULL AND `subject_id` IS NULL) OR (`scope_type` = 'LEVEL_SUBJECT' AND `class_level_id` IS NOT NULL AND `subject_id` IS NOT NULL)),
 	FOREIGN KEY (`school_id`,`grading_policy_id`) REFERENCES `grading_policy`(`school_id`,`id`) ON UPDATE cascade ON DELETE restrict,
 	FOREIGN KEY (`school_id`,`class_level_id`) REFERENCES `class_level`(`school_id`,`id`) ON UPDATE cascade ON DELETE restrict,
 	FOREIGN KEY (`school_id`,`subject_id`) REFERENCES `subject`(`school_id`,`id`) ON UPDATE cascade ON DELETE restrict,
@@ -176,6 +177,7 @@ CREATE TABLE `appreciation_scale` (
 CREATE INDEX `appreciation_scale_school_id_idx` ON `appreciation_scale` (`school_id`);--> statement-breakpoint
 CREATE INDEX `appreciation_scale_logical_scale_id_idx` ON `appreciation_scale` (`logical_scale_id`);--> statement-breakpoint
 CREATE UNIQUE INDEX `appreciation_scale_school_id_id_unique` ON `appreciation_scale` (`school_id`,`id`);--> statement-breakpoint
+CREATE UNIQUE INDEX `appreciation_scale_school_logical_version_unique` ON `appreciation_scale` (`school_id`,`logical_scale_id`,`version`);--> statement-breakpoint
 CREATE TABLE `appreciation_band` (
 	`id` text PRIMARY KEY NOT NULL,
 	`school_id` text NOT NULL,

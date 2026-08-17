@@ -17,19 +17,17 @@ import {
  * (roadmap §9.1, design §23). Every query is tenant-scoped by construction;
  * readiness is always computed, never cached, so it cannot go stale.
  *
- * Facts whose tables do not exist yet are reported as unmet so the
+ * Facts that depend on later phases are reported as unmet so the
  * corresponding capabilities stay blocked until their section lands:
- * - publishedGradingPolicies -> roadmap §9.7 (grading_policy)
- * - appreciationConfigured  -> roadmap §9.10 (appreciation_scale)
- * - validatedSubmissions    -> rebuilt Phase 5 (grade submission)
- * - bulletinConfigured      -> Phase 6 bulletin configuration
+ * - validatedSubmissions -> rebuilt Phase 5 (grade submission)
+ * - bulletinConfigured  -> Phase 6 bulletin configuration
  */
 export class ConfigurationRepository extends TenantScopedRepository {
   getSnapshot(): ConfigurationSnapshot {
     const schoolRow = this.db
       .select({ setupStatus: school.setupStatus })
       .from(school)
-      .where(eq(school.id, this.schoolId))
+      .where(and(eq(school.id, this.schoolId), isNull(school.deletedAt)))
       .get();
 
     const activeYear = this.db
@@ -81,7 +79,9 @@ export class ConfigurationRepository extends TenantScopedRepository {
       .get();
 
     return {
-      schoolProfileComplete: schoolRow?.setupStatus !== 'PENDING',
+      // No active school row (or an archived one) must never report the
+      // profile as complete: undefined !== 'PENDING' would be true.
+      schoolProfileComplete: schoolRow !== undefined && schoolRow.setupStatus !== 'PENDING',
       activeAcademicYear: activeYear !== undefined,
       levelCount: levelCountRow?.value ?? 0,
       subjectCount: subjectCountRow?.value ?? 0,

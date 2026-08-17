@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { AppreciationScaleInput } from '@edutrack/shared';
 import type { RepositoryExecutor, TenantContext } from './base.js';
@@ -87,6 +87,9 @@ export class AppreciationRepository extends TenantScopedRepository {
 
   /** The school's latest published scale (for readiness/transcript preview). */
   findLatestPublished(): AppreciationScaleRow | null {
+    // Sort by publication time, then version, then creation time so scales
+    // published in the same tick resolve deterministically to the highest
+    // version (createdAt alone is not unique within one request).
     const row = this.db
       .select()
       .from(appreciationScale)
@@ -97,9 +100,13 @@ export class AppreciationRepository extends TenantScopedRepository {
           isNull(appreciationScale.deletedAt)
         )
       )
-      .orderBy(asc(appreciationScale.createdAt))
-      .all()
-      .at(-1);
+      .orderBy(
+        desc(appreciationScale.publishedAt),
+        desc(appreciationScale.version),
+        desc(appreciationScale.createdAt)
+      )
+      .limit(1)
+      .get();
 
     return row ? { ...mapScale(row), bands: this.listBands(row.id) } : null;
   }

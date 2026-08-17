@@ -972,6 +972,18 @@ export const policyScope = sqliteTable(
       'policy_scope_type_check',
       sql`${table.scopeType} in ('SCHOOL_DEFAULT', 'LEVEL', 'LEVEL_SUBJECT')`
     ),
+    // A scope slot must be populated consistently: SCHOOL_DEFAULT carries no
+    // ids, LEVEL carries exactly a level, LEVEL_SUBJECT carries both.
+    check(
+      'policy_scope_shape_check',
+      sql`(
+        (${table.scopeType} = 'SCHOOL_DEFAULT' AND ${table.classLevelId} IS NULL AND ${table.subjectId} IS NULL)
+        OR
+        (${table.scopeType} = 'LEVEL' AND ${table.classLevelId} IS NOT NULL AND ${table.subjectId} IS NULL)
+        OR
+        (${table.scopeType} = 'LEVEL_SUBJECT' AND ${table.classLevelId} IS NOT NULL AND ${table.subjectId} IS NOT NULL)
+      )`
+    ),
     foreignKey({
       columns: [table.schoolId, table.gradingPolicyId],
       foreignColumns: [gradingPolicy.schoolId, gradingPolicy.id],
@@ -1010,6 +1022,13 @@ export const appreciationScale = sqliteTable(
     index('appreciation_scale_school_id_idx').on(table.schoolId),
     index('appreciation_scale_logical_scale_id_idx').on(table.logicalScaleId),
     uniqueIndex('appreciation_scale_school_id_id_unique').on(table.schoolId, table.id),
+    // Version identity per logical scale, mirroring grading_policy's
+    // (school_id, logical_policy_id, version) protection.
+    uniqueIndex('appreciation_scale_school_logical_version_unique').on(
+      table.schoolId,
+      table.logicalScaleId,
+      table.version
+    ),
     check(
       'appreciation_scale_status_check',
       sql`${table.status} in ('DRAFT', 'PUBLISHED', 'SUPERSEDED')`
