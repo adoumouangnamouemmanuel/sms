@@ -202,7 +202,7 @@ export function SetupWizard({
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/70 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
         <div className="flex-1 overflow-y-auto">
           <div className="flex min-h-0 flex-col p-5 lg:p-6">
-            <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col pb-2">
+            <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col pb-2">
               <div className="mb-5">
                 <h3 className="text-xl font-black text-slate-950">
                   {t(`setup.steps.${activeStep}.title`)}
