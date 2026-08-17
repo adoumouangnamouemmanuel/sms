@@ -202,7 +202,10 @@ export class AppreciationService {
         throw appreciationNotFound();
       }
 
-      const nextVersion = existing.version + 1;
+      // The next version must follow the whole logical chain, not the source
+      // row: duplicating an older version otherwise collides with an existing
+      // (school, logical scale, version) row.
+      const nextVersion = repository.maxVersion(existing.logicalScaleId) + 1;
       const id = repository.createDraft({
         logicalScaleId: existing.logicalScaleId,
         version: nextVersion,

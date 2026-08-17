@@ -1,6 +1,7 @@
 import type { ConfigRequirement, SchoolCapability } from '@edutrack/shared';
 
 export type ConfigurationErrorCode =
+  | 'VALIDATION_ERROR'
   | 'CONFIGURATION_FAILED'
   | 'CONFIGURATION_NOT_READY'
   | 'ACADEMIC_YEAR_NOT_FOUND'

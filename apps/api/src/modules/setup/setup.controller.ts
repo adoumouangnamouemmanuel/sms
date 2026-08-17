@@ -160,6 +160,9 @@ function sendSetupError(reply: FastifyReply, error: unknown) {
     error: {
       code: publicError.code,
       message: publicError.publicMessage,
+      ...(publicError instanceof SetupServiceError && publicError.fields
+        ? { fields: publicError.fields }
+        : {}),
     },
   });
 }

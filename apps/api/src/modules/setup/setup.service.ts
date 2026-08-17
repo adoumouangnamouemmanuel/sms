@@ -484,7 +484,7 @@ function assertStatusAtLeast(currentStatus: SchoolSetupStatus, minimumStatus: Sc
   }
 }
 
-/** The wizard advances strictly in order; each module step needs its predecessor. */
+/** The wizard advances strictly in order; each module step needs its exact predecessor. */
 function assertPrerequisiteStatus(currentStatus: SchoolSetupStatus, step: SetupModuleStep) {
   const prerequisites: Record<SetupModuleStep, SchoolSetupStatus> = {
     subjects: 'CLASS_LEVELS_COMPLETED',
@@ -493,7 +493,11 @@ function assertPrerequisiteStatus(currentStatus: SchoolSetupStatus, step: SetupM
     appreciation: 'GRADING_COMPLETED',
   };
 
-  assertStatusAtLeast(currentStatus, prerequisites[step]);
+  // Require the exact predecessor status so an earlier step can never be
+  // replayed after a later one and overwrite the higher status (rollback).
+  if (currentStatus !== prerequisites[step]) {
+    throw invalidSetupStep();
+  }
 }
 
 /** Validates the data the module step is meant to produce actually exists. */
@@ -507,16 +511,12 @@ function assertModuleStepData(
   switch (step) {
     case 'subjects':
       if (repositories.subjects.count({ status: 'active' }) === 0) {
-        throw moduleStepDataRequired(
-          'Ajoutez au moins une matiere avant de continuer (Matières et coefficients).'
-        );
+        throw moduleStepDataRequired('subjects');
       }
       break;
     case 'groups':
       if (repositories.groups.listWithCounts().length === 0) {
-        throw moduleStepDataRequired(
-          'Créez au moins un groupe de matières avant de continuer (Groupes de matières).'
-        );
+        throw moduleStepDataRequired('groups');
       }
       break;
     case 'grading':
@@ -524,16 +524,12 @@ function assertModuleStepData(
         repositories.policies.listSummaries().filter((policy) => policy.status === 'PUBLISHED')
           .length === 0
       ) {
-        throw moduleStepDataRequired(
-          'Publiez au moins une politique de notation avant de continuer (Politique de notation).'
-        );
+        throw moduleStepDataRequired('grading');
       }
       break;
     case 'appreciation':
       if (repositories.scales.list().filter((scale) => scale.status === 'PUBLISHED').length === 0) {
-        throw moduleStepDataRequired(
-          'Publiez au moins une échelle d\u2019appréciation avant de continuer (Appréciations).'
-        );
+        throw moduleStepDataRequired('appreciation');
       }
       break;
   }

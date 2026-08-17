@@ -262,7 +262,10 @@ export class GradingPolicyService {
         throw gradingPolicyNotFound();
       }
 
-      const nextVersion = existing.header.version + 1;
+      // The next version must follow the whole logical chain, not the source
+      // row: duplicating an older version otherwise collides with an existing
+      // (school, logical policy, version) row (grading_policy_school_logical_version_unique).
+      const nextVersion = repository.maxVersion(existing.header.logicalPolicyId) + 1;
       const id = repository.createDraft(
         {
           logicalPolicyId: existing.header.logicalPolicyId,
@@ -378,11 +381,9 @@ export class GradingPolicyService {
       {
         policies: published.map((detail) => ({
           policyId: detail.header.id,
-          scopes: repository.listScopes(detail.header.id).map((scope) => ({
-            scopeType: scope.scopeType,
-            levelId: scope.levelId,
-            subjectId: scope.subjectId,
-          })),
+          // The policy_scope_shape_check DB constraint guarantees the ids match
+          // the scope type, so the row maps to the exact union member.
+          scopes: repository.listScopes(detail.header.id).map(toPolicyScopeAssignment),
         })),
       },
       levelId,
@@ -474,6 +475,32 @@ function mapScopeView(scope: {
     levelId: scope.levelId,
     subjectId: scope.subjectId,
   };
+}
+
+/**
+ * Maps a persisted policy-scope row to its discriminated transport shape.
+ * The policy_scope_shape_check DB constraint guarantees the ids match the
+ * scope type, so the narrowings below never throw for valid data.
+ */
+function toPolicyScopeAssignment(scope: {
+  scopeType: PolicyScopeAssignment['scopeType'];
+  levelId: string | null;
+  subjectId: string | null;
+}): PolicyScopeAssignment {
+  switch (scope.scopeType) {
+    case 'LEVEL_SUBJECT':
+      if (scope.levelId === null || scope.subjectId === null) {
+        throw new Error('Invalid LEVEL_SUBJECT policy scope row (missing ids).');
+      }
+      return { scopeType: 'LEVEL_SUBJECT', levelId: scope.levelId, subjectId: scope.subjectId };
+    case 'LEVEL':
+      if (scope.levelId === null) {
+        throw new Error('Invalid LEVEL policy scope row (missing level id).');
+      }
+      return { scopeType: 'LEVEL', levelId: scope.levelId, subjectId: null };
+    case 'SCHOOL_DEFAULT':
+      return { scopeType: 'SCHOOL_DEFAULT', levelId: null, subjectId: null };
+  }
 }
 
 function resolutionExplanation(matchedScope: PolicyScopeAssignment['scopeType']): string {

@@ -4,6 +4,7 @@ import {
   createAcademicYearRequestSchema,
   academicYearStatusRequestSchema,
   gradingPolicyConfigSchema,
+  resolveGradingPolicyQuerySchema,
 } from '@edutrack/shared';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthServiceError, parseAuthorizationHeader, type AuthService } from '../auth/index.js';
@@ -235,19 +236,14 @@ export class ConfigurationController {
   };
 
   readonly resolveGradingPolicy = async (request: FastifyRequest, reply: FastifyReply) => {
-    const query = request.query as Record<string, string | undefined>;
-    const levelId = query.levelId;
-    const subjectId = query.subjectId ?? null;
+    const parsedQuery = resolveGradingPolicyQuerySchema.safeParse(request.query);
 
-    if (!levelId) {
-      return reply.code(400).send({
-        success: false,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Le paramètre levelId est requis.',
-        },
-      });
+    if (!parsedQuery.success) {
+      return sendValidationError(reply, parsedQuery.error);
     }
+
+    const { levelId } = parsedQuery.data;
+    const subjectId = parsedQuery.data.subjectId ?? null;
 
     try {
       const actor = await this.authenticateRequest(request);
@@ -412,7 +408,7 @@ function readParam(request: FastifyRequest, name: string) {
   const value = params[name];
 
   if (!value) {
-    throw new ConfigurationServiceError('CONFIGURATION_FAILED', 400, 'Paramètre manquant.');
+    throw new ConfigurationServiceError('VALIDATION_ERROR', 400, 'Paramètre manquant.');
   }
 
   return value;

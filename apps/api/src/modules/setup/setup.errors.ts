@@ -14,7 +14,8 @@ export class SetupServiceError extends Error {
   constructor(
     readonly code: SetupErrorCode,
     readonly statusCode: number,
-    readonly publicMessage: string
+    readonly publicMessage: string,
+    readonly fields?: Record<string, string | string[]>
   ) {
     super(publicMessage);
     this.name = 'SetupServiceError';
@@ -53,6 +54,13 @@ export function classLevelsRequired() {
   );
 }
 
-export function moduleStepDataRequired(message: string) {
-  return new SetupServiceError('MODULE_STEP_DATA_REQUIRED', 409, message);
+export function moduleStepDataRequired(step: string) {
+  // The public message stays generic; clients localize the actionable text
+  // via the stable code + step, never by parsing raw French.
+  return new SetupServiceError(
+    'MODULE_STEP_DATA_REQUIRED',
+    409,
+    'Complétez cette étape avant de continuer.',
+    { step }
+  );
 }
