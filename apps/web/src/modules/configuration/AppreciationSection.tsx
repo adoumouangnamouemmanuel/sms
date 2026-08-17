@@ -352,6 +352,7 @@ function AppreciationEditor({
       closeLabel={t('configuration.cancel')}
       onClose={onClose}
       resizeLabel={t('configuration.resize')}
+      size="xl"
       title={
         existing
           ? t('configuration.appreciation.editTitle')
@@ -402,12 +403,20 @@ function AppreciationEditor({
         </div>
 
         <div className="space-y-2">
-          <p className="text-[12px] font-black uppercase tracking-widest text-slate-500">
-            {t('configuration.appreciation.bandsTitle')}
-          </p>
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-[12px] font-black uppercase tracking-widest text-slate-500">
+              {t('configuration.appreciation.bandsTitle')}
+            </p>
+          </div>
+          <div className="hidden sm:grid gap-3 px-4 pb-1 sm:grid-cols-[120px_120px_1fr_140px]">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('configuration.appreciation.from')}</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('configuration.appreciation.to')}</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('configuration.appreciation.label')}</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('configuration.appreciation.shortLabel')}</span>
+          </div>
           {bands.map((band, index) => (
             <div
-              className="grid gap-2 rounded-2xl border border-slate-200/70 bg-slate-50/40 p-3 sm:grid-cols-[90px_90px_1fr_90px]"
+              className="grid gap-3 rounded-2xl border border-slate-200/70 bg-slate-50/40 p-4 sm:grid-cols-[120px_120px_1fr_140px] items-center"
               key={band.id ?? index}
             >
               <DecimalField
@@ -557,7 +566,7 @@ function AppreciationEditor({
           {isPublished ? null : (
             <button
               className="cursor-pointer rounded-2xl border border-slate-200/80 bg-white px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50"
-              disabled={isSaving}
+              disabled={isSaving || name.trim().length === 0}
               onClick={() => void handleSave()}
               type="button"
             >
@@ -567,7 +576,7 @@ function AppreciationEditor({
           {isPublished ? null : (
             <button
               className="cursor-pointer rounded-2xl bg-teal-500 px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_20px_-5px_rgba(20,184,166,0.5)] transition-all hover:scale-105 hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={isSaving || warnings.length > 0}
+              disabled={isSaving || warnings.length > 0 || name.trim().length === 0}
               onClick={() => void handlePublish()}
               type="button"
             >
