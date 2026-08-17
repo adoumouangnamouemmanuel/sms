@@ -1,3 +1,5 @@
+import type { SetupModuleStep } from '@edutrack/shared';
+
 export type SetupErrorCode =
   | 'CLASS_LEVELS_REQUIRED'
   | 'FORBIDDEN'
@@ -54,7 +56,7 @@ export function classLevelsRequired() {
   );
 }
 
-export function moduleStepDataRequired(step: string) {
+export function moduleStepDataRequired(step: SetupModuleStep) {
   // The public message stays generic; clients localize the actionable text
   // via the stable code + step, never by parsing raw French.
   return new SetupServiceError(

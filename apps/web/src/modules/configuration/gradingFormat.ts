@@ -15,8 +15,14 @@
  */
 export function parseDecimalToHundredths(value: string): number | null {
   const normalized = value.trim().replace(',', '.');
-  const parsed = Number.parseFloat(normalized);
 
+  // Accept only a plain decimal number. A parseFloat prefix match would
+  // silently commit a wrong value for inputs like "12abc" or "1,234,56".
+  if (!/^\d+(\.\d+)?$/.test(normalized)) {
+    return null;
+  }
+
+  const parsed = Number.parseFloat(normalized);
   if (!Number.isFinite(parsed)) {
     return null;
   }

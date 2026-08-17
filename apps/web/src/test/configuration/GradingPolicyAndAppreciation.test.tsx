@@ -441,4 +441,12 @@ describe('grading format helpers', () => {
     expect(parseDecimalToHundredths('14.37')).toBe(1437);
     expect(formatHundredths(1437)).toBe('14,37');
   });
+
+  it('rejects malformed input instead of committing a prefix match', () => {
+    expect(parseDecimalToHundredths('12abc')).toBeNull();
+    expect(parseDecimalToHundredths('1,234,56')).toBeNull();
+    expect(parseDecimalToHundredths('')).toBeNull();
+    expect(parseDecimalToHundredths('-1')).toBeNull();
+    expect(parseDecimalToHundredths('12.5')).toBe(1250);
+  });
 });
