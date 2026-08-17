@@ -11,6 +11,13 @@ export const fr = {
       summary: 'Gérez les dossiers scolaires avec une session locale sécurisée.',
     },
     configuration: {
+      tabs: {
+        overview: "Vue d'ensemble",
+        profile: "Profil de l'école",
+        years: "Années académiques",
+        grading: "Notation",
+        appreciation: "Appréciations",
+      },
       title: 'Configuration',
       loading: 'Chargement de la configuration...',
       retry: 'Réessayer',
@@ -1138,6 +1145,9 @@ export const fr = {
         saved: 'Programme du niveau enregistré.',
         subject: 'Matière',
         subjects: 'Matières au catalogue',
+        copyFrom: 'Copier le programme depuis...',
+        copy: 'Copier',
+        copied: 'Programme copié ! N\'oubliez pas d\'enregistrer.',
         summary: {
           levels: 'Niveaux',
           mapped: 'Matières liées',
@@ -1176,7 +1186,10 @@ export const fr = {
           subjects: 'Matières au catalogue',
         },
         title: 'Groupes de matières',
-        validation: 'Renseignez un nom (2 caractères minimum) et un ordre valide.',
+        errors: {
+          nameRequired: 'Renseignez un nom (2 caractères minimum).',
+          orderInvalid: 'Renseignez un ordre d’affichage valide (nombre > 0).',
+        },
       },
     },
     imports: {
