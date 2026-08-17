@@ -173,7 +173,14 @@ export interface PolicyValidationIssue {
     | 'CYCLE_DETECTED'
     | 'SCALE_MISMATCH'
     | 'PASS_THRESHOLD_ABOVE_SCALE'
-    | 'PRECISION_OUT_OF_RANGE';
+    | 'PRECISION_OUT_OF_RANGE'
+    | 'EMPTY_BANDS'
+    | 'BAND_BOUNDS_INVERTED'
+    | 'BAND_OUT_OF_SCALE'
+    | 'BAND_GAP'
+    | 'BAND_OVERLAP'
+    | 'BAND_TOP_UNREACHED'
+    | 'BAND_BOTTOM_UNREACHED';
   /** Human-readable French message for the publish flow (UI maps codes to i18n). */
   message: string;
 }
@@ -389,13 +396,22 @@ export function evaluatePolicy(
 
   for (const definition of config.assessmentTypes) {
     const marks = definition.id ? (marksByTypeId.get(definition.id) ?? []) : [];
+    if (marks.length === 0) {
+      // No recorded mark is not the same as a mark of 0.00 (AGENTS.md §9.1:
+      // zero is a valid grade and never means missing). Leave the node
+      // unset; the subject-result input check below then fails loudly
+      // instead of averaging a fabricated zero. Callers decide how
+      // MISSING/ABSENT/EXCUSED affect the average.
+      continue;
+    }
     // A single-occurrence type uses its only mark; a repeatable type uses
     // the mean of the provided occurrences (the sandbox samples one per
     // occurrence). Marks are already hundredths.
-    const effective =
-      marks.length === 0 ? 0 : derivedMean(marks, config.decimalPrecision, config.roundingMode);
     if (definition.id) {
-      nodeValues.set(definition.id, effective);
+      nodeValues.set(
+        definition.id,
+        derivedMean(marks, config.decimalPrecision, config.roundingMode)
+      );
     }
   }
 
@@ -531,7 +547,7 @@ export function validateAppreciationScale(input: AppreciationScaleInput): Policy
 
   if (bands.length === 0) {
     issues.push({
-      code: 'EMPTY_ASSESSMENT_TYPES',
+      code: 'EMPTY_BANDS',
       message: 'Ajoutez au moins une tranche d\u2019appréciation.',
     });
     return issues;
@@ -542,13 +558,13 @@ export function validateAppreciationScale(input: AppreciationScaleInput): Policy
   for (const band of bands) {
     if (band.lowerBound < 0 || band.upperBound > scaleHundredths) {
       issues.push({
-        code: 'SCALE_MISMATCH',
+        code: 'BAND_OUT_OF_SCALE',
         message: 'Les bornes des tranches doivent rester dans le barème.',
       });
     }
     if (band.lowerBound > band.upperBound) {
       issues.push({
-        code: 'INVALID_OCCURRENCE_RANGE',
+        code: 'BAND_BOUNDS_INVERTED',
         message: 'La borne inférieure ne peut pas dépasser la borne supérieure.',
       });
     }
@@ -564,13 +580,13 @@ export function validateAppreciationScale(input: AppreciationScaleInput): Policy
 
     if (next.upperBound + 1 < band.lowerBound) {
       issues.push({
-        code: 'WEIGHT_TOTAL',
+        code: 'BAND_GAP',
         message: `Il manque une tranche entre ${formatHundredths(next.upperBound)} et ${formatHundredths(band.lowerBound)}.`,
       });
     }
     if (next.upperBound >= band.lowerBound) {
       issues.push({
-        code: 'WEIGHT_TOTAL',
+        code: 'BAND_OVERLAP',
         message: 'Les tranches ne doivent pas se chevaucher.',
       });
     }
@@ -581,13 +597,13 @@ export function validateAppreciationScale(input: AppreciationScaleInput): Policy
 
   if (highest && highest.upperBound < scaleHundredths) {
     issues.push({
-      code: 'WEIGHT_TOTAL',
+      code: 'BAND_TOP_UNREACHED',
       message: 'La tranche supérieure doit atteindre le barème maximum.',
     });
   }
   if (lowest && lowest.lowerBound > 0) {
     issues.push({
-      code: 'WEIGHT_TOTAL',
+      code: 'BAND_BOTTOM_UNREACHED',
       message: 'La tranche inférieure doit commencer à zéro.',
     });
   }
