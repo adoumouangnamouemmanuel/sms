@@ -8,6 +8,7 @@ import {
   type ClassroomView,
   type ClassSubjectView,
   type CreateClassroomRequest,
+  type CreateSubjectGroupRequest,
   type CreateSubjectRequest,
   type CurriculumCopyConfirmRequest,
   type CurriculumCopyConfirmResponse,
@@ -16,18 +17,25 @@ import {
   type EnrolOptionalSubjectsRequest,
   type EnrolStudentsRequest,
   type EnrolStudentsResponse,
+  type LevelCurriculumsResponse,
   type PaginatedClassroomsResponse,
   type PaginatedSubjectsResponse,
+  type SaveLevelCurriculumRequest,
+  type SetSubjectGroupMembersRequest,
   type StudentSubjectEnrollmentResponse,
   type StudentsMissingClassResponse,
+  type SubjectGroupMembersResponse,
+  type SubjectGroupsResponse,
+  type SubjectGroupView,
   type SubjectListQuery,
   type SubjectResponse,
   type TransferStudentRequest,
   type UpdateClassroomRequest,
   type UpdateClassSubjectRequest,
+  type UpdateSubjectGroupRequest,
   type UpdateSubjectRequest,
 } from '@edutrack/shared';
-import { fetchWithTimeout } from '../../httpClient';
+import { fetchWithTimeout } from '../../lib/httpClient';
 import { createAuthHeaders } from '../auth';
 import { ClassesApiError } from './classesErrors';
 
@@ -256,6 +264,100 @@ export async function removeClassSubject(
     method: 'DELETE',
     options,
   });
+}
+
+// ---- Level curriculum (roadmap §9.5) ----------------------------------------
+
+export async function listLevelCurriculums(
+  apiBaseUrl: string,
+  options: ClassesRequestOptions = {}
+) {
+  return requestJson<LevelCurriculumsResponse>(apiBaseUrl, '/level-curriculum', {
+    method: 'GET',
+    options,
+  });
+}
+
+export async function saveLevelCurriculum(
+  apiBaseUrl: string,
+  input: SaveLevelCurriculumRequest,
+  options: ClassesRequestOptions = {}
+) {
+  return requestJson<LevelCurriculumsResponse>(apiBaseUrl, '/level-curriculum', {
+    method: 'PUT',
+    body: input,
+    options,
+  });
+}
+
+// ---- Subject groups (roadmap §9.6) ------------------------------------------
+
+export async function listSubjectGroups(apiBaseUrl: string, options: ClassesRequestOptions = {}) {
+  return requestJson<SubjectGroupsResponse>(apiBaseUrl, '/subject-groups', {
+    method: 'GET',
+    options,
+  });
+}
+
+export async function createSubjectGroup(
+  apiBaseUrl: string,
+  input: CreateSubjectGroupRequest,
+  options: ClassesRequestOptions = {}
+) {
+  return requestJson<SubjectGroupView>(apiBaseUrl, '/subject-groups', {
+    method: 'POST',
+    body: input,
+    options,
+  });
+}
+
+export async function updateSubjectGroup(
+  apiBaseUrl: string,
+  groupId: string,
+  input: UpdateSubjectGroupRequest,
+  options: ClassesRequestOptions = {}
+) {
+  return requestJson<SubjectGroupView>(apiBaseUrl, `/subject-groups/${groupId}`, {
+    method: 'PUT',
+    body: input,
+    options,
+  });
+}
+
+export async function archiveSubjectGroup(
+  apiBaseUrl: string,
+  groupId: string,
+  options: ClassesRequestOptions = {}
+) {
+  return requestJson<SubjectGroupView>(apiBaseUrl, `/subject-groups/${groupId}/archive`, {
+    method: 'POST',
+    options,
+  });
+}
+
+export async function listSubjectGroupMembers(
+  apiBaseUrl: string,
+  groupId: string,
+  options: ClassesRequestOptions = {}
+) {
+  return requestJson<SubjectGroupMembersResponse>(
+    apiBaseUrl,
+    `/subject-groups/${groupId}/members`,
+    { method: 'GET', options }
+  );
+}
+
+export async function setSubjectGroupMembers(
+  apiBaseUrl: string,
+  groupId: string,
+  input: SetSubjectGroupMembersRequest,
+  options: ClassesRequestOptions = {}
+) {
+  return requestJson<SubjectGroupMembersResponse>(
+    apiBaseUrl,
+    `/subject-groups/${groupId}/members`,
+    { method: 'PUT', body: input, options }
+  );
 }
 
 // ---- Enrolment -------------------------------------------------------------

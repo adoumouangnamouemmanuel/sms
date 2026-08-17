@@ -1,4 +1,5 @@
 import type {
+  AdvanceSetupStepRequest,
   SetupCalendarRequest,
   SetupClassLevelInput,
   SetupSchoolProfileRequest,
@@ -7,33 +8,45 @@ import type {
 } from '@edutrack/shared';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SetupAppreciationStep } from './SetupAppreciationStep';
 import { SetupCalendarStep } from './SetupCalendarStep';
 import { SetupClassLevelsStep } from './SetupClassLevelsStep';
+import { SetupGradingStep } from './SetupGradingStep';
+import { SetupGroupsStep } from './SetupGroupsStep';
 import { SetupProfileStep } from './SetupProfileStep';
 import { SetupReviewStep } from './SetupReviewStep';
+import { SetupSubjectsStep } from './SetupSubjectsStep';
 import { createCalendarDraft, createClassLevelsDraft, createProfileDraft } from './setupSteps';
 
 export interface SetupWizardProps {
+  apiBaseUrl: string | null;
+  capabilityToken?: string;
   errorKey: string | null;
   isSaving: boolean;
+  onAdvanceStep: (input: AdvanceSetupStepRequest) => Promise<SetupStateResponse | null>;
   onComplete: () => Promise<SetupStateResponse | null>;
   onSaveCalendar: (input: SetupCalendarRequest) => Promise<SetupStateResponse | null>;
   onSaveClassLevels: (input: {
     classLevels: SetupClassLevelInput[];
   }) => Promise<SetupStateResponse | null>;
   onSaveProfile: (input: SetupSchoolProfileRequest) => Promise<SetupStateResponse | null>;
+  onSessionExpired?: () => void;
   state: SetupStateResponse;
   activeStep: SetupStepId;
   setActiveStep: (step: SetupStepId) => void;
 }
 
 export function SetupWizard({
+  apiBaseUrl,
+  capabilityToken,
   errorKey,
   isSaving,
+  onAdvanceStep,
   onComplete,
   onSaveCalendar,
   onSaveClassLevels,
   onSaveProfile,
+  onSessionExpired,
   state,
   activeStep,
   setActiveStep,
@@ -47,7 +60,7 @@ export function SetupWizard({
     const nextState = await onSaveProfile(profileDraft);
 
     if (nextState) {
-      setActiveStep('calendar');
+      setActiveStep(nextState.nextStep);
     }
   }
 
@@ -55,7 +68,7 @@ export function SetupWizard({
     const nextState = await onSaveCalendar(calendarDraft);
 
     if (nextState) {
-      setActiveStep('classLevels');
+      setActiveStep(nextState.nextStep);
     }
   }
 
@@ -63,7 +76,15 @@ export function SetupWizard({
     const nextState = await onSaveClassLevels({ classLevels: classLevelDraft });
 
     if (nextState) {
-      setActiveStep('review');
+      setActiveStep(nextState.nextStep);
+    }
+  }
+
+  async function advanceModuleStep(step: AdvanceSetupStepRequest['step']) {
+    const nextState = await onAdvanceStep({ step });
+
+    if (nextState) {
+      setActiveStep(nextState.nextStep);
     }
   }
 
@@ -106,11 +127,67 @@ export function SetupWizard({
         }}
       />
     ),
+    subjects: (
+      <SetupSubjectsStep
+        apiBaseUrl={apiBaseUrl}
+        {...(capabilityToken !== undefined ? { capabilityToken } : {})}
+        isSaving={isSaving}
+        onBack={() => {
+          setActiveStep('classLevels');
+        }}
+        onSubmit={() => {
+          void advanceModuleStep('subjects');
+        }}
+        {...(onSessionExpired !== undefined ? { onSessionExpired } : {})}
+      />
+    ),
+    groups: (
+      <SetupGroupsStep
+        apiBaseUrl={apiBaseUrl}
+        {...(capabilityToken !== undefined ? { capabilityToken } : {})}
+        isSaving={isSaving}
+        onBack={() => {
+          setActiveStep('subjects');
+        }}
+        onSubmit={() => {
+          void advanceModuleStep('groups');
+        }}
+        {...(onSessionExpired !== undefined ? { onSessionExpired } : {})}
+      />
+    ),
+    grading: (
+      <SetupGradingStep
+        apiBaseUrl={apiBaseUrl}
+        {...(capabilityToken !== undefined ? { capabilityToken } : {})}
+        isSaving={isSaving}
+        onBack={() => {
+          setActiveStep('groups');
+        }}
+        onSubmit={() => {
+          void advanceModuleStep('grading');
+        }}
+        {...(onSessionExpired !== undefined ? { onSessionExpired } : {})}
+      />
+    ),
+    appreciation: (
+      <SetupAppreciationStep
+        apiBaseUrl={apiBaseUrl}
+        {...(capabilityToken !== undefined ? { capabilityToken } : {})}
+        isSaving={isSaving}
+        onBack={() => {
+          setActiveStep('grading');
+        }}
+        onSubmit={() => {
+          void advanceModuleStep('appreciation');
+        }}
+        {...(onSessionExpired !== undefined ? { onSessionExpired } : {})}
+      />
+    ),
     review: (
       <SetupReviewStep
         isSaving={isSaving}
         onBack={() => {
-          setActiveStep('classLevels');
+          setActiveStep('appreciation');
         }}
         onSubmit={() => {
           void onComplete();
@@ -125,7 +202,7 @@ export function SetupWizard({
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/70 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
         <div className="flex-1 overflow-y-auto">
           <div className="flex min-h-0 flex-col p-5 lg:p-6">
-            <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col pb-2">
+            <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col pb-2">
               <div className="mb-5">
                 <h3 className="text-xl font-black text-slate-950">
                   {t(`setup.steps.${activeStep}.title`)}

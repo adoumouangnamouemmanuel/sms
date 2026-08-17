@@ -1,10 +1,20 @@
 # EduTrack Africa - Product and System Specification
 
-**Document version:** 2.0
-**Status:** Approved baseline for Version 1 implementation
-**Updated:** 12 August 2026
+**Document version:** 2.1
+**Status:** Revised baseline (academic configuration redesign)
+**Updated:** 16 August 2026
 **Owner:** Emmanuel Ouang-namou Adoum
-**Related documents:** `SchoolMS_Roadmap.md`, `AGENTS.md`, accepted ADRs in `docs/decisions/`
+**Related documents:** `SchoolMS_Roadmap.md`, `AGENTS.md`, accepted ADRs in `docs/decisions/`, `docs/academic/Academic_Configuration_Grading_Redesign.md`
+
+> **Revision (16 August 2026):** after reviewing real bulletins from two Chadian schools
+> (Espérance and Elie Tao Baydo), the single-result grade model is replaced by a neutral,
+> explicitly configured grading-policy model: assessment types and instances, derived
+> results, one weighted subject result, configurable appreciation, and explicit
+> scale/rounding policy. There is no implicit grading scheme: a school must publish a valid
+> grading policy before grade entry is enabled for the covered scope. Phase 3 of the
+> roadmap implements this configuration; Phase 5 is rebuilt on top of it. The canonical
+> design lives in `docs/academic/Academic_Configuration_Grading_Redesign.md`; this
+> document is updated to match.
 
 ## 1. Purpose and authority
 
@@ -39,12 +49,12 @@ Version 1 includes:
 3. Academic years and non-overlapping terms.
 4. SchoolMaster and Teacher accounts.
 5. Student, guardian and teacher records.
-6. Class levels, classrooms, subjects, coefficients and teacher assignments.
+6. Class levels, classrooms, subjects, subject groups, level curricula, coefficients and teacher assignments.
 7. Class enrollment and optional-subject enrollment.
 8. Spreadsheet preview, validation and confirmed import for core records.
-9. One official subject result per student, class-subject and term.
-10. Teacher draft entry, submission and SchoolMaster validation/return.
-11. Fixed-point average, appreciation, pass/fail and competition ranking.
+9. A school-published grading policy (scale, assessment types, derived results, weighted subject result, appreciation) and per-student assessment results producing one official subject result per class-subject and term.
+10. Teacher draft entry per assessment instance, submission and SchoolMaster validation/return.
+11. Fixed-point derived results, subject results, average, appreciation, pass/fail and competition ranking.
 12. Provisional transcript review and finalized official PDF bulletins.
 13. CSV/XLSX export, append-only audit history and verified backup/restore.
 14. A Windows installer and documented fully offline installation path.
@@ -76,6 +86,7 @@ Excluded modules must not appear as unfinished navigation, dormant endpoints or 
 The SchoolMaster is the authorized school administrator for one school. The role may:
 
 - complete school and academic setup;
+- configure, publish and supersede grading policies and appreciation scales;
 - create, deactivate and reset Teacher accounts;
 - manage students, guardians, teachers, classes, subjects and enrollments;
 - assign teachers to class-subjects;
@@ -220,11 +231,11 @@ Dependencies point inward. Domain code does not import from applications or adap
 
 Version 1 contains six product modules:
 
-1. Installation, school and academic configuration.
+1. Installation, school and academic configuration (structure, grading policy, appreciation, readiness gates).
 2. Authentication, authorization and auditing.
 3. People: students, guardians and teachers.
-4. Curriculum: levels, classrooms, subjects, assignments and enrollments.
-5. Results: entry, submission, validation, computation, ranking and transcripts.
+4. Curriculum: levels, classrooms, subjects, subject groups, assignments and enrollments.
+5. Results: assessment instances, entry, submission, validation, computation, ranking and transcripts.
 6. Data safety: import, export, backup and restore.
 
 The modules excluded from Version 1 are not empty shells. Version 2 introduces new modules only after their dependencies and policies are accepted.
@@ -266,21 +277,22 @@ Represents one tenant and installation owner. Important attributes include name,
 
 #### `academic_year`
 
-Belongs to one school and contains label, start date, end date and status. Constraints:
+Belongs to one school and contains label, start date, end date and status (`DRAFT -> ACTIVE -> CLOSED`). Constraints:
 
 - start precedes end;
 - tenant-local label is unique;
 - at most one academic year is current per school;
 - historical years are preserved.
 
-#### `term`
+#### `term` (academic period)
 
-Belongs to an academic year and school. Contains label/order, start/end dates and status. Constraints:
+Belongs to an academic year and school. Contains school-defined label/order (1er Trimestre, 2e Trimestre, Semestre 1, ...), start/end dates and status. Constraints:
 
 - term dates fall inside the academic year;
 - terms in the same academic year do not overlap;
 - ordering is unique within the academic year;
-- at most one term is current within the school's current academic context.
+- at most one term is current within the school's current academic context;
+- dates are configurable but never the only determinant of academic state.
 
 #### `class_level`
 
@@ -328,9 +340,17 @@ Belongs to a school and contains stable staff code, names, contact details, acti
 
 Belongs to a school. Contains stable code, localized name, optional short label and active state.
 
+#### `subject_group` (bulletin section)
+
+A school-defined grouping of subjects such as Matières littéraires, Matières scientifiques or Formation humaine. Contains name, short label, display order and, where the school enables it, whether the group counts toward an admission/promotion average. Membership is school configuration and must never be inferred permanently from a universal subject category.
+
+#### `level_subject` (level curriculum)
+
+Determines whether a subject is taught at a class level and its coefficient there, plus required/optional applicability and active state. Curriculum, coefficients and grading policy are defined at level scope and inherited by classrooms, so identical configuration is never duplicated across 6ème A, 6ème B and 6ème C.
+
 #### `class_subject`
 
-Assigns one subject to one classroom for an academic year/term policy. Contains coefficient, required/optional policy, active state and optional assigned Teacher. The classroom/subject combination is tenant-locally unique in the relevant academic context.
+Resolves a level curriculum subject to one classroom for an academic year, with the level's coefficient/applicability, optional assigned Teacher and active state. The classroom/subject combination is tenant-locally unique in the relevant academic context.
 
 Changing a coefficient after validated results exist requires explicit policy and audit; it must never silently alter finalized transcripts.
 
@@ -346,11 +366,43 @@ Links student, classroom and academic year, with enrollment status and dates. Co
 
 Links a student/class enrollment to an optional class-subject. Required subjects are applicable by class configuration; optional subjects are applicable only through this active link.
 
-### 11.5 Results and transcripts
+### 11.5 Grading policy, results and transcripts
+
+#### `grading_policy` (versioned)
+
+Describes how subject results are produced for a school scope. Contains scale, pass threshold, decimal precision, rounding mode, effective academic scope, status (`DRAFT | PUBLISHED | SUPERSEDED`) and version metadata. `logical_policy_id` groups versions of the same conceptual policy. A policy version in use is immutable: edits create a new version and never retroactively change existing grades, calculations, validations, transcripts or PDFs.
+
+#### `assessment_type_definition`
+
+A category of marks teachers record, configured by the school (Devoir, Composition, Projet, Oral, TP, Interrogation). Contains name/short name, scale, occurrence mode (`SINGLE | REPEATABLE`), min/max occurrences, required flag and display order. Example: Devoir, /20, REPEATABLE, min 2, max 6.
+
+#### `assessment_instance`
+
+An operational assessment created for a class-subject/term, such as Devoir 1, Devoir 2, Composition. Belongs to the resolved policy version, references the assessment type, sequence number, title, optional date and scale snapshot. The number of instances is never hard-coded; a repeatable type cannot exceed its configured maximum. Existing instances with entered grades cannot be silently deleted.
+
+#### `derived_result_definition`
+
+A calculated intermediate (e.g. Évaluation = mean of all Devoir instances), not manually typed. Contains name/short name, operation, source definitions, precision and rounding mode. Version 1 supports the `MEAN` operation; the architecture may anticipate `WEIGHTED_MEAN`, `SUM`, `BEST_N` and `DROP_LOWEST_N` without exposing them.
+
+#### `subject_result_definition`
+
+Exactly one per policy: the official subject result with weighted inputs (e.g. Évaluation 50% + Composition 50%, or Note finale 100%). Policy publication validates the calculation graph (no cycles, all sources exist, weights valid, scales compatible).
+
+#### `student_assessment_result`
+
+One active result per student and assessment instance. Contains state (`GRADED | MISSING | ABSENT | EXCUSED | NOT_APPLICABLE`), fixed-point grade, entered-by/at, updated-at and record version. Zero is a valid grade and never means missing. The effect of `ABSENT`/`EXCUSED` on averages requires an explicit approved domain decision before calculation semantics are implemented.
+
+#### `appreciation_scale` and `appreciation_band`
+
+A school-configured, versioned mapping of official averages to labels (e.g. 16.00 -> Très bien), with fr/ar/en labels. Published scales used by official records are versioned; changes never mutate historical finalized records. Appreciation stays distinct from Mention/admission/promotion until explicitly designed.
+
+#### `policy_assignment`
+
+Binds a published policy version to a scope: school default, level, or level + subject. Resolution order is school default -> level -> level + subject. If no valid published policy resolves for a grade-entry scope, grade entry is blocked for that scope - never silently assumed.
 
 #### `grade_submission`
 
-Represents a Teacher's class-subject result set for one term. It contains school, term, class-subject, assigned Teacher, status, version, submitted/validated/returned/reopened metadata and reason fields.
+Represents a Teacher's class-subject result set for one term under a pinned policy version. It contains school, term, class-subject, assigned Teacher, pinned policy version, status, version, submitted/validated/returned/reopened metadata and reason fields.
 
 Allowed status flow:
 
@@ -363,11 +415,11 @@ DRAFT -> SUBMITTED -> VALIDATED
 VALIDATED -> REOPENED -> SUBMITTED
 ```
 
-Only the assigned Teacher edits draft/returned/reopened results. Only the SchoolMaster validates, returns or reopens. Every transition is authorized and audited.
+Only the assigned Teacher edits draft/returned/reopened results. Only the SchoolMaster validates, returns or reopens. Every transition is authorized and audited. Submission completeness is policy-aware: minimum assessment occurrences and required single assessments must be satisfied.
 
 #### `transcript`
 
-Represents one student's official term result for an enrollment. Contains state, version, calculation-policy version, completeness status, official average, appreciation, pass/fail, rank, class size and finalized snapshot metadata.
+Represents one student's official term result for an enrollment. Contains state, version, pinned calculation-policy version, completeness status, official average, appreciation, pass/fail, rank, class size and finalized snapshot metadata.
 
 Allowed state flow:
 
@@ -384,7 +436,7 @@ DRAFT -> READY_FOR_REVIEW -> FINALIZED
 
 #### `transcript_line`
 
-Stores one applicable class-subject line for a transcript: subject identity/label snapshot, coefficient, result, weighted value, validation source and inclusion status. It is the Version 1 official subject result record.
+Stores one applicable class-subject line for a transcript: subject identity/label snapshot, coefficient, official subject result, weighted value, validation source and inclusion status. It is the Version 1 official subject result record, computed from validated assessment results by the pinned policy version.
 
 The combination of transcript and class-subject is unique. A student cannot have two official values for the same class-subject/term transcript.
 
@@ -394,50 +446,69 @@ Import jobs, backup manifests and generated-document records may use supporting 
 
 ## 12. Academic calculation policy
 
-### 12.1 Input parsing
+The rules in this section are the deterministic calculation core. Rounding is academic policy: Version 1 supports `HALF_UP` and `TRUNCATE`, applied at explicitly defined boundaries according to the pinned policy. Real Chadian bulletins demonstrate intermediate truncation, so intermediate values follow the configured precision/rounding mode - never an unstated universal default. All official values use fixed-point integer hundredths and never unbounded binary floating point.
 
-- Accept decimal comma or period.
-- Trim harmless surrounding whitespace.
-- Reject ambiguous or malformed formats rather than guessing.
-- A supplied result must be from `0.00` to `20.00` inclusive.
+### 12.1 Policy resolution and calculation graph
+
+- A grading policy is resolved for a student/subject/term scope as: school default -> level -> level + subject. No valid published policy means grade entry and official calculation are blocked for that scope, with an actionable French message - never a silently assumed default.
+- A policy's calculation graph is validated at publication: exactly one official subject result exists, every input source exists, no circular dependency exists, weights are valid and normalize correctly, all dependency paths are calculable, and scales are compatible.
+- A policy version used by assessment instances or grades is immutable. Mid-term policy changes never retroactively alter a workflow already pinned to an earlier version.
+
+### 12.2 Input parsing and result states
+
+- Accept decimal comma or period; trim harmless surrounding whitespace; reject ambiguous or malformed formats rather than guessing.
+- A supplied grade must be from `0.00` through the policy's configured scale maximum, inclusive (the `/20` secondary template is a starting point, never a universal assumption; persistence keeps a physical upper CHECK bound, the effective maximum comes from the configured scale).
+- Accept at most the configured decimal places; any normalization policy beyond that requires an ADR.
+- Each student assessment result carries an explicit state: `GRADED`, `MISSING`, `ABSENT`, `EXCUSED` or `NOT_APPLICABLE`. Empty input is `MISSING`, never `GRADED 0.00`.
 - A Version 1 coefficient is a positive whole number, represented internally at the same exact hundredths scale.
-- Accept at most the configured two official decimal places; any normalization policy beyond that requires an ADR.
-- Empty input is missing, not zero.
+- The effect of `ABSENT`/`EXCUSED` on averages is not invented here: it requires an explicit approved domain decision before calculation semantics are implemented.
 
-### 12.2 Applicability
+### 12.3 Derived and subject results
+
+For each assessment instance group, the policy computes derived results from the student's graded instances:
+
+- `Évaluation` = `MEAN` of all applicable `GRADED` instances of its source assessment type (e.g. the Devoirs administered), at the policy's derived precision/rounding.
+- Exactly one official subject result per policy combines its weighted inputs, e.g. `Évaluation 50% + Composition 50%` or `Note finale 100%`.
+- Derived and subject results are computed by shared pure domain functions; UI previews and the authoritative backend call the same logic.
+
+### 12.4 Applicability
 
 For a student and term, include:
 
 - every active required class-subject for the student's class enrollment;
-- every optional class-subject with an active student-subject enrollment.
+- every optional class-subject with an active student-subject enrollment;
+- per policy assignment scope (school/level/level+subject) resolved in 12.1.
 
 Do not include inactive subjects, unrelated class assignments or optional subjects without enrollment.
 
-### 12.3 Weighted computation
+### 12.5 Weighted computation
 
 For each applicable subject:
 
-`weighted value = official result × coefficient`
+`weighted value = official subject result × coefficient`
 
 The unrounded overall average is:
 
 `sum(weighted values) / sum(applicable coefficients)`
 
-The official average is rounded half-up to exactly two decimal places at the final calculation boundary. Intermediate integer/rational values remain unrounded as long as practical.
+The official average is rounded at the final calculation boundary to the policy's configured precision and rounding mode (default template: half-up to two decimals). Intermediate integer/rational values remain unrounded as long as the pinned policy allows.
 
 If the total applicable coefficient is zero, return a typed `ZERO_TOTAL_COEFFICIENT` domain error. Never generate `NaN`, infinity or an arbitrary zero average.
 
-### 12.4 Missing values and completeness
+### 12.6 Missing values and completeness
 
 - Missing is a first-class state and never becomes `0.00` automatically.
+- Submission completeness is policy-aware: minimum assessment occurrences and required single assessments must be satisfied, and every applicable student's required result resolved.
 - Provisional previews may show partial calculations only when clearly labeled incomplete and non-official.
 - A transcript cannot become `READY_FOR_REVIEW` or `FINALIZED` if an applicable required value is missing.
 - A transcript cannot be finalized while any relevant grade submission is not validated.
-- An excused/waived result policy is not invented in Version 1. If a pilot requires it, define it in a domain ADR before implementation.
+- `ABSENT`/`EXCUSED` handling is defined only through an approved domain decision or ADR.
 
-### 12.5 Pass/fail and appreciation
+### 12.7 Pass/fail and appreciation
 
-An official average of `10.00` or greater passes. `9.99` fails.
+Pass/fail uses the policy's configured pass threshold (for the `/20` template, an official average of `10.00` or greater passes and `9.99` fails).
+
+Appreciation is school configuration, not a universal constant: the school defines bands, thresholds and labels through an appreciation scale, which is versioned once used by official records. A Chadian template seeds the common bands below as an editable starting point, never an implicit default:
 
 |     Average | Appreciation |
 | ----------: | ------------ |
@@ -450,9 +521,9 @@ An official average of `10.00` or greater passes. `9.99` fails.
 |   6.00–7.99 | Faible       |
 |   0.00–5.99 | Très Faible  |
 
-These labels and thresholds are shared domain constants used by UI, services, tests, exports and PDFs.
+Appreciation stays distinct from Mention/admission/promotion until explicitly designed. Labels are resolved from the pinned appreciation scale/version and are used consistently by UI, services, tests, exports and PDFs.
 
-### 12.6 Ranking
+### 12.8 Ranking
 
 Ranking uses competition ranking based on the persisted official average:
 
@@ -464,33 +535,33 @@ Ranking uses competition ranking based on the persisted official average:
 
 The domain engine returns an explicit result for an empty eligible class. It never divides by zero or fabricates ranks.
 
-### 12.7 Canonical fixtures
+### 12.9 Canonical fixtures
 
 Automated tests must cover at least:
 
-`0`, `5.99`, `6`, `7.99`, `8`, `9.99`, `10`, `11.99`, `12`, `13.99`, `14`, `15.99`, `16`, `17.99`, `18`, `20`, decimal comma input, missing results, zero coefficients, an empty class, duplicate names, optional subjects and tied averages.
+`0`, `5.99`, `6`, `7.99`, `8`, `9.99`, `10`, `11.99`, `12`, `13.99`, `14`, `15.99`, `16`, `17.99`, `18`, `20` (against the configured scale), decimal comma input, missing/absent/excused/not-applicable states, zero coefficients, an empty class, duplicate names, optional subjects, tied averages, truncation vs half-up boundaries, and policy-resolution scopes (school/level/level+subject).
 
 ## 13. Grade-entry workflow
 
-1. The SchoolMaster configures classroom subjects, coefficients and Teacher assignments.
-2. The assigned Teacher opens a term/class-subject grid.
+1. The SchoolMaster configures the academic structure and publishes a grading policy (assessment types, derived results, subject result, appreciation) covering the relevant scope. Grade entry stays blocked until a valid published policy resolves.
+2. The assigned Teacher opens a term/class-subject grid generated from the resolved policy and its actual assessment instances (e.g. Devoir 1, Devoir 2, Composition - one editable column per instance, read-only derived columns).
 3. The service returns only applicable enrolled students for the authenticated school and assignment.
-4. The Teacher enters results. Each confirmed save is durably committed with optimistic concurrency.
+4. The Teacher enters grades per instance. Each confirmed save is durably committed with optimistic concurrency.
 5. Draft state survives navigation and application restart.
 6. Client and server show precise row-level errors without discarding valid draft entries.
-7. Submission is blocked until every applicable student has a valid result or an approved policy explicitly says otherwise.
+7. Submission is blocked until policy-aware completeness is satisfied: minimum assessment occurrences, required single assessments, and every applicable student's required result resolved - or an approved policy explicitly says otherwise.
 8. Submission locks Teacher editing and creates an audit event.
 9. The SchoolMaster validates the complete set or returns it with a reason.
-10. Validation makes values eligible for official transcript computation.
+10. Validation makes the assessment results eligible for official subject-result computation.
 11. Reopening requires SchoolMaster authorization, a reason and audit metadata.
 
 Autosave must not create silent loss, duplicate writes or unclear state. The UI distinguishes unsaved, saving, saved, offline/local and failed states in French.
 
 ## 14. Transcript and bulletin workflow
 
-1. The system builds a draft from the student's applicable subjects and validated results.
+1. The system builds a draft from the student's applicable subjects and validated assessment results under the pinned policy version.
 2. Completeness and coefficient checks run through the canonical domain engine.
-3. The engine calculates subject weighted values, official average, pass/fail and appreciation.
+3. The engine computes derived results and the official subject result per the pinned policy, then subject weighted values, official average, pass/fail and appreciation.
 4. Eligible classmates are ranked using the same persisted calculation policy.
 5. The SchoolMaster reviews a provisional, visibly non-official preview.
 6. Finalization runs in a transaction, verifies current versions and stores immutable input/output snapshots.

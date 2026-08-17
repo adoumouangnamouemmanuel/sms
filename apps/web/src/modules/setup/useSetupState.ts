@@ -1,4 +1,5 @@
 import {
+  type AdvanceSetupStepRequest,
   type SetupCalendarRequest,
   type SetupClassLevelsRequest,
   type SetupSchoolProfileRequest,
@@ -6,6 +7,7 @@ import {
 } from '@edutrack/shared';
 import { useCallback, useEffect, useState } from 'react';
 import {
+  advanceSetupStep,
   completeSetup,
   getSetupState,
   saveSchoolProfile,
@@ -16,6 +18,10 @@ import {
 import { resolveSetupErrorMessageKey } from './setupErrors';
 
 export interface SetupClient {
+  advanceStep: (
+    input: AdvanceSetupStepRequest,
+    options?: SetupRequestOptions
+  ) => Promise<SetupStateResponse>;
   complete: (options?: SetupRequestOptions) => Promise<SetupStateResponse>;
   getState: (options?: SetupRequestOptions) => Promise<SetupStateResponse>;
   saveCalendar: (
@@ -138,6 +144,16 @@ export function useSetupState({ apiBaseUrl, capabilityToken, client }: UseSetupS
     [apiBaseUrl, client, persist, requestOptions]
   );
 
+  const advanceStep = useCallback(
+    async (input: AdvanceSetupStepRequest) =>
+      persist(async () =>
+        client
+          ? client.advanceStep(input, requestOptions())
+          : advanceSetupStep(apiBaseUrl ?? '', input, requestOptions())
+      ),
+    [apiBaseUrl, client, persist, requestOptions]
+  );
+
   const complete = useCallback(
     async () =>
       persist(async () =>
@@ -153,6 +169,7 @@ export function useSetupState({ apiBaseUrl, capabilityToken, client }: UseSetupS
   }, []);
 
   return {
+    advanceStep,
     complete,
     errorKey,
     isLoading,

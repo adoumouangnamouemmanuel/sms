@@ -2,6 +2,8 @@
 
 SQLite is the Version 1 system of record. PostgreSQL, cloud sync and remote web access remain out of scope until a later ADR approves them.
 
+> **Status (Aug 2026):** this document is being reconciled with the academic configuration redesign (`docs/academic/Academic_Configuration_Grading_Redesign.md`, roadmap v2.1). The phase labels below follow the reorganized roadmap: the people tables were built under the old "Phase 3.1" label and now belong to Phase 4 (People, enrolment and teaching assignments), and the classes/curriculum tables serve the Phase 3 configuration slices (§9.4/§9.5) and Phase 4 enrolment (§10.4). The neutral grading-policy tables (`grading_policy`, `assessment_type_definition`, `assessment_instance`, `derived_result_definition`, `subject_result_definition`, `student_assessment_result`, `appreciation_scale`/`appreciation_band`, `policy_assignment`) are defined in the redesign doc and land with the Phase 3 migrations. The legacy single-result tables on the local Phase 5 branch (`submission_result`, `transcript`, `transcript_line`, `grade_submission`) are superseded by that model and will be rolled back under roadmap §11.0; they are not part of `develop`.
+
 ## Conventions
 
 - Primary keys are UUID text values, except explicitly keyed metadata tables such as `schema_metadata`.
@@ -25,15 +27,16 @@ Indexes:
 
 ### `academic_year`
 
-Tracks academic years for one school.
+Tracks academic years for one school. Since migration `0018` the year carries an explicit lifecycle `status` (`DRAFT | ACTIVE | CLOSED`); exactly one ACTIVE year per school is enforced by the partial unique index and by the transactional rollover in the service layer.
 
-Key columns: `id`, `school_id`, `label`, `start_date`, `end_date`, `is_current`, lifecycle metadata.
+Key columns: `id`, `school_id`, `label`, `start_date`, `end_date`, `status`, `is_current`, lifecycle metadata.
 
 Indexes:
 
 - `academic_year_school_id_idx`
 - `academic_year_school_current_unique`
 - `academic_year_school_label_unique`
+- `academic_year_school_active_unique` (partial: one ACTIVE row per school)
 
 ### `term`
 
@@ -123,7 +126,7 @@ Stores local schema/seed metadata that must persist with the SQLite database. It
 
 Key columns: `key`, `value`, `description`, `created_at`, `updated_at`, `record_version`.
 
-## Phase 3.1 People Tables
+## Phase 4 People Tables (students, guardians, teachers)
 
 ### `student`
 
@@ -181,6 +184,51 @@ Indexes and constraints:
 - `student_guardian_relationship_type_check` (`PERE`, `MERE`, `TUTEUR`, `AUTRE`)
 - composite FKs `(school_id, student_id)` → `student(school_id, id)` and `(school_id, guardian_id)` → `guardian(school_id, id)`
 
+## Phase 3 Configuration Tables (level curriculum, subject groups)
+
+### `level_subject`
+
+Level-scope curriculum matrix (roadmap §9.5): coefficient and required/optional flag per subject per level, inherited by every classroom of that level. Saving replaces the matrix atomically; removed entries are soft-deactivated, never hard-deleted.
+
+Key columns: `id`, `school_id`, `class_level_id`, `subject_id`, `coefficient`, `is_required`, `is_active`, lifecycle metadata.
+
+Indexes and constraints:
+
+- `level_subject_school_id_idx`
+- `level_subject_class_level_id_idx`
+- `level_subject_subject_id_idx`
+- `level_subject_school_level_subject_unique` (one row per level + subject, soft-delete aware)
+- `level_subject_coefficient_check` (`coefficient >= 1`)
+- composite FKs `(school_id, class_level_id)` → `class_level(school_id, id)` and `(school_id, subject_id)` → `subject(school_id, id)`
+
+### `subject_group`
+
+School-defined subject groups / sections (roadmap §9.6), e.g. Matières littéraires, Matières scientifiques. Pure configuration: name (+ optional EN/AR), display order, active state.
+
+Key columns: `id`, `school_id`, `name`, `name_en`, `name_ar`, `display_order`, `is_active`, lifecycle metadata.
+
+Indexes and constraints:
+
+- `subject_group_school_id_idx`
+- `subject_group_school_name_unique`
+- `subject_group_display_order_check` (`display_order >= 1`)
+- composite FK `(school_id, id)` → `school(school_id, id)`
+
+### `subject_group_member`
+
+Ordered membership of a subject group. Replacing membership is atomic: the array order sent by the client becomes the display order, and removed members are soft-deactivated.
+
+Key columns: `id`, `school_id`, `subject_group_id`, `subject_id`, `display_order`, `is_active`, lifecycle metadata.
+
+Indexes and constraints:
+
+- `subject_group_member_school_id_idx`
+- `subject_group_member_group_id_idx`
+- `subject_group_member_subject_id_idx`
+- `subject_group_member_group_subject_unique` (one member per group + subject, soft-delete aware)
+- `subject_group_member_display_order_check` (`display_order >= 1`)
+- composite FKs `(school_id, subject_group_id)` → `subject_group(school_id, id)` and `(school_id, subject_id)` → `subject(school_id, id)`
+
 ## Migrations
 
 SQLite migration files live in `packages/db/migrations/sqlite`.
@@ -189,7 +237,7 @@ SQLite migration files live in `packages/db/migrations/sqlite`.
 
 `0002_glorious_lizard.sql` adds the Phase 2.2 setup tables for terms, class levels and module visibility. It is additive and safe for non-empty databases that do not already violate the single-current-year invariant.
 
-`0003_old_sumo.sql` adds the Phase 3.1 people tables (`student`, `teacher`, `guardian`, `student_guardian`) with strict tenant-local code uniqueness and composite tenant foreign keys. It is additive and safe for non-empty databases.
+`0003_old_sumo.sql` adds the Phase 4 people tables (`student`, `teacher`, `guardian`, `student_guardian`) with strict tenant-local code uniqueness and composite tenant foreign keys. It is additive and safe for non-empty databases.
 
 `0004_students_module.sql` widens the `school_module_config.module_name` CHECK to accept `STUDENTS` (hand-written table rebuild, since drizzle-kit does not emit CHECK constraints) and backfills an enabled `STUDENTS` row for every school that lacks one, so already-setup schools surface the students module too.
 
@@ -197,13 +245,27 @@ SQLite migration files live in `packages/db/migrations/sqlite`.
 
 `0006_import_batch.sql` adds the `import_batch` table that records each confirmed Excel import (kind, import identifier, filename, row counts) with a unique `(school_id, import_identifier)` index - the backbone of import idempotency (Phase 3.4). Import previews themselves are never persisted; they live in an in-memory store on the sidecar with a 30-minute TTL.
 
-`0014_classes_data_model.sql` (originally `0009_gifted_kronos.sql`) adds the Phase 4 classes and curriculum data model (roadmap §10.1): five new tenant-scoped tables with composite `(school_id, id)` foreign keys and partial unique indexes - `subject` (school catalogue with code, localized names, category), `classroom` (cohort/section within an academic year and class level, year-local code), `class_subject` (subject/coefficient/teacher assignment per classroom, required/optional policy), `class_enrollment` (student ↔ classroom for a year with a controlled status; the partial unique index enforces at most one `ACTIVE` enrollment per student/year), and `student_subject_enrollment` (explicit links to optional class-subjects). `0015_class_level_id_unique.sql` (originally `0010_slippery_mother_askani.sql`) adds the `(school_id, id)` unique index on `class_level` that SQLite requires for the composite tenant foreign keys from `classroom`. `0013_student_guardian_primary_index.sql` (originally `0008_noisy_mephisto.sql`) recreates the per-student primary-link unique index so it ignores soft-deleted links. Domain CHECK constraints (subject category, coefficient ≥ 1, enrollment status, capacity ≥ 1) are enforced in both the migration and the source schema.
+`0007_import_batch_guardians.sql` follows the `0006` rebuild pattern to accept the `GUARDIANS` import kind (Phase 4.3), preserving all rows and indexes so confirmed-import history stays auditable.
+
+`0011_classes_import_kinds.sql` rebuilds `import_batch` so its `kind` CHECK accepts the three classes/curriculum import kinds (`SUBJECTS`, `CLASSROOMS`, `CLASS_SUBJECTS`, roadmap §9.4/§9.5), preserving all rows and indexes - confirmed-import history stays auditable for the new templates.
+
+`0012_classes_module.sql` registers the `CLASSES` school module (roadmap §9.4/§9.5): it rebuilds `school_module_config` so the `module_name` CHECK accepts `CLASSES` and backfills an enabled `CLASSES` row for every school that lacks one, so already-setup schools surface the classes & curriculum module as well.
+
+`0013_student_guardian_primary_index.sql` (originally `0008_noisy_mephisto.sql`) recreates the per-student primary-link unique index so it ignores soft-deleted links.
+
+`0014_classes_data_model.sql` (originally `0009_gifted_kronos.sql`) adds the classes and curriculum data model (roadmap §9.4/§9.5 and §10.4): five new tenant-scoped tables with composite `(school_id, id)` foreign keys and partial unique indexes - `subject` (school catalogue with code, localized names, category), `classroom` (cohort/section within an academic year and class level, year-local code), `class_subject` (subject/coefficient/teacher assignment per classroom, required/optional policy), `class_enrollment` (student ↔ classroom for a year with a controlled status; the partial unique index enforces at most one `ACTIVE` enrollment per student/year), and `student_subject_enrollment` (explicit links to optional class-subjects). Domain CHECK constraints (subject category, coefficient ≥ 1, enrollment status, capacity ≥ 1) are enforced in both the migration and the source schema.
+
+`0015_class_level_id_unique.sql` (originally `0010_slippery_mother_askani.sql`) adds the `(school_id, id)` unique index on `class_level` that SQLite requires for the composite tenant foreign keys from `classroom`.
 
 These three were renumbered (`0008`/`0009`/`0010` → `0013`/`0014`/`0015`) because their original journal `when` timestamps were lower than migrations already applied on pre-existing databases; drizzle's migrator compares each journal entry against the last-applied `created_at` and would have permanently skipped them on such databases (fresh databases applied everything in order and were unaffected). The renumbering gives them later `when` timestamps so already-set-up databases receive the DDL on the next boot, while fresh databases still run every entry in order.
 
-`0011_classes_import_kinds.sql` rebuilds `import_batch` so its `kind` CHECK accepts the three Phase 4.2/4.3 import kinds (`SUBJECTS`, `CLASSROOMS`, `CLASS_SUBJECTS`), preserving all rows and indexes - confirmed-import history stays auditable for the new templates.
+`0016_class_enrollment_consistency.sql` (CodeRabbit, PR 19) closes two Phase 4 enrolment integrity gaps: it enforces through BEFORE INSERT/UPDATE triggers that a `class_enrollment` row's `academic_year_id` always matches its classroom's academic year (SQLite cannot add composite foreign keys to an existing table), and it narrows `class_enrollment_school_classroom_student_unique` to `ACTIVE` rows only, so a transfer back to a previous classroom no longer collides with the retained `TRANSFERRED` history row.
 
-`0012_classes_module.sql` registers the `CLASSES` school module (roadmap §10.2): it rebuilds `school_module_config` so the `module_name` CHECK accepts `CLASSES` and backfills an enabled `CLASSES` row for every school that lacks one, so already-setup schools surface the classes & curriculum module as well.
+`0017_configuration_module.sql` registers the `CONFIGURATION` school module (roadmap §9.1): it rebuilds `school_module_config` so the `module_name` CHECK accepts `CONFIGURATION` and backfills an enabled `CONFIGURATION` row for every school that lacks one, so already-setup schools surface the permanent Configuration area as well.
+
+`0018_academic_year_status.sql` adds the academic-year lifecycle (roadmap §9.3): a `status` column (`DRAFT | ACTIVE | CLOSED`) with a CHECK, a partial unique index enforcing at most one ACTIVE year per school, and a backfill that marks the existing current year ACTIVE (and any other years CLOSED). All existing rows are preserved; the backfill is safe on non-empty databases.
+
+`0019_structure_configuration.sql` adds the Phase 3 structure-configuration tables (roadmap §9.5/§9.6): `level_subject` (level-scope curriculum matrix with coefficient ≥ 1 CHECK and a soft-delete-aware per level+subject unique index), `subject_group` (school-defined groups with a school-scoped unique name) and `subject_group_member` (ordered, soft-delete-aware membership). All three are additive and safe for non-empty databases.
 
 ## Seed Policy
 

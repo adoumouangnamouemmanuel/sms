@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@edutrack/db": "workspace:*",
+    "@edutrack/domain": "workspace:*",
     "@edutrack/shared": "workspace:*",
     "@fastify/multipart": "^9.4.0",
     "bcrypt": "^6.0.0",

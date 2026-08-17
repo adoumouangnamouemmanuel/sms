@@ -14,6 +14,7 @@ Before making a meaningful change, read only the documentation relevant to the t
 
 - `SchoolMS_Roadmap.md` (or `docs/SchoolMS_Roadmap.md`): delivery order, milestones, acceptance criteria, risks, and phase-level definition of done.
 - `sms.md` (or `docs/sms.md`): approved Version 1 product, domain, permission, module-boundary and architecture specification.
+- `docs/academic/Academic_Configuration_Grading_Redesign.md`: accepted design for the neutral, configured grading-policy model (assessment types/instances, derived results, subject result, appreciation, readiness gates) that grade entry and calculation are rebuilt on. It supersedes any older single-result descriptions elsewhere.
 - `SchoolMS_UML_Design.md` (or `docs/SchoolMS_UML_Design.md`): legacy domain model snapshot. Do not let it override the approved Version 1 `sms.md`.
 - `docs/decisions/`: approved Architecture Decision Records (ADRs). An accepted ADR overrides older option-level recommendations in the roadmap or UML document.
 - Existing schemas, migrations, tests, and public API contracts: inspect these before changing implemented behavior. If they conflict with the written design, report the conflict; do not silently choose one.
@@ -150,12 +151,12 @@ Do not manually edit generated files, lockfiles, migration snapshots, or build o
 
 Maintain clear module boundaries:
 
-1. Core / school configuration
+1. Core / school configuration (structure, grading policy, appreciation, readiness gates)
 2. Authentication and users
 3. Students
 4. Teachers and payroll
-5. Classes and curriculum
-6. Grades and transcripts
+5. Classes and curriculum (levels, classrooms, subjects, subject groups)
+6. Grades and transcripts (assessment instances, entry, validation, computation)
 7. Finance
 8. Timetable and academic calendar
 9. Learning resources
@@ -167,7 +168,7 @@ Modules may be enabled per school through `school_module_config`. Disabled modul
 
 ### 7.4 Vertical delivery and phase discipline
 
-Build complete, testable slices within the active roadmap phase. Do not scaffold all future modules “for completeness.” Phase 5-the grade and transcript engine-is the central value proposition; earlier data and API decisions must support it without prematurely implementing its UI.
+Build complete, testable slices within the active roadmap phase. Do not scaffold all future modules “for completeness.” The grade-to-bulletin path - Phase 3 configuration, Phase 5 entry/validation, and Phase 6 official results - is the central value proposition; earlier data and API decisions must support it without prematurely implementing its UI.
 
 ## 8. Data and database rules
 
@@ -175,7 +176,7 @@ Build complete, testable slices within the active roadmap phase. Do not scaffold
 - Database columns use `snake_case`; TypeScript variables and functions use `camelCase`; React components, classes, and exported types use `PascalCase`.
 - Store money as integer minor units. XAF normally has no fractional unit in product display, but the storage and formatting policy must remain explicit.
 - Store grades, averages, coefficients, and weighted values in exact fixed-point form-prefer integer hundredths at persistence boundaries. Never use unbounded binary floating-point arithmetic for official academic results.
-- Round only at explicitly defined domain boundaries. The official transcript average is rounded to two decimal places.
+- Round only at explicitly defined domain boundaries, according to the pinned grading policy's precision and rounding mode (`HALF_UP` or `TRUNCATE`). The official transcript average follows the policy's final-boundary rule (default template: half-up to two decimals) - never an unstated universal default.
 - Enforce integrity in both Zod/application validation and database constraints. The backend remains authoritative.
 - Add required `NOT NULL`, `UNIQUE`, foreign-key, check, and index constraints. Choose cascade/restrict behavior deliberately; never blanket-apply cascading deletes to academic or financial history.
 - Academic, grade, payment, and signature history should be archived or soft-deactivated rather than destructively deleted.
@@ -190,18 +191,20 @@ Build complete, testable slices within the active roadmap phase. Do not scaffold
 
 ### 9.1 Grades and transcripts
 
-- Accepted grades are from `0.00` through `20.00`, inclusive.
+- There is **no implicit grading scheme**. A school must explicitly publish a valid grading policy before grade entry is enabled for the covered scope. Templates are editable starting points, never automatic defaults.
+- The model is neutral: `grading_policy` (versioned, `DRAFT -> PUBLISHED -> SUPERSEDED`), `assessment_type_definition` (`SINGLE | REPEATABLE` with min/max occurrences), `assessment_instance` (Devoir 1, Devoir 2, Composition), `derived_result_definition` (V1 operation `MEAN`), exactly one weighted `subject_result_definition`, and `student_assessment_result`. Never hard-code `DEV_1`/`EVAL`/`MOY_DEV` keys or a fixed number of devoirs as domain logic; labels are configuration.
+- The scale, pass threshold, precision, and rounding mode come from the pinned policy (a `/20` secondary template is a starting point, never a universal assumption). Accepted grades are from `0.00` through the configured scale maximum; persistence keeps a physical upper CHECK bound.
 - Accept comma or period as a decimal separator at the input boundary; normalize once and validate before persistence.
-- Weighted score: `grade × coefficient`.
-- Overall average: `sum(weighted scores) / sum(coefficients)`, rounded to two decimal places.
-- An average of exactly `10.00` passes; `9.99` fails.
-- Missing grades remain missing. Never silently convert them to zero.
+- Result states are `GRADED | MISSING | ABSENT | EXCUSED | NOT_APPLICABLE`. Zero is a valid grade and never means missing. The effect of `ABSENT`/`EXCUSED` on averages requires an explicit approved domain decision - never invented inline.
+- Derived/subject computation: `Évaluation = MEAN` of its graded source instances; official subject result = weighted combination of its inputs; `weighted value = official subject result × coefficient`; `overall average = sum(weighted values) / sum(applicable coefficients)`, rounded at the final boundary per the policy's precision and rounding mode (`HALF_UP` or `TRUNCATE`).
+- Pass/fail uses the policy's configured pass threshold (for `/20`: exactly `10.00` passes, `9.99` fails).
 - A zero total coefficient must return a controlled domain result/error, never `NaN`, infinity, or a crash.
 - Duplicate student names are valid. Student codes, not names, establish identity.
-- Appreciation boundaries are canonical shared constants: 18–20 Excellent; 16–17.99 Très Bien; 14–15.99 Bien; 12–13.99 Assez Bien; 10–11.99 Passable; 8–9.99 Insuffisant; 6–7.99 Faible; 0–5.99 Très Faible.
+- Appreciation is school configuration, not canonical constants: bands, thresholds, and labels live in a versioned appreciation scale (a Chadian template seeds 18–20 Excellent; 16–17.99 Très Bien; 14–15.99 Bien; 12–13.99 Assez Bien; 10–11.99 Passable; 8–9.99 Insuffisant; 6–7.99 Faible; 0–5.99 Très Faible as an editable starting point). Appreciation stays distinct from Mention/admission/promotion until explicitly designed.
 - Centralize computation in pure shared domain functions. UI previews, API calculations, reports, and PDFs must call the same logic or verify against the same fixtures.
-- Teachers may enter and validate grades only for their assigned class-subjects. After validation, grades are read-only unless an authorized SchoolMaster reopens them.
-- Respect the lifecycle: `PENDING -> IN_ENTRY -> COMPUTED/RANKED -> FINALIZED -> SIGNED`; error correction uses an authorized, audited `REOPENED` transition.
+- Policy resolution is `school default -> level -> level + subject`. A scope with no valid published policy blocks grade entry with an actionable message; a policy version in use is immutable, and edits create a new version that never rewrites existing grades or transcripts.
+- Teachers may enter and validate grades only for their assigned class-subjects and permitted assessment instances. After validation, grades are read-only unless an authorized SchoolMaster reopens them.
+- Respect the submission lifecycle `DRAFT -> SUBMITTED -> VALIDATED` (with `RETURNED`/`REOPENED`) and the transcript lifecycle `DRAFT -> READY_FOR_REVIEW -> FINALIZED` (with audited `REOPENED`); error correction uses an authorized, audited transition with a required reason.
 - Finalized or signed transcripts cannot be mutated in place. Reopening, recomputation, re-finalization, and re-signing must be explicit and audited.
 - Ranking must be deterministic. Preserve equal ranks for equal official averages; encode the chosen next-rank policy in tests before changing it.
 - PDFs must reproduce persisted official values exactly; never recompute with separate PDF-only logic.
@@ -299,16 +302,20 @@ Every behavior change needs the lowest-cost test that proves it, plus regression
 
 ### Required layers
 
-- Unit: pure calculations, appreciation boundaries, fixed-point conversion, state transitions, permission decisions, validation schemas, code/receipt generation.
-- Integration: repositories against SQLite; transactions; tenant scoping; auth refresh/logout; grade workflow; import; backup/restore. Add PostgreSQL-specific coverage only after a later ADR introduces PostgreSQL into the active runtime.
+- Unit: pure calculations, derived means, weighted subject results, scale/pass-threshold boundaries, configured rounding/truncation, appreciation bands, policy-resolution hierarchy, calculation-graph cycle rejection, min/max occurrence rules, fixed-point conversion, state transitions, permission decisions, validation schemas, code/receipt generation.
+- Integration: repositories against SQLite; transactions; tenant scoping; auth refresh/logout; grade workflow; policy publication/resolution; assessment-instance limits; import; backup/restore. Add PostgreSQL-specific coverage only after a later ADR introduces PostgreSQL into the active runtime.
 - Component: French labels, validation, keyboard grade entry, loading/empty/error states, accessibility.
 - End-to-end: setup wizard; full class grade entry; transcript initialization through signed PDF; student self-view; Excel import; offline restart and recovery.
 
 ### Mandatory edge cases
 
-- Grades `0`, `5.99`, `6`, `7.99`, `8`, `9.99`, `10`, `11.99`, `12`, `13.99`, `14`, `15.99`, `16`, `17.99`, `18`, and `20`.
+- Grades `0`, `5.99`, `6`, `7.99`, `8`, `9.99`, `10`, `11.99`, `12`, `13.99`, `14`, `15.99`, `16`, `17.99`, `18`, and `20` (against the configured scale).
 - Decimal comma input.
-- Missing grades, all-zero coefficients, an empty class, duplicate names, and ties in ranking.
+- Missing, absent, excused, and not-applicable result states; zero never confused with missing.
+- All-zero coefficients, an empty class, duplicate names, and ties in ranking.
+- Truncation vs half-up boundaries at intermediate and final calculation points.
+- Policy resolution: school default -> level -> level + subject, unconfigured scope blocked, two schools with different labels/formulas fully isolated.
+- Repeatable-assessment min/max enforcement (2-6 devoirs) and required single assessments.
 - Unauthorized same-school and cross-school access.
 - Repeated idempotent requests and interrupted transactions.
 - Offline mutation queue restart, retry, duplicate delivery, conflict logging, and reconnect.
@@ -389,6 +396,6 @@ A change is complete only when all applicable conditions are met:
 
 ## 19. When uncertain
 
-Choose the path that protects school data, produces deterministic official records, works offline, and is easiest for a French-speaking school employee to understand. Do not invent domain policy. If ambiguity affects a grade formula, rank, payment, permission, transcript state, tenant boundary, sync conflict, or destructive migration, stop and request a decision or propose an ADR with explicit options.
+Choose the path that protects school data, produces deterministic official records, works offline, and is easiest for a French-speaking school employee to understand. Do not invent domain policy. If ambiguity affects a grading policy, assessment structure, scale, grade formula, rounding mode, appreciation, rank, payment, permission, transcript state, tenant boundary, sync conflict, or destructive migration, stop and request a decision or propose an ADR with explicit options.
 
 The standard is not merely “the application runs.” The standard is that a school can trust it with a student’s academic future.

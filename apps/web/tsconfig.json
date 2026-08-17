@@ -8,5 +8,9 @@
     "types": ["react", "react-dom", "vite/client", "vitest/globals"]
   },
   "include": ["src", "vite.config.ts"],
-  "references": [{ "path": "../../packages/shared" }, { "path": "../../packages/ui" }]
+  "references": [
+    { "path": "../../packages/domain" },
+    { "path": "../../packages/shared" },
+    { "path": "../../packages/ui" }
+  ]
 }

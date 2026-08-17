@@ -37,8 +37,8 @@ export function ModalShell({
    * (used by content-heavy steps such as the import preview table).
    */
   resizable?: boolean;
-  /** 'lg' is for content-heavy steps (e.g. the import preview table). */
-  size?: 'md' | 'lg';
+  /** 'lg' is for content-heavy steps, 'xl' is for very wide dialogs. */
+  size?: 'md' | 'lg' | 'xl';
   children: React.ReactNode;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -128,7 +128,7 @@ export function ModalShell({
       >
         <div
           className={`flex max-h-[90vh] w-full flex-col overflow-y-auto rounded-3xl border border-white bg-white p-6 shadow-2xl ${
-            dims ? '' : size === 'lg' ? 'max-w-4xl' : 'max-w-md'
+            dims ? '' : size === 'xl' ? 'max-w-6xl' : size === 'lg' ? 'max-w-4xl' : 'max-w-md'
           }`}
         >
           <div className="mb-4 flex items-center justify-between">

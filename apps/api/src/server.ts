@@ -20,9 +20,18 @@ import {
   ClassroomsService,
   ClassSubjectsService,
   CurriculumService,
+  LevelCurriculumService,
   registerClassesRoutes,
+  SubjectGroupsService,
   SubjectsService,
 } from './modules/classes/index.js';
+import {
+  AcademicYearsService,
+  AppreciationService,
+  ConfigurationService,
+  GradingPolicyService,
+  registerConfigurationRoutes,
+} from './modules/configuration/index.js';
 import { ImportsService, registerImportsRoutes } from './modules/imports/index.js';
 import {
   GuardiansService,
@@ -211,6 +220,19 @@ export function buildServer(options: BuildServerOptions = {}) {
         ...(options.auth?.now ? { now: options.auth.now } : {}),
       }),
     });
+    registerConfigurationRoutes(server, {
+      authService,
+      configurationService: new ConfigurationService(database),
+      academicYearsService: new AcademicYearsService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+      gradingPolicyService: new GradingPolicyService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+      appreciationService: new AppreciationService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+    });
     registerPeopleRoutes(server, {
       authService,
       studentsService: new StudentsService(database, {
@@ -232,6 +254,12 @@ export function buildServer(options: BuildServerOptions = {}) {
     registerClassesRoutes(server, {
       authService,
       subjectsService: new SubjectsService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+      levelCurriculumService: new LevelCurriculumService(database, {
+        ...(options.auth?.now ? { now: options.auth.now } : {}),
+      }),
+      subjectGroupsService: new SubjectGroupsService(database, {
         ...(options.auth?.now ? { now: options.auth.now } : {}),
       }),
       classroomsService: new ClassroomsService(database, {

@@ -57,14 +57,19 @@ describe('database foundation migrations', () => {
 
     // Phase 1-3 schema only (the Phase 4 classes data model was renumbered
     // from 0009/0010 to 0014/0015, so those are the ones to exclude here, and
-    // 0016 builds on top of 0014).
+    // 0016 builds on top of 0014; the Phase 3 configuration migrations 0017+
+    // land on a later baseline too).
     const phase3Migrations = readdirSync(migrationsDir)
       .filter(
         (file) =>
           file.endsWith('.sql') &&
           !file.startsWith('0014') &&
           !file.startsWith('0015') &&
-          !file.startsWith('0016')
+          !file.startsWith('0016') &&
+          !file.startsWith('0017') &&
+          !file.startsWith('0018') &&
+          !file.startsWith('0019') &&
+          !file.startsWith('0020')
       )
       .sort();
     for (const migrationFile of phase3Migrations) {

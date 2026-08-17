@@ -1,7 +1,7 @@
 import { APP_NAME, type PublicAuthUser, type SchoolModuleName } from '@edutrack/shared';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { DesktopDeploymentStatus } from '../../desktopStatus';
+import type { DesktopDeploymentStatus } from '../../lib/desktopStatus';
 import { clearAccessToken, useLogoutAction, type LogoutClient } from '../auth';
 import type { SetupStateResponse } from '@edutrack/shared';
 import { lazy, Suspense } from 'react';
@@ -23,6 +23,9 @@ const StudentsModule = lazy(() =>
 );
 const TeachersModule = lazy(() =>
   import('../teachers/TeachersModule').then((m) => ({ default: m.TeachersModule }))
+);
+const ConfigurationModule = lazy(() =>
+  import('../configuration/ConfigurationModule').then((m) => ({ default: m.ConfigurationModule }))
 );
 
 // ---------------------------------------------------------------------------
@@ -151,6 +154,32 @@ function ClassesIcon() {
   );
 }
 
+/** Sliders icon for the permanent Configuration area (roadmap §9.1). */
+function SlidersIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      viewBox="0 0 24 24"
+    >
+      <line x1="4" x2="4" y1="21" y2="14" />
+      <line x1="4" x2="4" y1="10" y2="3" />
+      <line x1="12" x2="12" y1="21" y2="12" />
+      <line x1="12" x2="12" y1="8" y2="3" />
+      <line x1="20" x2="20" y1="21" y2="16" />
+      <line x1="20" x2="20" y1="12" y2="3" />
+      <line x1="2" x2="6" y1="14" y2="14" />
+      <line x1="10" x2="14" y1="8" y2="8" />
+      <line x1="18" x2="22" y1="16" y2="16" />
+    </svg>
+  );
+}
+
 function SearchIcon() {
   return (
     <svg
@@ -223,6 +252,8 @@ const MODULE_NAV_CONFIG: Partial<Record<SchoolModuleName, Omit<NavItem, 'moduleN
   STUDENTS: { labelKey: 'setup.modules.STUDENTS', icon: <PeopleIcon /> },
   TEACHERS: { labelKey: 'setup.modules.TEACHERS', icon: <TeacherIcon /> },
   CLASSES: { labelKey: 'setup.modules.CLASSES', icon: <ClassesIcon /> },
+  // Permanent Configuration area (roadmap §9.1): readiness + every section.
+  CONFIGURATION: { labelKey: 'setup.modules.CONFIGURATION', icon: <SlidersIcon /> },
 };
 
 // ---------------------------------------------------------------------------
@@ -527,6 +558,15 @@ export function MainAppShell({
               <ClassesModule
                 apiBaseUrl={apiBaseUrl}
                 {...(capabilityToken ? { capabilityToken } : {})}
+                onSessionExpired={handleSessionExpired}
+                {...(onSetupStateChange ? { onSetupStateChange } : {})}
+                setupState={setupState}
+              />
+            ) : activeModule === 'CONFIGURATION' ? (
+              <ConfigurationModule
+                apiBaseUrl={apiBaseUrl}
+                {...(capabilityToken ? { capabilityToken } : {})}
+                onNavigate={setActiveModule}
                 onSessionExpired={handleSessionExpired}
                 {...(onSetupStateChange ? { onSetupStateChange } : {})}
                 setupState={setupState}

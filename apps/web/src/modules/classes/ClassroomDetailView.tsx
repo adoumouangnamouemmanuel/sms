@@ -6,6 +6,7 @@ import type {
   CurriculumCopyPreviewRequest,
   CurriculumCopyPreviewResponse,
   EnrolStudentsResponse,
+  LevelCurriculumView,
   SubjectResponse,
   TransferStudentRequest,
 } from '@edutrack/shared';
@@ -74,6 +75,7 @@ export interface DetailApi {
     input: AssignClassSubjectRequest,
     options?: ClassesRequestOptions
   ): Promise<ClassSubjectView>;
+  levelCurriculum(options?: ClassesRequestOptions): Promise<LevelCurriculumView[]>;
   updateAssignment(
     id: string,
     input: Parameters<typeof updateClassSubject>[2],
@@ -516,6 +518,7 @@ export function ClassroomDetailView({
       {assignOpen ? (
         <AssignSubjectModal
           api={api}
+          classLevelId={classroom.classroom.classLevelId}
           classroomId={classroom.classroom.id}
           requestOptions={requestOptions()}
           onClose={() => {
@@ -726,6 +729,13 @@ function useDetailApi(apiBaseUrl: string | null, client?: ClassesClient): Detail
           await listTeachers(apiBaseUrl ?? '', { limit: 100, offset: 0, status: 'active' }, options)
         ).items;
       },
+      levelCurriculum: async (options) => {
+        if (client?.listLevelCurriculums) {
+          return (await client.listLevelCurriculums(options)).items;
+        }
+        const { listLevelCurriculums } = await import('./classesApi');
+        return (await listLevelCurriculums(apiBaseUrl ?? '', options)).items;
+      },
       archive: (classroomId, input, options) =>
         client
           ? client.archiveClassroom(classroomId, input, options)
@@ -877,12 +887,14 @@ function ClassSubjectRow({
 
 function AssignSubjectModal({
   api,
+  classLevelId,
   classroomId,
   requestOptions,
   onClose,
   onSubmit,
 }: {
   api: DetailApi;
+  classLevelId: string;
   classroomId: string;
   requestOptions: ClassesRequestOptions;
   onClose: () => void;
@@ -904,6 +916,11 @@ function AssignSubjectModal({
   const [isRequired, setIsRequired] = useState(true);
   const [teacherId, setTeacherId] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  // Coefficient of the selected subject in this class's level curriculum:
+  // the natural default so per-class assignments inherit the level coefficient
+  // (design §4.3) instead of silently conflicting with it.
+  const [levelCoefficients, setLevelCoefficients] = useState<Map<string, number>>(() => new Map());
+  const [levelName, setLevelName] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -923,10 +940,37 @@ function AssignSubjectModal({
         }
       })
       .catch(() => undefined);
+    void api
+      .levelCurriculum(requestOptions)
+      .then((items) => {
+        if (cancelled) {
+          return;
+        }
+        const level = items.find((item) => item.levelId === classLevelId);
+        if (level) {
+          setLevelName(level.levelName);
+          setLevelCoefficients(
+            new Map(level.entries.map((entry) => [entry.subjectId, entry.coefficient]))
+          );
+        }
+      })
+      .catch(() => undefined);
     return () => {
       cancelled = true;
     };
-  }, [api, requestOptions]);
+  }, [api, classLevelId, requestOptions]);
+
+  // When a subject is picked, prefill the coefficient from the level
+  // curriculum if defined there; keep whatever the user typed otherwise.
+  const handleSubjectChange = (nextSubjectId: string) => {
+    setSubjectId(nextSubjectId);
+    const levelCoefficient = levelCoefficients.get(nextSubjectId);
+    if (levelCoefficient !== undefined) {
+      setCoefficient(String(levelCoefficient));
+    }
+  };
+
+  const levelCoefficient = subjectId ? levelCoefficients.get(subjectId) : undefined;
 
   const fieldClassName = `${formInputClassName} h-11`;
   const selectClassName = `${formSelectClassName} h-11`;
@@ -963,7 +1007,7 @@ function AssignSubjectModal({
           <select
             className={selectClassName}
             onChange={(event) => {
-              setSubjectId(event.target.value);
+              handleSubjectChange(event.target.value);
             }}
             required
             value={subjectId}
@@ -993,6 +1037,14 @@ function AssignSubjectModal({
             type="number"
             value={coefficient}
           />
+          {levelCoefficient !== undefined && levelName ? (
+            <span className="text-[11px] font-semibold text-teal-600">
+              {t('classes.curriculum.levelCoefficientHint', {
+                coefficient: String(levelCoefficient),
+                level: levelName,
+              })}
+            </span>
+          ) : null}
         </label>
         <label className="flex items-center gap-2.5 rounded-xl border border-slate-200/70 bg-slate-50/60 px-4 py-3">
           <input

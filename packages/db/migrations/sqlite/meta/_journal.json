@@ -99,6 +99,34 @@
       "when": 1787330000000,
       "tag": "0016_class_enrollment_consistency",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "5",
+      "when": 1787500000000,
+      "tag": "0017_configuration_module",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "5",
+      "when": 1787600000000,
+      "tag": "0018_academic_year_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "5",
+      "when": 1787700000000,
+      "tag": "0019_structure_configuration",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "5",
+      "when": 1787800000000,
+      "tag": "0020_grading_policy",
+      "breakpoints": true
     }
   ]
 }

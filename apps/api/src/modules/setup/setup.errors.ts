@@ -1,3 +1,5 @@
+import type { SetupModuleStep } from '@edutrack/shared';
+
 export type SetupErrorCode =
   | 'CLASS_LEVELS_REQUIRED'
   | 'FORBIDDEN'
@@ -5,6 +7,7 @@ export type SetupErrorCode =
   | 'INVALID_CLASS_LEVELS'
   | 'INVALID_SETUP_STEP'
   | 'INVALID_TERMS'
+  | 'MODULE_STEP_DATA_REQUIRED'
   | 'SCHOOL_NOT_FOUND'
   | 'SETUP_FAILED';
 
@@ -13,7 +16,8 @@ export class SetupServiceError extends Error {
   constructor(
     readonly code: SetupErrorCode,
     readonly statusCode: number,
-    readonly publicMessage: string
+    readonly publicMessage: string,
+    readonly fields?: Record<string, string | string[]>
   ) {
     super(publicMessage);
     this.name = 'SetupServiceError';
@@ -49,5 +53,16 @@ export function classLevelsRequired() {
     'CLASS_LEVELS_REQUIRED',
     409,
     'Ajoutez au moins un niveau de classe avant de terminer la configuration.'
+  );
+}
+
+export function moduleStepDataRequired(step: SetupModuleStep) {
+  // The public message stays generic; clients localize the actionable text
+  // via the stable code + step, never by parsing raw French.
+  return new SetupServiceError(
+    'MODULE_STEP_DATA_REQUIRED',
+    409,
+    'Complétez cette étape avant de continuer.',
+    { step }
   );
 }

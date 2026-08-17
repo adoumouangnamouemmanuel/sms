@@ -5,7 +5,7 @@ import type {
   ResetPasswordRequest,
 } from '@edutrack/shared';
 import { SIDECAR_CAPABILITY_HEADER } from '@edutrack/shared';
-import { fetchWithTimeout } from '../../httpClient';
+import { fetchWithTimeout } from '../../lib/httpClient';
 import { AuthApiError } from './authErrors';
 import { clearAccessToken, createAuthHeaders, rememberAccessToken } from './authSession';
 

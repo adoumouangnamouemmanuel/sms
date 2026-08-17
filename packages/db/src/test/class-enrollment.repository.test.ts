@@ -161,8 +161,8 @@ describe('class-enrollment repository', () => {
     const secondYearId = randomUUID();
     sqlite
       .prepare(
-        `INSERT INTO academic_year (id, school_id, label, start_date, end_date, is_current)
-         VALUES (?, ?, ?, ?, ?, 0)`
+        `INSERT INTO academic_year (id, school_id, label, start_date, end_date, is_current, status)
+         VALUES (?, ?, ?, ?, ?, 0, 'CLOSED')`
       )
       .run(secondYearId, firstSchool.id, '2027-2028', '2027-09-01', '2028-06-30');
     const firstClassroom = createClassroomRepository(db, tenant).create({

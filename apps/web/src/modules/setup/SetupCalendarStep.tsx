@@ -1,6 +1,5 @@
 import type { SetupCalendarRequest, TermSystem } from '@edutrack/shared';
 import { useTranslation } from 'react-i18next';
-import { DatePicker } from '../../components/DatePicker';
 import { createSuggestedTerms } from './setupSteps';
 import { WizardPrimaryButton, WizardSecondaryButton } from './SetupProfileStep';
 
@@ -213,7 +212,15 @@ function CalendarField({ label, onChange, type = 'text', value }: CalendarFieldP
     <label className="flex flex-col gap-2">
       <span className="text-sm font-semibold text-slate-800">{label}</span>
       {type === 'date' ? (
-        <DatePicker onChange={onChange} value={value} />
+        <input
+          className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-teal-500 focus:ring-4 focus:ring-teal-600/10"
+          onChange={(event) => {
+            onChange(event.target.value);
+          }}
+          required
+          type="date"
+          value={value}
+        />
       ) : (
         <input
           className="h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-teal-500 focus:ring-4 focus:ring-teal-600/10"

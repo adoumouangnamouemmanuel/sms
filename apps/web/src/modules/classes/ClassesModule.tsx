@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next';
 import type { ClassesClient } from './useClassesState';
 import { ClassroomsView } from './ClassroomsView';
 import { EnrolmentView } from './EnrolmentView';
+import { LevelCurriculumView } from './LevelCurriculumView';
 import { LevelsView } from './LevelsView';
+import { SubjectGroupsView } from './SubjectGroupsView';
 import { SubjectsView } from './SubjectsView';
 
 export interface ClassesModuleProps {
@@ -16,7 +18,8 @@ export interface ClassesModuleProps {
   onSessionExpired?: () => void;
 }
 
-export type ClassesTabId = 'subjects' | 'classrooms' | 'enrolment' | 'levels';
+export type ClassesTabId =
+  'subjects' | 'classrooms' | 'enrolment' | 'levels' | 'curriculum' | 'groups';
 
 export function ClassesModule({
   apiBaseUrl,
@@ -32,6 +35,8 @@ export function ClassesModule({
   const tabs: { id: ClassesTabId; label: string }[] = [
     { id: 'classrooms', label: t('classes.tabs.classrooms') },
     { id: 'subjects', label: t('classes.tabs.subjects') },
+    { id: 'curriculum', label: t('classes.tabs.curriculum') },
+    { id: 'groups', label: t('classes.tabs.groups') },
     { id: 'enrolment', label: t('classes.tabs.enrolment') },
     { id: 'levels', label: t('classes.tabs.levels') },
   ];
@@ -83,6 +88,20 @@ export function ClassesModule({
         />
       ) : tab === 'subjects' ? (
         <SubjectsView
+          apiBaseUrl={apiBaseUrl}
+          {...(capabilityToken ? { capabilityToken } : {})}
+          {...(client ? { client } : {})}
+          {...(onSessionExpired ? { onSessionExpired } : {})}
+        />
+      ) : tab === 'curriculum' ? (
+        <LevelCurriculumView
+          apiBaseUrl={apiBaseUrl}
+          {...(capabilityToken ? { capabilityToken } : {})}
+          {...(client ? { client } : {})}
+          {...(onSessionExpired ? { onSessionExpired } : {})}
+        />
+      ) : tab === 'groups' ? (
+        <SubjectGroupsView
           apiBaseUrl={apiBaseUrl}
           {...(capabilityToken ? { capabilityToken } : {})}
           {...(client ? { client } : {})}

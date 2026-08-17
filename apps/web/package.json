@@ -11,6 +11,7 @@
     "test": "vitest run --config vite.config.ts"
   },
   "dependencies": {
+    "@edutrack/domain": "workspace:*",
     "@edutrack/shared": "workspace:*",
     "@edutrack/ui": "workspace:*",
     "@tauri-apps/api": "2.9.0",

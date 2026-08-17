@@ -16,5 +16,6 @@ export function registerSetupRoutes(server: FastifyInstance, options: RegisterSe
   server.put('/setup/profile', controller.saveProfile);
   server.put('/setup/calendar', controller.saveCalendar);
   server.put('/setup/class-levels', controller.saveClassLevels);
+  server.put('/setup/step', controller.advanceStep);
   server.post('/setup/complete', controller.complete);
 }

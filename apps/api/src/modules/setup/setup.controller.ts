@@ -3,6 +3,7 @@ import { AuthServiceError, parseAuthorizationHeader, type AuthService } from '..
 import { readHeader } from '../auth/auth.cookies.js';
 import type { RequestAuditContext } from '../auth/auth.types.js';
 import {
+  advanceSetupStepRequestSchema,
   setupCalendarRequestSchema,
   setupClassLevelsRequestSchema,
   setupSchoolProfileRequestSchema,
@@ -103,6 +104,30 @@ export class SetupController {
     }
   };
 
+  readonly advanceStep = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedBody = advanceSetupStepRequestSchema.safeParse(request.body);
+
+    if (!parsedBody.success) {
+      return sendValidationError(reply, parsedBody.error);
+    }
+
+    try {
+      const actor = await this.authenticateRequest(request);
+
+      return await reply.send({
+        success: true,
+        data: this.setupService.advanceModuleStep(
+          actor,
+          parsedBody.data.step,
+          getRequestAuditContext(request)
+        ),
+        message: 'Etape de configuration validee.',
+      });
+    } catch (error) {
+      return sendSetupError(reply, error);
+    }
+  };
+
   readonly complete = async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const actor = await this.authenticateRequest(request);
@@ -135,6 +160,9 @@ function sendSetupError(reply: FastifyReply, error: unknown) {
     error: {
       code: publicError.code,
       message: publicError.publicMessage,
+      ...(publicError instanceof SetupServiceError && publicError.fields
+        ? { fields: publicError.fields }
+        : {}),
     },
   });
 }

@@ -18,7 +18,7 @@ import {
   type UpdateStudentGuardianLinkRequest,
   type UpdateStudentRequest,
 } from '@edutrack/shared';
-import { fetchWithTimeout } from '../../httpClient';
+import { fetchWithTimeout } from '../../lib/httpClient';
 import { createAuthHeaders } from '../auth';
 import { StudentsApiError } from './studentsErrors';
 

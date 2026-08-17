@@ -9,9 +9,12 @@ export type ClassesErrorCode =
   | 'CLASS_LEVEL_NOT_FOUND'
   | 'ENROLLMENT_NOT_FOUND'
   | 'FORBIDDEN'
+  | 'LEVEL_CURRICULUM_NOT_FOUND'
   | 'STUDENT_NOT_FOUND'
   | 'STUDENT_ALREADY_ENROLLED'
   | 'SUBJECT_CODE_EXISTS'
+  | 'SUBJECT_GROUP_NAME_EXISTS'
+  | 'SUBJECT_GROUP_NOT_FOUND'
   | 'SUBJECT_NOT_FOUND'
   | 'TEACHER_NOT_FOUND'
   | 'TRANSFER_SAME_CLASSROOM'
@@ -135,5 +138,25 @@ export function versionConflict() {
     'VERSION_CONFLICT',
     409,
     'Ce dossier a été modifié depuis votre dernière consultation. Rechargez-le avant de réessayer.'
+  );
+}
+
+export function levelCurriculumNotFound() {
+  return new ClassesServiceError(
+    'LEVEL_CURRICULUM_NOT_FOUND',
+    404,
+    'Niveau introuvable pour le curriculum.'
+  );
+}
+
+export function subjectGroupNotFound() {
+  return new ClassesServiceError('SUBJECT_GROUP_NOT_FOUND', 404, 'Groupe de matières introuvable.');
+}
+
+export function subjectGroupNameAlreadyExists() {
+  return new ClassesServiceError(
+    'SUBJECT_GROUP_NAME_EXISTS',
+    409,
+    'Un groupe de matières avec ce nom existe déjà.'
   );
 }

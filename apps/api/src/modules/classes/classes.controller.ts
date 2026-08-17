@@ -5,15 +5,19 @@ import {
   classSubjectListQuerySchema,
   classroomListQuerySchema,
   createClassroomRequestSchema,
+  createSubjectGroupRequestSchema,
   createSubjectRequestSchema,
   curriculumCopyConfirmRequestSchema,
   curriculumCopyPreviewRequestSchema,
   enrolOptionalSubjectsRequestSchema,
   enrolStudentsRequestSchema,
+  saveLevelCurriculumRequestSchema,
+  setSubjectGroupMembersRequestSchema,
   subjectListQuerySchema,
   transferStudentRequestSchema,
   updateClassSubjectRequestSchema,
   updateClassroomRequestSchema,
+  updateSubjectGroupRequestSchema,
   updateSubjectRequestSchema,
 } from '@edutrack/shared';
 import { AuthServiceError, parseAuthorizationHeader, type AuthService } from '../auth/index.js';
@@ -24,6 +28,8 @@ import type { ClassEnrollmentsService } from './class-enrollments.service.js';
 import type { ClassSubjectsService } from './class-subjects.service.js';
 import type { ClassroomsService } from './classrooms.service.js';
 import type { CurriculumService } from './curriculum.service.js';
+import type { LevelCurriculumService } from './level-curriculum.service.js';
+import type { SubjectGroupsService } from './subject-groups.service.js';
 import type { SubjectsService } from './subjects.service.js';
 
 /** Handles classes HTTP validation, auth, and response envelopes. */
@@ -34,7 +40,9 @@ export class ClassesController {
     private readonly classroomsService: ClassroomsService,
     private readonly classSubjectsService: ClassSubjectsService,
     private readonly classEnrollmentsService: ClassEnrollmentsService,
-    private readonly curriculumService: CurriculumService
+    private readonly curriculumService: CurriculumService,
+    private readonly levelCurriculumService: LevelCurriculumService,
+    private readonly subjectGroupsService: SubjectGroupsService
   ) {}
 
   // ---- Subjects -----------------------------------------------------------
@@ -521,6 +529,168 @@ export class ClassesController {
           getRequestAuditContext(request)
         ),
         message: 'Curriculum copie.',
+      });
+    } catch (error) {
+      return sendClassesError(reply, error);
+    }
+  };
+
+  // ---- Level curriculum (roadmap §9.5) -----------------------------------
+
+  readonly listLevelCurriculums = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const actor = await this.authenticateRequest(request);
+
+      return await reply.send({
+        success: true,
+        data: this.levelCurriculumService.list(actor),
+        message: 'Curriculum par niveau chargé.',
+      });
+    } catch (error) {
+      return sendClassesError(reply, error);
+    }
+  };
+
+  readonly saveLevelCurriculum = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedBody = saveLevelCurriculumRequestSchema.safeParse(request.body);
+
+    if (!parsedBody.success) {
+      return sendValidationError(reply, parsedBody.error);
+    }
+
+    try {
+      const actor = await this.authenticateRequest(request);
+
+      return await reply.send({
+        success: true,
+        data: this.levelCurriculumService.save(
+          actor,
+          parsedBody.data,
+          getRequestAuditContext(request)
+        ),
+        message: 'Curriculum du niveau enregistré.',
+      });
+    } catch (error) {
+      return sendClassesError(reply, error);
+    }
+  };
+
+  // ---- Subject groups (roadmap §9.6) -------------------------------------
+
+  readonly listSubjectGroups = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const actor = await this.authenticateRequest(request);
+
+      return await reply.send({
+        success: true,
+        data: this.subjectGroupsService.list(actor),
+        message: 'Groupes de matières chargés.',
+      });
+    } catch (error) {
+      return sendClassesError(reply, error);
+    }
+  };
+
+  readonly createSubjectGroup = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedBody = createSubjectGroupRequestSchema.safeParse(request.body);
+
+    if (!parsedBody.success) {
+      return sendValidationError(reply, parsedBody.error);
+    }
+
+    try {
+      const actor = await this.authenticateRequest(request);
+
+      return await reply.send({
+        success: true,
+        data: this.subjectGroupsService.create(
+          actor,
+          parsedBody.data,
+          getRequestAuditContext(request)
+        ),
+        message: 'Groupe de matières créé.',
+      });
+    } catch (error) {
+      return sendClassesError(reply, error);
+    }
+  };
+
+  readonly updateSubjectGroup = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedBody = updateSubjectGroupRequestSchema.safeParse(request.body);
+
+    if (!parsedBody.success) {
+      return sendValidationError(reply, parsedBody.error);
+    }
+
+    try {
+      const actor = await this.authenticateRequest(request);
+
+      return await reply.send({
+        success: true,
+        data: this.subjectGroupsService.update(
+          actor,
+          readParam(request, 'groupId'),
+          parsedBody.data,
+          getRequestAuditContext(request)
+        ),
+        message: 'Groupe de matières mis à jour.',
+      });
+    } catch (error) {
+      return sendClassesError(reply, error);
+    }
+  };
+
+  readonly archiveSubjectGroup = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const actor = await this.authenticateRequest(request);
+
+      return await reply.send({
+        success: true,
+        data: this.subjectGroupsService.archive(
+          actor,
+          readParam(request, 'groupId'),
+          getRequestAuditContext(request)
+        ),
+        message: 'Groupe de matières archivé.',
+      });
+    } catch (error) {
+      return sendClassesError(reply, error);
+    }
+  };
+
+  readonly listSubjectGroupMembers = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const actor = await this.authenticateRequest(request);
+
+      return await reply.send({
+        success: true,
+        data: this.subjectGroupsService.listMembers(actor, readParam(request, 'groupId')),
+        message: 'Matières du groupe chargées.',
+      });
+    } catch (error) {
+      return sendClassesError(reply, error);
+    }
+  };
+
+  readonly setSubjectGroupMembers = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedBody = setSubjectGroupMembersRequestSchema.safeParse(request.body);
+
+    if (!parsedBody.success) {
+      return sendValidationError(reply, parsedBody.error);
+    }
+
+    try {
+      const actor = await this.authenticateRequest(request);
+
+      return await reply.send({
+        success: true,
+        data: this.subjectGroupsService.setMembers(
+          actor,
+          readParam(request, 'groupId'),
+          parsedBody.data,
+          getRequestAuditContext(request)
+        ),
+        message: 'Matières du groupe mises à jour.',
       });
     } catch (error) {
       return sendClassesError(reply, error);

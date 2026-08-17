@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ForgotPasswordNotice } from './ForgotPasswordNotice';
 import { useLoginForm, type LoginClient, type LoginFormField } from './useLoginForm';
 import { useLogoutAction, type LogoutClient } from './useLogoutAction';
-import type { DesktopDeploymentStatus } from '../../desktopStatus';
+import type { DesktopDeploymentStatus } from '../../lib/desktopStatus';
 
 export interface LoginScreenProps {
   apiBaseUrl: string | null;

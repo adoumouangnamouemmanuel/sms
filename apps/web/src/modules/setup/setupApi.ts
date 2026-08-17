@@ -1,11 +1,12 @@
 import {
   SIDECAR_CAPABILITY_HEADER,
+  type AdvanceSetupStepRequest,
   type SetupCalendarRequest,
   type SetupClassLevelsRequest,
   type SetupSchoolProfileRequest,
   type SetupStateResponse,
 } from '@edutrack/shared';
-import { fetchWithTimeout } from '../../httpClient';
+import { fetchWithTimeout } from '../../lib/httpClient';
 import { createAuthHeaders } from '../auth';
 import { SetupApiError } from './setupErrors';
 
@@ -53,6 +54,18 @@ export async function saveSetupClassLevels(
   options: SetupRequestOptions = {}
 ) {
   return requestJson<SetupStateResponse>(apiBaseUrl, '/setup/class-levels', {
+    method: 'PUT',
+    body: input,
+    options,
+  });
+}
+
+export async function advanceSetupStep(
+  apiBaseUrl: string,
+  input: AdvanceSetupStepRequest,
+  options: SetupRequestOptions = {}
+) {
+  return requestJson<SetupStateResponse>(apiBaseUrl, '/setup/step', {
     method: 'PUT',
     body: input,
     options,

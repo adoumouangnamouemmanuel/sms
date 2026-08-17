@@ -5,6 +5,10 @@ export const SCHOOL_SETUP_STATUSES = [
   'PROFILE_COMPLETED',
   'CALENDAR_COMPLETED',
   'CLASS_LEVELS_COMPLETED',
+  'SUBJECTS_COMPLETED',
+  'GROUPS_COMPLETED',
+  'GRADING_COMPLETED',
+  'APPRECIATION_COMPLETED',
   'COMPLETED',
 ] as const;
 export type SchoolSetupStatus = (typeof SCHOOL_SETUP_STATUSES)[number];
@@ -18,11 +22,30 @@ export const IMPLEMENTED_SCHOOL_MODULES = [
   'STUDENTS',
   'TEACHERS',
   'CLASSES',
+  'CONFIGURATION',
 ] as const;
 export type SchoolModuleName = (typeof IMPLEMENTED_SCHOOL_MODULES)[number];
 
-export const SETUP_STEP_IDS = ['profile', 'calendar', 'classLevels', 'review'] as const;
+export const SETUP_STEP_IDS = [
+  'profile',
+  'calendar',
+  'classLevels',
+  'subjects',
+  'groups',
+  'grading',
+  'appreciation',
+  'review',
+] as const;
 export type SetupStepId = (typeof SETUP_STEP_IDS)[number];
+
+/** Steps that persist through the module APIs (subjects, groups, policies, scales). */
+export const SETUP_MODULE_STEPS = ['subjects', 'groups', 'grading', 'appreciation'] as const;
+export type SetupModuleStep = (typeof SETUP_MODULE_STEPS)[number];
+
+export const advanceSetupStepRequestSchema = z.object({
+  step: z.enum(SETUP_MODULE_STEPS),
+});
+export type AdvanceSetupStepRequest = z.infer<typeof advanceSetupStepRequestSchema>;
 
 export const defaultSchoolConfiguration = {
   country: 'TD',

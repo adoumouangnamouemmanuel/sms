@@ -1,4 +1,4 @@
-import type { DesktopDeploymentStatus } from '../../desktopStatus';
+import type { DesktopDeploymentStatus } from '../../lib/desktopStatus';
 
 export interface AuthRuntime {
   apiBaseUrl: string | null;

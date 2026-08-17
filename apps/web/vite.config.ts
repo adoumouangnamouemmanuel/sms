@@ -7,6 +7,9 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
+      '@edutrack/domain': fileURLToPath(
+        new URL('../../packages/domain/src/index.ts', import.meta.url)
+      ),
       '@edutrack/shared': fileURLToPath(
         new URL('../../packages/shared/src/index.ts', import.meta.url)
       ),
@@ -40,6 +43,6 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
-    setupFiles: ['src/test/setup.ts'],
+    setupFiles: ['src/test/setup/setup.ts'],
   },
 });

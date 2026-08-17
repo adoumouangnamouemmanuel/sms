@@ -1,8 +1,12 @@
 import {
   createAcademicYearRepository,
+  createAppreciationRepository,
   createAuditLogRepository,
   createClassLevelRepository,
+  createGradingPolicyRepository,
   createSchoolModuleConfigRepository,
+  createSubjectGroupRepository,
+  createSubjectRepository,
   createTenantContext,
   createTenantSchoolRepository,
   createTermRepository,
@@ -16,6 +20,7 @@ import {
   type SetupCalendarRequest,
   type SetupClassLevelInput,
   type SetupClassLevelsRequest,
+  type SetupModuleStep,
   type SetupSchoolProfileRequest,
   type SetupStateResponse,
   type SetupStepId,
@@ -28,6 +33,7 @@ import {
   invalidClassLevels,
   invalidSetupStep,
   invalidTerms,
+  moduleStepDataRequired,
   schoolNotFound,
   setupForbidden,
 } from './setup.errors.js';
@@ -37,7 +43,19 @@ const statusRank: Record<SchoolSetupStatus, number> = {
   PROFILE_COMPLETED: 1,
   CALENDAR_COMPLETED: 2,
   CLASS_LEVELS_COMPLETED: 3,
-  COMPLETED: 4,
+  SUBJECTS_COMPLETED: 4,
+  GROUPS_COMPLETED: 5,
+  GRADING_COMPLETED: 6,
+  APPRECIATION_COMPLETED: 7,
+  COMPLETED: 8,
+};
+
+/** Which completed status each module step must reach to advance past it. */
+const stepCompletionStatus: Record<SetupModuleStep, SchoolSetupStatus> = {
+  subjects: 'SUBJECTS_COMPLETED',
+  groups: 'GROUPS_COMPLETED',
+  grading: 'GRADING_COMPLETED',
+  appreciation: 'APPRECIATION_COMPLETED',
 };
 
 export interface SetupServiceOptions {
@@ -182,6 +200,44 @@ export class SetupService {
     });
   }
 
+  /**
+   * Marks a module-backed wizard step complete (roadmap §9.11). The step's
+   * data itself is persisted by the module APIs (subjects, subject groups,
+   * grading policies, appreciation scales); this only validates the linear
+   * wizard order and that the prerequisite data actually exists, then
+   * advances the school setup status.
+   */
+  advanceModuleStep(
+    actor: AuthenticatedUser,
+    step: SetupModuleStep,
+    requestContext: RequestAuditContext = {}
+  ): SetupStateResponse {
+    this.assertSchoolMaster(actor);
+    const tenant = createTenantContext(actor.schoolId);
+    const updatedAt = this.now().toISOString();
+
+    return withTransaction(this.db, (transaction) => {
+      const schoolRepository = createTenantSchoolRepository(transaction, tenant);
+      const school = requireSchool(schoolRepository.findActive());
+
+      assertPrerequisiteStatus(school.setupStatus, step);
+      assertModuleStepData(transaction, tenant, step);
+
+      const nextStatus = stepCompletionStatus[step];
+      schoolRepository.updateSetupStatus(nextStatus, updatedAt);
+      createAuditLogRepository(transaction, tenant).createEvent({
+        actorUserId: actor.id,
+        action: 'SETUP_STEP_ADVANCE',
+        targetType: 'school',
+        targetId: actor.schoolId,
+        correlationId: requestContext.correlationId ?? null,
+        metadata: { step, setupStatus: nextStatus },
+      });
+
+      return this.readState(actor.schoolId, transaction);
+    });
+  }
+
   completeSetup(
     actor: AuthenticatedUser,
     requestContext: RequestAuditContext = {}
@@ -199,7 +255,8 @@ export class SetupService {
         : [];
       const classLevels = createClassLevelRepository(transaction, tenant).listActive();
 
-      assertStatusAtLeast(school.setupStatus, 'CLASS_LEVELS_COMPLETED');
+      // Grade-entry readiness requires the full guided chain (roadmap §9.13).
+      assertStatusAtLeast(school.setupStatus, 'APPRECIATION_COMPLETED');
 
       if (!academicYear || terms.length === 0 || classLevels.length === 0) {
         throw classLevelsRequired();
@@ -404,6 +461,14 @@ function resolveNextStep(status: SchoolSetupStatus): SetupStepId {
     case 'CALENDAR_COMPLETED':
       return 'classLevels';
     case 'CLASS_LEVELS_COMPLETED':
+      return 'subjects';
+    case 'SUBJECTS_COMPLETED':
+      return 'groups';
+    case 'GROUPS_COMPLETED':
+      return 'grading';
+    case 'GRADING_COMPLETED':
+      return 'appreciation';
+    case 'APPRECIATION_COMPLETED':
     case 'COMPLETED':
       return 'review';
   }
@@ -417,6 +482,69 @@ function assertStatusAtLeast(currentStatus: SchoolSetupStatus, minimumStatus: Sc
   if (statusRank[currentStatus] < statusRank[minimumStatus]) {
     throw invalidSetupStep();
   }
+}
+
+/** The wizard advances strictly in order; each module step needs its exact predecessor. */
+function assertPrerequisiteStatus(currentStatus: SchoolSetupStatus, step: SetupModuleStep) {
+  const prerequisites: Record<SetupModuleStep, SchoolSetupStatus> = {
+    subjects: 'CLASS_LEVELS_COMPLETED',
+    groups: 'SUBJECTS_COMPLETED',
+    grading: 'GROUPS_COMPLETED',
+    appreciation: 'GRADING_COMPLETED',
+  };
+
+  // Require the exact predecessor status so an earlier step can never be
+  // replayed after a later one and overwrite the higher status (rollback).
+  if (currentStatus !== prerequisites[step]) {
+    throw invalidSetupStep();
+  }
+}
+
+/** Validates the data the module step is meant to produce actually exists. */
+function assertModuleStepData(
+  executor: EduTrackDatabase,
+  tenant: ReturnType<typeof createTenantContext>,
+  step: SetupModuleStep
+) {
+  const repositories = createModuleStepRepositories(executor, tenant);
+
+  switch (step) {
+    case 'subjects':
+      if (repositories.subjects.count({ status: 'active' }) === 0) {
+        throw moduleStepDataRequired('subjects');
+      }
+      break;
+    case 'groups':
+      if (repositories.groups.listWithCounts().length === 0) {
+        throw moduleStepDataRequired('groups');
+      }
+      break;
+    case 'grading':
+      if (
+        repositories.policies.listSummaries().filter((policy) => policy.status === 'PUBLISHED')
+          .length === 0
+      ) {
+        throw moduleStepDataRequired('grading');
+      }
+      break;
+    case 'appreciation':
+      if (repositories.scales.list().filter((scale) => scale.status === 'PUBLISHED').length === 0) {
+        throw moduleStepDataRequired('appreciation');
+      }
+      break;
+  }
+}
+
+function createModuleStepRepositories(
+  executor: EduTrackDatabase,
+  tenant: ReturnType<typeof createTenantContext>
+) {
+  return {
+    subjects: createSubjectRepository(executor, tenant),
+    groups: createSubjectGroupRepository(executor, tenant),
+    policies: createGradingPolicyRepository(executor, tenant),
+    scales: createAppreciationRepository(executor, tenant),
+  };
 }
 
 function requireSchool(school: SafeSchoolRecord | undefined) {

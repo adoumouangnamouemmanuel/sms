@@ -7,6 +7,7 @@ import type {
   ClassroomRosterResponse,
   ClassSubjectView,
   CreateClassroomRequest,
+  CreateSubjectGroupRequest,
   CreateSubjectRequest,
   CurriculumCopyConfirmRequest,
   CurriculumCopyPreviewRequest,
@@ -14,16 +15,23 @@ import type {
   EnrolOptionalSubjectsRequest,
   EnrolStudentsRequest,
   EnrolStudentsResponse,
+  LevelCurriculumsResponse,
   PaginatedClassroomsResponse,
   PaginatedSubjectsResponse,
   RecordStatus,
+  SaveLevelCurriculumRequest,
+  SetSubjectGroupMembersRequest,
   StudentSubjectEnrollmentResponse,
   StudentsMissingClassResponse,
   SubjectCategory,
+  SubjectGroupMembersResponse,
+  SubjectGroupsResponse,
+  SubjectGroupView,
   SubjectListQuery,
   SubjectResponse,
   TransferStudentRequest,
   UpdateClassroomRequest,
+  UpdateSubjectGroupRequest,
   UpdateSubjectRequest,
 } from '@edutrack/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -104,6 +112,36 @@ export interface ClassesClient {
     classroomId: string,
     options?: ClassesRequestOptions
   ): Promise<ClassSubjectView[]>;
+  /** Level curriculum (roadmap §9.5) - optional test seams. */
+  listLevelCurriculums?: (options?: ClassesRequestOptions) => Promise<LevelCurriculumsResponse>;
+  saveLevelCurriculum?: (
+    input: SaveLevelCurriculumRequest,
+    options?: ClassesRequestOptions
+  ) => Promise<LevelCurriculumsResponse>;
+  /** Subject groups (roadmap §9.6) - optional test seams. */
+  listSubjectGroups?: (options?: ClassesRequestOptions) => Promise<SubjectGroupsResponse>;
+  createSubjectGroup?: (
+    input: CreateSubjectGroupRequest,
+    options?: ClassesRequestOptions
+  ) => Promise<SubjectGroupView>;
+  updateSubjectGroup?: (
+    groupId: string,
+    input: UpdateSubjectGroupRequest,
+    options?: ClassesRequestOptions
+  ) => Promise<SubjectGroupView>;
+  archiveSubjectGroup?: (
+    groupId: string,
+    options?: ClassesRequestOptions
+  ) => Promise<SubjectGroupView>;
+  listSubjectGroupMembers?: (
+    groupId: string,
+    options?: ClassesRequestOptions
+  ) => Promise<SubjectGroupMembersResponse>;
+  setSubjectGroupMembers?: (
+    groupId: string,
+    input: SetSubjectGroupMembersRequest,
+    options?: ClassesRequestOptions
+  ) => Promise<SubjectGroupMembersResponse>;
   listSubjects(
     query: SubjectListQuery,
     options?: ClassesRequestOptions
