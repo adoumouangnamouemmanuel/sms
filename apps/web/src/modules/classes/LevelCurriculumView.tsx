@@ -241,7 +241,7 @@ export function LevelCurriculumView({
       </div>
 
       <section className="rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] lg:p-8">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
             <h3 className="text-base font-black tracking-tight text-slate-900">
               {t('classes.curriculumLevel.title')}
@@ -251,22 +251,75 @@ export function LevelCurriculumView({
             </p>
           </div>
 
-          {levelOptions.length > 0 ? (
-            <select
-              aria-label={t('classes.curriculumLevel.level')}
-              className="h-11 cursor-pointer rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[13px] font-bold text-slate-700 outline-none transition-all hover:border-slate-300 focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-600/10"
-              onChange={(event) => {
-                selectLevel(event.target.value);
-              }}
-              value={selectedLevelId ?? ''}
-            >
-              {levelOptions.map((item) => (
-                <option key={item.levelId} value={item.levelId}>
-                  {item.levelName}
-                </option>
-              ))}
-            </select>
-          ) : null}
+          {levelOptions.length > 1 && (
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="hidden text-xs font-semibold text-slate-500 sm:inline-block">
+                {t('classes.curriculumLevel.copyFrom')}
+              </span>
+              <select
+                aria-label={t('classes.curriculumLevel.copyFrom')}
+                className="h-10 cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 outline-none transition-all hover:border-slate-300 focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20"
+                defaultValue=""
+                onChange={(event) => {
+                  const sourceLevelId = event.target.value;
+                  if (!sourceLevelId) return;
+                  const source = curriculums?.items.find((item) => item.levelId === sourceLevelId);
+                  if (source) {
+                    setDraft(
+                      Object.fromEntries(
+                        source.entries.map((entry) => [
+                          entry.subjectId,
+                          { coefficient: entry.coefficient, isRequired: entry.isRequired },
+                        ])
+                      )
+                    );
+                    setSaved(false);
+                    // Reset select after copy
+                    event.target.value = '';
+                  }
+                }}
+              >
+                <option disabled value="">Sélectionner un niveau...</option>
+                {levelOptions
+                  .filter((l) => l.levelId !== selectedLevelId && l.entries.length > 0)
+                  .map((item) => (
+                    <option key={item.levelId} value={item.levelId}>
+                      {item.levelName}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        <div className="mb-6 flex flex-wrap items-center gap-2">
+          {levelOptions.map((item) => {
+            const isSelected = item.levelId === selectedLevelId;
+            const hasCurriculum = item.entries.length > 0;
+            
+            return (
+              <button
+                key={item.levelId}
+                className={`relative flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
+                  isSelected
+                    ? 'bg-slate-800 text-white shadow-md'
+                    : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+                onClick={() => selectLevel(item.levelId)}
+                type="button"
+              >
+                {item.levelName}
+                {hasCurriculum && (
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      isSelected ? 'bg-teal-400' : 'bg-teal-500'
+                    }`}
+                    title="Programme configuré"
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {levelOptions.length === 0 ? (
