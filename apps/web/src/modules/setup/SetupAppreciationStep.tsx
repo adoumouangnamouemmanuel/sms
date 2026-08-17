@@ -36,7 +36,11 @@ export function SetupAppreciationStep({
 
       <div className="flex items-center justify-end gap-3 pt-1">
         <WizardSecondaryButton label={t('setup.actions.back')} onClick={onBack} />
-        <WizardPrimaryButton isSaving={isSaving} label={t('setup.actions.saveAndContinue')} onClick={onSubmit} />
+        <WizardPrimaryButton
+          isSaving={isSaving}
+          label={t('setup.actions.saveAndContinue')}
+          onClick={onSubmit}
+        />
       </div>
     </div>
   );

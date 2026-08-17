@@ -5,10 +5,7 @@ import {
   withTransaction,
   type EduTrackDatabase,
 } from '@edutrack/db';
-import {
-  resolvePolicyScope,
-  validatePolicyForPublication,
-} from '@edutrack/domain';
+import { resolvePolicyScope, validatePolicyForPublication } from '@edutrack/domain';
 import type {
   AssignPolicyScopesRequest,
   GradingPoliciesResponse,
@@ -229,12 +226,7 @@ export class GradingPolicyService {
         repository.supersede(previous.id, publishedAt);
       }
 
-      repository.publish(
-        policyId,
-        actor.id,
-        publishedAt,
-        sameLogical[0]?.id ?? null
-      );
+      repository.publish(policyId, actor.id, publishedAt, sameLogical[0]?.id ?? null);
 
       createAuditLogRepository(transaction, tenant).createEvent({
         actorUserId: actor.id,
@@ -370,7 +362,11 @@ export class GradingPolicyService {
    * `school default -> level -> level + subject` hierarchy (design §5.1).
    * Any authenticated user may read the resolution - grade entry shows it.
    */
-  resolve(actor: AuthenticatedUser, levelId: string, subjectId: string | null): ResolvedPolicyResponse {
+  resolve(
+    actor: AuthenticatedUser,
+    levelId: string,
+    subjectId: string | null
+  ): ResolvedPolicyResponse {
     const tenant = createTenantContext(actor.schoolId);
     const repository = createGradingPolicyRepository(this.db, tenant);
 
@@ -494,4 +490,3 @@ function resolutionExplanation(matchedScope: PolicyScopeAssignment['scopeType'])
     }
   }
 }
-

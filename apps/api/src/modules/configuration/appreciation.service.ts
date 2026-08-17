@@ -227,7 +227,11 @@ export class AppreciationService {
         targetType: 'appreciation_scale',
         targetId: id,
         correlationId: requestContext.correlationId ?? null,
-        metadata: { logicalScaleId: existing.logicalScaleId, version: nextVersion, source: scaleId },
+        metadata: {
+          logicalScaleId: existing.logicalScaleId,
+          version: nextVersion,
+          source: scaleId,
+        },
       });
 
       return id;

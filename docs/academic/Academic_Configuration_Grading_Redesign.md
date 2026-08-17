@@ -7,7 +7,7 @@ defines the configuration foundation required before grade entry\
 **Priority:** Correctness, configurability, usability, auditability,
 offline operation, and preservation of official academic history
 
-------------------------------------------------------------------------
+---
 
 ## 1. Purpose
 
@@ -16,18 +16,18 @@ one school as universal application logic.
 
 Real schools may:
 
--   administer a variable number of devoirs/continuous assessments;
--   call the derived average of those assessments `Moyenne des devoirs`,
-    `Évaluation`, `Contrôle continu`, or another school-defined label;
--   use a Composition, Exam, Project, Oral, TP, or other assessment
-    type;
--   combine derived and direct assessment results with school-specific
-    weights;
--   use different grading policies by level and, when necessary, by
-    subject within a level;
--   use different appreciation bands and terminology;
--   print different subsets of the underlying academic data on their
-    bulletins.
+- administer a variable number of devoirs/continuous assessments;
+- call the derived average of those assessments `Moyenne des devoirs`,
+  `Évaluation`, `Contrôle continu`, or another school-defined label;
+- use a Composition, Exam, Project, Oral, TP, or other assessment
+  type;
+- combine derived and direct assessment results with school-specific
+  weights;
+- use different grading policies by level and, when necessary, by
+  subject within a level;
+- use different appreciation bands and terminology;
+- print different subsets of the underlying academic data on their
+  bulletins.
 
 Therefore EduTrack must model **neutral academic concepts** and let each
 school configure terminology, rules, and presentation.
@@ -40,7 +40,7 @@ The core separation is:
 This proposal defines the first three. Bulletin/PDF presentation
 consumes the official results later and must remain a separate concern.
 
-------------------------------------------------------------------------
+---
 
 ## 2. Mandatory architecture principles
 
@@ -55,16 +55,16 @@ the SchoolMaster reviews and confirms.
 
 Never silently assume:
 
--   three devoirs;
--   `/20` forever;
--   `Évaluation = moyenne des devoirs`;
--   `Moyenne des devoirs` as a universal label;
--   `50% continuous assessment + 50% composition`;
--   Composition exists;
--   a blank mark is zero;
--   a blank mark should be ignored;
--   every subject uses the same policy;
--   every level uses the same policy.
+- three devoirs;
+- `/20` forever;
+- `Évaluation = moyenne des devoirs`;
+- `Moyenne des devoirs` as a universal label;
+- `50% continuous assessment + 50% composition`;
+- Composition exists;
+- a blank mark is zero;
+- a blank mark should be ignored;
+- every subject uses the same policy;
+- every level uses the same policy.
 
 ### 2.2 Neutral internal model, school-defined vocabulary
 
@@ -73,14 +73,14 @@ Do not create domain logic whose meaning depends on keys such as
 
 Use stable UUIDs and neutral entities such as:
 
--   grading policy;
--   assessment type;
--   assessment instance;
--   derived result definition;
--   final subject result definition;
--   student assessment result;
--   policy assignment;
--   appreciation scale.
+- grading policy;
+- assessment type;
+- assessment instance;
+- derived result definition;
+- final subject result definition;
+- student assessment result;
+- policy assignment;
+- appreciation scale.
 
 Labels such as `Devoir`, `Évaluation`, `Moy. Dev.`, `Composition`, and
 `Moyenne matière` are configuration.
@@ -91,7 +91,7 @@ A repeatable assessment type is configured once.
 
 Example:
 
-``` text
+```text
 Assessment type: Devoir
 Scale: /20
 Occurrence rule: repeatable
@@ -101,7 +101,7 @@ Maximum occurrences: 6
 
 Teachers then create actual assessment instances for a subject/term:
 
-``` text
+```text
 Devoir 1
 Devoir 2
 Devoir 3
@@ -119,7 +119,7 @@ change existing grades, calculations, validations, transcripts, or PDFs.
 
 Policy lifecycle:
 
-``` text
+```text
 DRAFT -> PUBLISHED -> SUPERSEDED
 ```
 
@@ -134,31 +134,31 @@ be traceable to the exact policy version used.
 
 Examples:
 
--   academic years and terms;
--   levels and classrooms;
--   subjects and coefficients;
--   subject groups/sections;
--   assessment types;
--   grading policies;
--   calculation rules;
--   appreciation bands;
--   validation requirements.
+- academic years and terms;
+- levels and classrooms;
+- subjects and coefficients;
+- subject groups/sections;
+- assessment types;
+- grading policies;
+- calculation rules;
+- appreciation bands;
+- validation requirements.
 
 **Operations are activity inside that structure.**
 
 Examples:
 
--   teacher assignments;
--   student enrolments;
--   creating Devoir 1;
--   entering Amina's mark;
--   submitting grades;
--   validating grades;
--   reopening a validated submission.
+- teacher assignments;
+- student enrolments;
+- creating Devoir 1;
+- entering Amina's mark;
+- submitting grades;
+- validating grades;
+- reopening a validated submission.
 
 Do not mix these concepts merely because both concern academics.
 
-------------------------------------------------------------------------
+---
 
 ## 3. Configuration module
 
@@ -194,7 +194,7 @@ available from `Configuration`.
 
 Do not build a separate onboarding-only configuration implementation.
 
-------------------------------------------------------------------------
+---
 
 ## 4. Academic structure configuration
 
@@ -207,7 +207,7 @@ A school can create academic years with explicit status.
 
 Recommended lifecycle:
 
-``` text
+```text
 DRAFT -> ACTIVE -> CLOSED
 ```
 
@@ -222,12 +222,12 @@ Terms/trimesters/semesters belong to an academic year.
 
 Configuration should allow school-defined labels:
 
--   1er Trimestre;
--   2e Trimestre;
--   3e Trimestre;
--   Semestre 1;
--   Semestre 2;
--   other configured labels.
+- 1er Trimestre;
+- 2e Trimestre;
+- 3e Trimestre;
+- Semestre 1;
+- Semestre 2;
+- other configured labels.
 
 Period order is explicit.
 
@@ -240,18 +240,18 @@ A **level** defines academic structure.
 
 Examples:
 
--   6ème
--   5ème
--   4ème
--   Terminale
+- 6ème
+- 5ème
+- 4ème
+- Terminale
 
 A **classroom** is an operational cohort/container.
 
 Examples:
 
--   6ème A
--   6ème B
--   Terminale C
+- 6ème A
+- 6ème B
+- Terminale C
 
 Curriculum, coefficients, and grading policy should normally be defined
 at level scope and inherited by classrooms.
@@ -267,12 +267,12 @@ Examples are user-defined, not hard-coded.
 
 Each subject may have:
 
--   full display name;
--   short name;
--   optional stable school code;
--   localization labels where supported;
--   active/archive state;
--   subject group/section membership.
+- full display name;
+- short name;
+- optional stable school code;
+- localization labels where supported;
+- active/archive state;
+- subject group/section membership.
 
 ### 4.5 Level curriculum and coefficients
 
@@ -281,19 +281,21 @@ that level and its coefficient.
 
 The UX should support a matrix:
 
-  Matière           6ème   5ème   4ème   3ème
-  --------------- ------ ------ ------ ------
-  Français             2      2      2      2
-  Mathématiques        4      4      4      4
-  Physique           ---    ---      3      3
+Matière 6ème 5ème 4ème 3ème
+
+---
+
+Français 2 2 2 2
+Mathématiques 4 4 4 4
+Physique --- --- 3 3
 
 A populated cell means applicable and displays the coefficient.
 
 Editing a cell should support:
 
--   coefficient;
--   required/optional applicability;
--   active state.
+- coefficient;
+- required/optional applicability;
+- active state.
 
 Coefficients must be validated as positive values according to the
 canonical domain rule selected for V1.
@@ -304,17 +306,17 @@ Schools can group subjects differently.
 
 Examples:
 
--   Matières littéraires;
--   Matières scientifiques;
--   Formation humaine.
+- Matières littéraires;
+- Matières scientifiques;
+- Formation humaine.
 
 A subject group's configuration includes:
 
--   school-defined name;
--   short label if useful;
--   display order;
--   whether the group counts toward an admission/promotion average when
-    that concept is enabled.
+- school-defined name;
+- short label if useful;
+- display order;
+- whether the group counts toward an admission/promotion average when
+  that concept is enabled.
 
 Subject membership is school configuration and must not be inferred
 permanently from a universal subject category.
@@ -322,7 +324,7 @@ permanently from a universal subject category.
 UX should support drag-and-drop or simple assignment with immediate
 preview.
 
-------------------------------------------------------------------------
+---
 
 ## 5. Configuration scope and inheritance
 
@@ -333,7 +335,7 @@ administrative chaos.
 
 Use:
 
-``` text
+```text
 School default
     ↓
 Level override
@@ -384,7 +386,7 @@ Provide:
 Reverting inheritance must not delete historical policy versions already
 used.
 
-------------------------------------------------------------------------
+---
 
 ## 6. Grading policy model
 
@@ -407,7 +409,7 @@ A policy contains:
 
 Conceptual fields:
 
-``` text
+```text
 grading_policy
   id
   school_id
@@ -434,7 +436,7 @@ grading_policy
 Exact schema naming may be adjusted to repository conventions, but
 semantics must remain.
 
-------------------------------------------------------------------------
+---
 
 ## 7. Assessment types
 
@@ -442,18 +444,18 @@ An assessment type defines a category of marks teachers can record.
 
 Examples are configuration, not enum values:
 
--   Devoir
--   Composition
--   Projet
--   Oral
--   TP
--   Interrogation
+- Devoir
+- Composition
+- Projet
+- Oral
+- TP
+- Interrogation
 
 ### 7.1 Assessment type properties
 
 Conceptually:
 
-``` text
+```text
 assessment_type_definition
   id
   school_id
@@ -471,7 +473,7 @@ assessment_type_definition
 
 ### 7.2 Repeatable example
 
-``` text
+```text
 Name: Devoir
 Short name: Dev.
 Scale: 20
@@ -483,7 +485,7 @@ Teacher can create instances: Yes
 
 ### 7.3 Single example
 
-``` text
+```text
 Name: Composition
 Short name: Comp.
 Scale: 20
@@ -495,15 +497,15 @@ Required: Yes
 
 ### 7.4 Rules
 
--   `min_occurrences >= 0`
--   `max_occurrences >= min_occurrences`
--   SINGLE implies a maximum of one.
--   A required single assessment must be structurally satisfiable.
--   Invalid definitions cannot be published.
--   Removing a definition already used requires a new policy version,
-    never destructive mutation.
+- `min_occurrences >= 0`
+- `max_occurrences >= min_occurrences`
+- SINGLE implies a maximum of one.
+- A required single assessment must be structurally satisfiable.
+- Invalid definitions cannot be published.
+- Removing a definition already used requires a new policy version,
+  never destructive mutation.
 
-------------------------------------------------------------------------
+---
 
 ## 8. Assessment instances
 
@@ -512,7 +514,7 @@ class-subject/term.
 
 Example:
 
-``` text
+```text
 Configured type: Devoir
 
 Actual instances:
@@ -523,7 +525,7 @@ Actual instances:
 
 Conceptual entity:
 
-``` text
+```text
 assessment_instance
   id
   school_id
@@ -543,17 +545,17 @@ assessment_instance
 
 ### 8.1 Instance rules
 
--   Must belong to the resolved policy version for the workflow.
--   Repeatable type cannot exceed configured maximum.
--   Teacher may create instances only when authorized by policy and
-    assignment.
--   Sequence numbers are presentation/order, not domain identifiers.
--   Existing assessment instances with entered grades cannot be silently
-    deleted.
--   Closing/removing an assessment after marks exist requires an
-    explicit audited operation.
+- Must belong to the resolved policy version for the workflow.
+- Repeatable type cannot exceed configured maximum.
+- Teacher may create instances only when authorized by policy and
+  assignment.
+- Sequence numbers are presentation/order, not domain identifiers.
+- Existing assessment instances with entered grades cannot be silently
+  deleted.
+- Closing/removing an assessment after marks exist requires an
+  explicit audited operation.
 
-------------------------------------------------------------------------
+---
 
 ## 9. Derived results
 
@@ -562,7 +564,7 @@ manually typed.
 
 Examples:
 
-``` text
+```text
 Devoir 1
 Devoir 2
 Devoir 3
@@ -572,7 +574,7 @@ Moyenne des devoirs
 
 Another school may configure the same calculation but call it:
 
-``` text
+```text
 Évaluation
 ```
 
@@ -582,7 +584,7 @@ The label does not determine behavior.
 
 Conceptually:
 
-``` text
+```text
 derived_result_definition
   id
   school_id
@@ -602,21 +604,21 @@ Keep implementation controlled.
 
 Required initial operation:
 
--   `MEAN`
+- `MEAN`
 
 Architecture may anticipate:
 
--   `WEIGHTED_MEAN`
--   `SUM`
--   `BEST_N`
--   `DROP_LOWEST_N`
+- `WEIGHTED_MEAN`
+- `SUM`
+- `BEST_N`
+- `DROP_LOWEST_N`
 
 but do not expose or implement speculative operations unless explicitly
 included in the accepted implementation scope.
 
 ### 9.3 Example
 
-``` text
+```text
 Name: Évaluation
 Source: all applicable Devoir instances
 Operation: MEAN
@@ -625,7 +627,7 @@ Precision: 2
 
 or:
 
-``` text
+```text
 Name: Moyenne des devoirs
 Source: all applicable Devoir instances
 Operation: MEAN
@@ -634,7 +636,7 @@ Precision: 2
 
 Same engine.
 
-------------------------------------------------------------------------
+---
 
 ## 10. Final subject result
 
@@ -643,7 +645,7 @@ official subject result.
 
 Example:
 
-``` text
+```text
 Moyenne des devoirs   50%
 Composition           50%
 --------------------------
@@ -652,7 +654,7 @@ Moyenne matière       100%
 
 Another:
 
-``` text
+```text
 Évaluation            40%
 Composition           60%
 --------------------------
@@ -661,7 +663,7 @@ Moyenne               100%
 
 Another:
 
-``` text
+```text
 Note finale           100%
 ```
 
@@ -669,7 +671,7 @@ Note finale           100%
 
 Conceptually:
 
-``` text
+```text
 subject_result_definition
   id
   school_id
@@ -682,7 +684,7 @@ subject_result_definition
 
 with child inputs:
 
-``` text
+```text
 subject_result_input
   id
   subject_result_definition_id
@@ -695,16 +697,16 @@ subject_result_input
 
 Before publishing:
 
--   exactly one official subject result exists;
--   every input source exists;
--   no circular dependency exists;
--   weights are valid;
--   normalized weights total the required amount;
--   all dependency paths are calculable;
--   scale compatibility is validated;
--   rounding behavior is explicit.
+- exactly one official subject result exists;
+- every input source exists;
+- no circular dependency exists;
+- weights are valid;
+- normalized weights total the required amount;
+- all dependency paths are calculable;
+- scale compatibility is validated;
+- rounding behavior is explicit.
 
-------------------------------------------------------------------------
+---
 
 ## 11. Calculation graph
 
@@ -713,7 +715,7 @@ does not use that terminology.
 
 Example:
 
-``` text
+```text
 Devoir instances
       ↓
 Moyenne des devoirs ── 50% ─┐
@@ -725,14 +727,14 @@ The policy publisher must reject cycles.
 
 Example invalid configuration:
 
-``` text
+```text
 A depends on B
 B depends on A
 ```
 
 Do not attempt to resolve it dynamically.
 
-------------------------------------------------------------------------
+---
 
 ## 12. Grade scale
 
@@ -742,7 +744,7 @@ A policy should explicitly define its scale.
 
 Initial UX:
 
-``` text
+```text
 Barème principal       20
 Note minimale          0
 Note de réussite       10
@@ -756,7 +758,7 @@ later.
 Persistence must continue using deterministic fixed-point representation
 according to the project's canonical arithmetic rules.
 
-------------------------------------------------------------------------
+---
 
 ## 13. Rounding and precision
 
@@ -767,15 +769,15 @@ truncation rather than conventional half-up rounding.
 
 Support at least the approved V1 modes:
 
--   `HALF_UP`
--   `TRUNCATE`
+- `HALF_UP`
+- `TRUNCATE`
 
 The configuration UX should place this under **Options avancées de
 calcul** rather than making initial setup intimidating.
 
 Example:
 
-``` text
+```text
 Précision              2 décimales
 Méthode                Troncature
 ```
@@ -786,7 +788,7 @@ Never use floating-point arithmetic for official persisted academic
 results when deterministic fixed-point arithmetic is required by
 canonical project rules.
 
-------------------------------------------------------------------------
+---
 
 ## 14. Appreciation configuration
 
@@ -797,7 +799,9 @@ A school configures a scale mapping official averages to labels.
 Example UX:
 
     À partir de Appréciation
-  ------------- --------------
+
+---
+
           16.00 Très bien
           14.00 Bien
           12.00 Assez bien
@@ -808,7 +812,7 @@ Example UX:
 
 Conceptually:
 
-``` text
+```text
 appreciation_scale
   id
   school_id
@@ -818,7 +822,7 @@ appreciation_scale
   scale_max
 ```
 
-``` text
+```text
 appreciation_band
   id
   appreciation_scale_id
@@ -838,14 +842,14 @@ strategy instead.
 
 Provide:
 
--   add band;
--   remove unused draft band;
--   reorder if relevant;
--   edit threshold;
--   edit label;
--   live example preview;
--   immediate overlap/gap warnings;
--   validation before publishing.
+- add band;
+- remove unused draft band;
+- reorder if relevant;
+- edit threshold;
+- edit label;
+- live example preview;
+- immediate overlap/gap warnings;
+- validation before publishing.
 
 Example preview:
 
@@ -865,15 +869,15 @@ changes finalized records.
 
 Do not automatically equate:
 
--   appreciation;
--   mention;
--   admission decision;
--   promotion decision.
+- appreciation;
+- mention;
+- admission decision;
+- promotion decision.
 
 These may be separate concepts and must remain separable until
 explicitly designed.
 
-------------------------------------------------------------------------
+---
 
 ## 15. Missing, absent, excused and not-applicable results
 
@@ -882,7 +886,7 @@ invent final calculation semantics without approval.
 
 A student assessment result must be capable of distinguishing at least:
 
-``` text
+```text
 GRADED
 MISSING
 ABSENT
@@ -894,23 +898,23 @@ Potential additional states require explicit design.
 
 Rules:
 
--   zero is a valid grade and never means missing;
--   blank UI state must not silently become zero;
--   the effect of ABSENT/EXCUSED on averages must be explicitly
-    configured or decided by an approved ADR/domain decision;
--   grade submission completeness must use state, not merely
-    null/non-null;
--   UI must communicate state clearly.
+- zero is a valid grade and never means missing;
+- blank UI state must not silently become zero;
+- the effect of ABSENT/EXCUSED on averages must be explicitly
+  configured or decided by an approved ADR/domain decision;
+- grade submission completeness must use state, not merely
+  null/non-null;
+- UI must communicate state clearly.
 
 The coding agent must not invent calculation behavior for these states.
 
-------------------------------------------------------------------------
+---
 
 ## 16. Student assessment results
 
 Conceptual entity:
 
-``` text
+```text
 student_assessment_result
   id
   school_id
@@ -926,12 +930,12 @@ student_assessment_result
 
 Constraints:
 
--   one active result per student + assessment instance;
--   tenant-scoped uniqueness;
--   grade range validated against assessment scale;
--   state/grade consistency enforced;
--   optimistic concurrency;
--   audit where required.
+- one active result per student + assessment instance;
+- tenant-scoped uniqueness;
+- grade range validated against assessment scale;
+- state/grade consistency enforced;
+- optimistic concurrency;
+- audit where required.
 
 Derived results should normally be computed by domain services rather
 than stored as editable grade rows.
@@ -939,7 +943,7 @@ than stored as editable grade rows.
 Official snapshots later persist the exact values needed for
 reproducibility.
 
-------------------------------------------------------------------------
+---
 
 ## 17. Grade-entry UX
 
@@ -950,7 +954,7 @@ assessment instances.
 
 Teacher selects:
 
-``` text
+```text
 Academic year
 Term
 Class
@@ -961,30 +965,31 @@ EduTrack resolves the published policy.
 
 The page shows:
 
--   policy name/version in unobtrusive detail;
--   assessment instances;
--   progress;
--   derived result previews;
--   submission readiness.
+- policy name/version in unobtrusive detail;
+- assessment instances;
+- progress;
+- derived result previews;
+- submission readiness.
 
 ### 17.2 Dynamic assessment columns
 
 If three Devoir instances currently exist:
 
-  Élève     Dev 1   Dev 2   Dev 3   Évaluation   Composition   Moyenne
-  ------- ------- ------- ------- ------------ ------------- ---------
+Élève Dev 1 Dev 2 Dev 3 Évaluation Composition Moyenne
+
+---
 
 Editable:
 
--   Dev 1
--   Dev 2
--   Dev 3
--   Composition
+- Dev 1
+- Dev 2
+- Dev 3
+- Composition
 
 Read-only computed:
 
--   Évaluation
--   Moyenne
+- Évaluation
+- Moyenne
 
 If a fourth devoir is created, the grid adds it.
 
@@ -999,7 +1004,7 @@ For authorized repeatable assessment types:
 
 Dialog:
 
-``` text
+```text
 Nouveau devoir
 
 Nom             Devoir 4
@@ -1018,14 +1023,14 @@ At maximum occurrence:
 
 Preserve the good existing Phase 5 UX principles:
 
--   fast tab/enter navigation;
--   decimal comma and decimal point normalization where supported;
--   autosave;
--   visible persistence state;
--   no loss after restart;
--   row/cell validation;
--   accessible focus;
--   efficient entry for 60-student classes.
+- fast tab/enter navigation;
+- decimal comma and decimal point normalization where supported;
+- autosave;
+- visible persistence state;
+- no loss after restart;
+- row/cell validation;
+- accessible focus;
+- efficient entry for 60-student classes.
 
 ### 17.5 Computed preview
 
@@ -1036,7 +1041,7 @@ The backend remains authoritative.
 
 Do not implement a second independent formula engine in React.
 
-------------------------------------------------------------------------
+---
 
 ## 18. Submission completeness
 
@@ -1044,7 +1049,7 @@ Completeness is policy-aware.
 
 Example configuration:
 
-``` text
+```text
 Devoir
 minimum occurrences: 2
 
@@ -1069,7 +1074,7 @@ policy.
 
 Example:
 
-``` text
+```text
 État de la saisie
 
 Devoirs                    ✓ 3 / minimum 2
@@ -1092,20 +1097,19 @@ Bad:
 
 Good:
 
-> Aucune note ni statut n'a été renseigné pour Adam Mahamat --- Devoir
-> 3.
+> Aucune note ni statut n'a été renseigné pour Adam Mahamat --- Devoir 3.
 
 or:
 
 > Deux devoirs minimum sont requis. Un seul devoir a été créé.
 
-------------------------------------------------------------------------
+---
 
 ## 19. Grade submission and SchoolMaster validation
 
 Retain the proven lifecycle concept:
 
-``` text
+```text
 DRAFT -> SUBMITTED -> VALIDATED
    ^         |
    |         v
@@ -1118,10 +1122,10 @@ VALIDATED -> REOPENED -> SUBMITTED
 
 Teacher can:
 
--   create permitted assessment instances;
--   enter/update marks;
--   resolve student result states;
--   inspect computed previews.
+- create permitted assessment instances;
+- enter/update marks;
+- resolve student result states;
+- inspect computed previews.
 
 ### 19.2 SUBMITTED
 
@@ -1129,12 +1133,12 @@ Teacher editing is locked.
 
 SchoolMaster reviews:
 
--   structural compliance with policy;
--   assessment coverage;
--   student completeness;
--   computed subject results;
--   anomalies/warnings;
--   audit context.
+- structural compliance with policy;
+- assessment coverage;
+- student completeness;
+- computed subject results;
+- anomalies/warnings;
+- audit context.
 
 ### 19.3 RETURNED
 
@@ -1159,15 +1163,15 @@ Only authorized SchoolMaster action.
 
 Requirements:
 
--   explicit reason;
--   audit event;
--   clear warning if downstream calculations/transcripts are affected;
--   previously finalized transcript locking rules remain authoritative;
--   recalculation/re-finalization must be explicit.
+- explicit reason;
+- audit event;
+- clear warning if downstream calculations/transcripts are affected;
+- previously finalized transcript locking rules remain authoritative;
+- recalculation/re-finalization must be explicit.
 
 Do not silently invalidate official records.
 
-------------------------------------------------------------------------
+---
 
 ## 20. Validation UX
 
@@ -1175,11 +1179,13 @@ SchoolMaster needs a dashboard, not a sequence of opaque submissions.
 
 Example:
 
-  Classe   Matière    Enseignant     Couverture État
-  -------- ---------- ------------ ------------ -----------
-  6ème A   Français   Mme X               32/32 Soumis
-  6ème A   Maths      M. Y                31/32 Brouillon
-  6ème A   Anglais    Mme Z               32/32 Validé
+Classe Matière Enseignant Couverture État
+
+---
+
+6ème A Français Mme X 32/32 Soumis
+6ème A Maths M. Y 31/32 Brouillon
+6ème A Anglais Mme Z 32/32 Validé
 
 Opening a submission shows:
 
@@ -1194,12 +1200,12 @@ Opening a submission shows:
 
 Actions:
 
--   `Valider`
--   `Retourner à l'enseignant`
+- `Valider`
+- `Retourner à l'enseignant`
 
 Return requires reason.
 
-------------------------------------------------------------------------
+---
 
 ## 21. Policy publishing UX
 
@@ -1213,10 +1219,10 @@ Initial screen:
 
 Templates may include:
 
--   Devoirs + Composition
--   Contrôle continu + Composition
--   Note finale uniquement
--   Personnalisé
+- Devoirs + Composition
+- Contrôle continu + Composition
+- Note finale uniquement
+- Personnalisé
 
 These are editable starting points, not hard-coded domain types and not
 automatic defaults.
@@ -1225,7 +1231,7 @@ automatic defaults.
 
 Example:
 
-``` text
+```text
 ┌───────────────┐
 │    DEVOIRS    │
 │   2 à 6 /20   │
@@ -1261,7 +1267,7 @@ Provide `Tester cette politique`.
 
 Example:
 
-``` text
+```text
 Dev 1          14
 Dev 2          17
 Dev 3          12
@@ -1290,7 +1296,7 @@ Generated deterministic explanation:
 This explanation is generated from configuration, not stored as
 authoritative logic.
 
-------------------------------------------------------------------------
+---
 
 ## 22. Configuration validation
 
@@ -1298,22 +1304,22 @@ A policy cannot be published if invalid.
 
 Validate at least:
 
--   missing official result definition;
--   invalid min/max occurrences;
--   impossible required assessment structure;
--   weight total mismatch;
--   missing source dependency;
--   circular calculation dependency;
--   incompatible scales where unsupported;
--   invalid grade range;
--   missing rounding/precision where required;
--   invalid policy assignment;
--   appreciation gaps/overlaps if full coverage is required;
--   duplicate conflicting scope assignments.
+- missing official result definition;
+- invalid min/max occurrences;
+- impossible required assessment structure;
+- weight total mismatch;
+- missing source dependency;
+- circular calculation dependency;
+- incompatible scales where unsupported;
+- invalid grade range;
+- missing rounding/precision where required;
+- invalid policy assignment;
+- appreciation gaps/overlaps if full coverage is required;
+- duplicate conflicting scope assignments.
 
 Errors must identify exactly what to fix.
 
-------------------------------------------------------------------------
+---
 
 ## 23. Configuration readiness and capability gates
 
@@ -1324,7 +1330,7 @@ Maintain readiness by capability.
 
 Example dashboard:
 
-``` text
+```text
 Configuration générale       ✓ Prête
 Structure académique         ✓ Prête
 Notation                     ✓ Prête
@@ -1334,7 +1340,7 @@ Bulletin                     ⚠ À configurer
 
 Suggested gates:
 
-``` text
+```text
 Create/manage classrooms
   -> academic structure ready
 
@@ -1359,7 +1365,7 @@ Generate PDF
 
 The backend enforces every gate. UI gating alone is insufficient.
 
-------------------------------------------------------------------------
+---
 
 ## 24. Policy changes after grade entry begins
 
@@ -1401,7 +1407,7 @@ is:
 
 Future terms may resolve to the newer version.
 
-------------------------------------------------------------------------
+---
 
 ## 25. Migration from the current coded Phase 5
 
@@ -1415,19 +1421,19 @@ it.
 
 Reuse or reimplement the proven patterns:
 
--   role/assignment authorization;
--   tenant isolation;
--   optimistic concurrency;
--   autosave;
--   keyboard-first grid behavior;
--   submission lifecycle;
--   return reason;
--   validation;
--   reopening;
--   audit events;
--   finalized-transcript locking;
--   French-first errors;
--   restart persistence.
+- role/assignment authorization;
+- tenant isolation;
+- optimistic concurrency;
+- autosave;
+- keyboard-first grid behavior;
+- submission lifecycle;
+- return reason;
+- validation;
+- reopening;
+- audit events;
+- finalized-transcript locking;
+- French-first errors;
+- restart persistence.
 
 ### 25.2 Do not preserve the wrong abstraction
 
@@ -1439,10 +1445,10 @@ per-student assessment results.
 
 If temporary migration compatibility is needed:
 
--   document it;
--   make reads/writes unambiguous;
--   establish one source of truth;
--   remove compatibility code at a defined gate.
+- document it;
+- make reads/writes unambiguous;
+- establish one source of truth;
+- remove compatibility code at a defined gate.
 
 Never dual-write indefinitely.
 
@@ -1450,15 +1456,15 @@ Never dual-write indefinitely.
 
 If existing development/demo data is migrated:
 
--   create explicit fixtures/policies;
--   map legacy single results only to an explicitly configured
-    single-result policy;
--   never infer that every school uses a single-result policy;
--   verify migration counts and values;
--   keep migration rollback/backup strategy appropriate to the
-    development stage.
+- create explicit fixtures/policies;
+- map legacy single results only to an explicitly configured
+  single-result policy;
+- never infer that every school uses a single-result policy;
+- verify migration counts and values;
+- keep migration rollback/backup strategy appropriate to the
+  development stage.
 
-------------------------------------------------------------------------
+---
 
 ## 26. Proposed service boundaries
 
@@ -1466,7 +1472,7 @@ Keep domain logic outside UI/routes/repositories.
 
 Suggested modules/services:
 
-``` text
+```text
 configuration/
   AcademicStructureService
   GradingPolicyService
@@ -1494,24 +1500,24 @@ domain/
 
 Exact filenames should follow repository conventions.
 
-------------------------------------------------------------------------
+---
 
 ## 27. API behavior principles
 
 Every endpoint:
 
--   derives school/tenant from trusted auth context;
--   checks permission server-side;
--   validates policy/version scope;
--   uses optimistic concurrency where records are mutable;
--   returns stable machine-readable errors plus French user-facing
-    messages;
--   uses transactions for multi-record integrity;
--   is idempotent where command semantics require it.
+- derives school/tenant from trusted auth context;
+- checks permission server-side;
+- validates policy/version scope;
+- uses optimistic concurrency where records are mutable;
+- returns stable machine-readable errors plus French user-facing
+  messages;
+- uses transactions for multi-record integrity;
+- is idempotent where command semantics require it.
 
 Examples of likely endpoint families, not frozen route contracts:
 
-``` text
+```text
 /config/academic-years
 /config/terms
 /config/levels
@@ -1535,49 +1541,49 @@ Examples of likely endpoint families, not frozen route contracts:
 Do not create routes blindly if repository conventions already define
 better contracts.
 
-------------------------------------------------------------------------
+---
 
 ## 28. Offline-first requirements
 
 Every core workflow in this proposal must work without internet:
 
--   configuration;
--   policy publishing;
--   teacher assessment creation;
--   grade entry;
--   autosave;
--   submission;
--   SchoolMaster validation;
--   reopening;
--   derived calculation previews.
+- configuration;
+- policy publishing;
+- teacher assessment creation;
+- grade entry;
+- autosave;
+- submission;
+- SchoolMaster validation;
+- reopening;
+- derived calculation previews.
 
 SQLite is authoritative for V1.
 
 No feature in this proposal may require cloud connectivity.
 
-------------------------------------------------------------------------
+---
 
 ## 29. Audit requirements
 
 Audit at minimum:
 
--   policy publication;
--   policy supersession;
--   policy assignment changes;
--   appreciation scale publication;
--   assessment deletion/closure after use;
--   grade submission;
--   return;
--   validation;
--   reopen;
--   privileged correction affecting validated data.
+- policy publication;
+- policy supersession;
+- policy assignment changes;
+- appreciation scale publication;
+- assessment deletion/closure after use;
+- grade submission;
+- return;
+- validation;
+- reopen;
+- privileged correction affecting validated data.
 
 Audit data should include actor, school, target, action, timestamp, and
 relevant reason/metadata.
 
 Do not log secrets or unnecessary sensitive data.
 
-------------------------------------------------------------------------
+---
 
 ## 30. Testing requirements
 
@@ -1585,60 +1591,60 @@ Do not log secrets or unnecessary sensitive data.
 
 Cover:
 
--   policy resolution hierarchy;
--   repeatable min/max rules;
--   calculation DAG cycle rejection;
--   mean calculation;
--   weight calculation;
--   scale boundaries;
--   rounding/truncation;
--   appreciation boundary values;
--   missing versus zero;
--   submission completeness;
--   lifecycle transitions;
--   policy immutability/versioning.
+- policy resolution hierarchy;
+- repeatable min/max rules;
+- calculation DAG cycle rejection;
+- mean calculation;
+- weight calculation;
+- scale boundaries;
+- rounding/truncation;
+- appreciation boundary values;
+- missing versus zero;
+- submission completeness;
+- lifecycle transitions;
+- policy immutability/versioning.
 
 ### 30.2 Repository tests
 
 Cover:
 
--   two-school tenant isolation;
--   uniqueness;
--   optimistic concurrency;
--   FK integrity;
--   policy version relationships;
--   assessment-instance limits at service/domain boundary;
--   student-result state/grade consistency.
+- two-school tenant isolation;
+- uniqueness;
+- optimistic concurrency;
+- FK integrity;
+- policy version relationships;
+- assessment-instance limits at service/domain boundary;
+- student-result state/grade consistency.
 
 ### 30.3 API integration tests
 
 Cover:
 
--   role gates;
--   cross-school denial;
--   policy publication;
--   policy resolution;
--   teacher cannot create forbidden assessment;
--   teacher cannot exceed max occurrence;
--   incomplete submission rejection;
--   submit/return/resubmit/validate/reopen;
--   locked validated/finalized behavior;
--   French error envelope.
+- role gates;
+- cross-school denial;
+- policy publication;
+- policy resolution;
+- teacher cannot create forbidden assessment;
+- teacher cannot exceed max occurrence;
+- incomplete submission rejection;
+- submit/return/resubmit/validate/reopen;
+- locked validated/finalized behavior;
+- French error envelope.
 
 ### 30.4 Component tests
 
 Cover:
 
--   configuration builder;
--   inheritance display;
--   live calculation preview;
--   appreciation editor;
--   grade grid;
--   dynamic assessment columns;
--   autosave indicators;
--   keyboard navigation;
--   actionable validation errors;
--   readiness dashboard.
+- configuration builder;
+- inheritance display;
+- live calculation preview;
+- appreciation editor;
+- grade grid;
+- dynamic assessment columns;
+- autosave indicators;
+- keyboard navigation;
+- actionable validation errors;
+- readiness dashboard.
 
 ### 30.5 End-to-end scenarios
 
@@ -1666,7 +1672,7 @@ At minimum:
 19. Another level/subject resolves an override correctly.
 20. Two schools with different labels/formulas remain fully isolated.
 
-------------------------------------------------------------------------
+---
 
 ## 31. UX quality bar
 
@@ -1675,44 +1681,44 @@ who understands school rules but is not a software engineer.
 
 Required principles:
 
--   use school vocabulary;
--   hide implementation terminology;
--   progressive disclosure;
--   advanced settings separated from common settings;
--   live previews;
--   templates as accelerators;
--   no implicit defaults;
--   explain consequences before publishing;
--   clearly distinguish inherited versus customized policy;
--   show readiness/progress;
--   actionable errors;
--   never require formula syntax for standard use;
--   preserve keyboard efficiency for grade entry;
--   French-first UI.
+- use school vocabulary;
+- hide implementation terminology;
+- progressive disclosure;
+- advanced settings separated from common settings;
+- live previews;
+- templates as accelerators;
+- no implicit defaults;
+- explain consequences before publishing;
+- clearly distinguish inherited versus customized policy;
+- show readiness/progress;
+- actionable errors;
+- never require formula syntax for standard use;
+- preserve keyboard efficiency for grade entry;
+- French-first UI.
 
 A flexible engine is not permission to create a complicated interface.
 
-------------------------------------------------------------------------
+---
 
 ## 32. Explicit non-goals for this implementation slice
 
 Unless separately approved, do not add:
 
--   arbitrary user-written formula language;
--   classroom-level policy overrides;
--   cloud sync;
--   parent/student portals;
--   attendance module;
--   finance;
--   cryptographic signatures;
--   arbitrary drag-and-drop PDF designer;
--   AI-generated grading rules;
--   automatic promotion decisions;
--   unapproved semantics for absence/excused grades;
--   speculative assessment operations merely because the schema could
-    support them.
+- arbitrary user-written formula language;
+- classroom-level policy overrides;
+- cloud sync;
+- parent/student portals;
+- attendance module;
+- finance;
+- cryptographic signatures;
+- arbitrary drag-and-drop PDF designer;
+- AI-generated grading rules;
+- automatic promotion decisions;
+- unapproved semantics for absence/excused grades;
+- speculative assessment operations merely because the schema could
+  support them.
 
-------------------------------------------------------------------------
+---
 
 ## 33. Decisions still requiring explicit approval
 
@@ -1737,36 +1743,36 @@ Do not silently decide these during implementation:
 When one of these blocks implementation, stop and request a focused
 decision.
 
-------------------------------------------------------------------------
+---
 
 ## 34. Definition of Done
 
 This redesign is complete only when:
 
--   no production grade workflow assumes a fixed number of devoirs;
--   no production calculation relies on school-specific labels as domain
-    keys;
--   SchoolMaster can configure and publish a valid grading policy
-    through friendly UX;
--   policies resolve through the approved inheritance hierarchy;
--   policy versions are immutable once used;
--   appreciation bands are configurable and versioned;
--   teacher can create permitted assessment instances dynamically;
--   grade entry is multi-assessment and keyboard efficient;
--   computed results use shared deterministic domain logic;
--   submission completeness is policy-aware;
--   SchoolMaster return/validate/reopen lifecycle works and is audited;
--   configuration readiness gates prevent invalid workflows;
--   all core behavior works offline;
--   tenant isolation is tested;
--   restart does not lose entered grades;
--   tests cover calculation and lifecycle boundaries;
--   no old single-result abstraction remains as an accidental permanent
-    source of truth;
--   documentation and roadmap are updated to match the implemented
-    domain model.
+- no production grade workflow assumes a fixed number of devoirs;
+- no production calculation relies on school-specific labels as domain
+  keys;
+- SchoolMaster can configure and publish a valid grading policy
+  through friendly UX;
+- policies resolve through the approved inheritance hierarchy;
+- policy versions are immutable once used;
+- appreciation bands are configurable and versioned;
+- teacher can create permitted assessment instances dynamically;
+- grade entry is multi-assessment and keyboard efficient;
+- computed results use shared deterministic domain logic;
+- submission completeness is policy-aware;
+- SchoolMaster return/validate/reopen lifecycle works and is audited;
+- configuration readiness gates prevent invalid workflows;
+- all core behavior works offline;
+- tenant isolation is tested;
+- restart does not lose entered grades;
+- tests cover calculation and lifecycle boundaries;
+- no old single-result abstraction remains as an accidental permanent
+  source of truth;
+- documentation and roadmap are updated to match the implemented
+  domain model.
 
-------------------------------------------------------------------------
+---
 
 ## 35. Implementation instruction to coding agents
 

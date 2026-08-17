@@ -121,10 +121,7 @@ export const academicYear = sqliteTable(
       .on(table.schoolId, table.label)
       .where(sql`${table.deletedAt} is null`),
     uniqueIndex('academic_year_school_id_id_unique').on(table.schoolId, table.id),
-    check(
-      'academic_year_status_check',
-      sql`${table.status} in ('DRAFT', 'ACTIVE', 'CLOSED')`
-    ),
+    check('academic_year_status_check', sql`${table.status} in ('DRAFT', 'ACTIVE', 'CLOSED')`),
   ]
 );
 
@@ -789,16 +786,16 @@ export const gradingPolicy = sqliteTable(
       table.logicalPolicyId,
       table.version
     ),
-    check('grading_policy_scale_max_check', sql`${table.scaleMax} >= 1 AND ${table.scaleMax} <= 100`),
+    check(
+      'grading_policy_scale_max_check',
+      sql`${table.scaleMax} >= 1 AND ${table.scaleMax} <= 100`
+    ),
     check('grading_policy_pass_threshold_check', sql`${table.passThreshold} >= 0`),
     check(
       'grading_policy_status_check',
       sql`${table.status} in ('DRAFT', 'PUBLISHED', 'SUPERSEDED')`
     ),
-    check(
-      'grading_policy_rounding_check',
-      sql`${table.roundingMode} in ('HALF_UP', 'TRUNCATE')`
-    ),
+    check('grading_policy_rounding_check', sql`${table.roundingMode} in ('HALF_UP', 'TRUNCATE')`),
     foreignKey({
       columns: [table.schoolId, table.effectiveAcademicYearId],
       foreignColumns: [academicYear.schoolId, academicYear.id],
@@ -870,10 +867,7 @@ export const derivedResultDefinition = sqliteTable(
     index('derived_result_definition_school_id_idx').on(table.schoolId),
     index('derived_result_definition_grading_policy_id_idx').on(table.gradingPolicyId),
     uniqueIndex('derived_result_definition_school_id_id_unique').on(table.schoolId, table.id),
-    check(
-      'derived_result_definition_operation_check',
-      sql`${table.operation} in ('MEAN')`
-    ),
+    check('derived_result_definition_operation_check', sql`${table.operation} in ('MEAN')`),
     check(
       'derived_result_definition_rounding_check',
       sql`${table.roundingMode} in ('HALF_UP', 'TRUNCATE')`

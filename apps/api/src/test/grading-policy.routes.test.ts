@@ -334,9 +334,7 @@ describe('grading-policy routes (roadmap §9.7-§9.10)', () => {
       url: `/grading-policies/${subjectPolicyId}/scopes`,
       headers: { authorization: `Bearer ${accessToken}` },
       payload: {
-        scopes: [
-          { scopeType: 'LEVEL_SUBJECT', levelId: levelThreeId, subjectId: subjectMathId },
-        ],
+        scopes: [{ scopeType: 'LEVEL_SUBJECT', levelId: levelThreeId, subjectId: subjectMathId }],
       },
     });
 
@@ -480,9 +478,33 @@ describe('grading-policy routes (roadmap §9.7-§9.10)', () => {
     const gappy = validAppreciationScale();
     // Real gap: nothing covers 16.00-16.99 (bands jump from 15.99 to 17.00).
     gappy.bands = [
-      { lowerBound: 1700, upperBound: 2000, labelFr: 'TB', labelAr: 'TB', labelEn: 'TB', shortLabel: 'TB', displayOrder: 1 },
-      { lowerBound: 800, upperBound: 1599, labelFr: 'P', labelAr: 'P', labelEn: 'P', shortLabel: 'P', displayOrder: 2 },
-      { lowerBound: 0, upperBound: 799, labelFr: 'I', labelAr: 'I', labelEn: 'I', shortLabel: 'I', displayOrder: 3 },
+      {
+        lowerBound: 1700,
+        upperBound: 2000,
+        labelFr: 'TB',
+        labelAr: 'TB',
+        labelEn: 'TB',
+        shortLabel: 'TB',
+        displayOrder: 1,
+      },
+      {
+        lowerBound: 800,
+        upperBound: 1599,
+        labelFr: 'P',
+        labelAr: 'P',
+        labelEn: 'P',
+        shortLabel: 'P',
+        displayOrder: 2,
+      },
+      {
+        lowerBound: 0,
+        upperBound: 799,
+        labelFr: 'I',
+        labelAr: 'I',
+        labelEn: 'I',
+        shortLabel: 'I',
+        displayOrder: 3,
+      },
     ];
 
     const response = await server.inject({
@@ -632,9 +654,33 @@ function validAppreciationScale() {
     name: 'Barème secondaire',
     scaleMax: 20,
     bands: [
-      { lowerBound: 1600, upperBound: 2000, labelFr: 'Très bien', labelAr: 'جيد جداً', labelEn: 'Very good', shortLabel: 'TB', displayOrder: 1 },
-      { lowerBound: 1000, upperBound: 1599, labelFr: 'Passable', labelAr: 'مقبول', labelEn: 'Passable', shortLabel: 'P', displayOrder: 2 },
-      { lowerBound: 0, upperBound: 999, labelFr: 'Insuffisant', labelAr: 'غير كاف', labelEn: 'Insufficient', shortLabel: 'I', displayOrder: 3 },
+      {
+        lowerBound: 1600,
+        upperBound: 2000,
+        labelFr: 'Très bien',
+        labelAr: 'جيد جداً',
+        labelEn: 'Very good',
+        shortLabel: 'TB',
+        displayOrder: 1,
+      },
+      {
+        lowerBound: 1000,
+        upperBound: 1599,
+        labelFr: 'Passable',
+        labelAr: 'مقبول',
+        labelEn: 'Passable',
+        shortLabel: 'P',
+        displayOrder: 2,
+      },
+      {
+        lowerBound: 0,
+        upperBound: 999,
+        labelFr: 'Insuffisant',
+        labelAr: 'غير كاف',
+        labelEn: 'Insufficient',
+        shortLabel: 'I',
+        displayOrder: 3,
+      },
     ],
   };
 }

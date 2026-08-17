@@ -14,9 +14,9 @@ export const fr = {
       tabs: {
         overview: "Vue d'ensemble",
         profile: "Profil de l'école",
-        years: "Années académiques",
-        grading: "Notation",
-        appreciation: "Appréciations",
+        years: 'Années académiques',
+        grading: 'Notation',
+        appreciation: 'Appréciations',
       },
       title: 'Configuration',
       loading: 'Chargement de la configuration...',
@@ -1147,7 +1147,7 @@ export const fr = {
         subjects: 'Matières au catalogue',
         copyFrom: 'Copier le programme depuis...',
         copy: 'Copier',
-        copied: 'Programme copié ! N\'oubliez pas d\'enregistrer.',
+        copied: "Programme copié ! N'oubliez pas d'enregistrer.",
         summary: {
           levels: 'Niveaux',
           mapped: 'Matières liées',

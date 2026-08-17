@@ -409,10 +409,18 @@ function AppreciationEditor({
             </p>
           </div>
           <div className="hidden sm:grid gap-3 px-4 pb-1 sm:grid-cols-[120px_120px_1fr_140px]">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('configuration.appreciation.from')}</span>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('configuration.appreciation.to')}</span>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('configuration.appreciation.label')}</span>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('configuration.appreciation.shortLabel')}</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              {t('configuration.appreciation.from')}
+            </span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              {t('configuration.appreciation.to')}
+            </span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              {t('configuration.appreciation.label')}
+            </span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              {t('configuration.appreciation.shortLabel')}
+            </span>
           </div>
           {bands.map((band, index) => (
             <div

@@ -310,9 +310,33 @@ describe('grading-policy repositories (roadmap §9.7-§9.10)', () => {
       name: 'Barème secondaire',
       scaleMax: 20,
       bands: [
-        { lowerBound: 1600, upperBound: 2000, labelFr: 'Très bien', labelAr: 'جيد جداً', labelEn: 'Very good', shortLabel: 'TB', displayOrder: 1 },
-        { lowerBound: 1000, upperBound: 1599, labelFr: 'Passable', labelAr: 'مقبول', labelEn: 'Passable', shortLabel: 'P', displayOrder: 2 },
-        { lowerBound: 0, upperBound: 999, labelFr: 'Insuffisant', labelAr: 'غير كاف', labelEn: 'Insufficient', shortLabel: 'I', displayOrder: 3 },
+        {
+          lowerBound: 1600,
+          upperBound: 2000,
+          labelFr: 'Très bien',
+          labelAr: 'جيد جداً',
+          labelEn: 'Very good',
+          shortLabel: 'TB',
+          displayOrder: 1,
+        },
+        {
+          lowerBound: 1000,
+          upperBound: 1599,
+          labelFr: 'Passable',
+          labelAr: 'مقبول',
+          labelEn: 'Passable',
+          shortLabel: 'P',
+          displayOrder: 2,
+        },
+        {
+          lowerBound: 0,
+          upperBound: 999,
+          labelFr: 'Insuffisant',
+          labelAr: 'غير كاف',
+          labelEn: 'Insufficient',
+          shortLabel: 'I',
+          displayOrder: 3,
+        },
       ],
     };
   }
@@ -341,7 +365,11 @@ describe('grading-policy repositories (roadmap §9.7-§9.10)', () => {
 
   it('replaces draft bands without hard-deleting history', () => {
     const repository = createAppreciationRepository(db, tenant());
-    const scaleId = repository.createDraft({ logicalScaleId: 'scale-1', version: 1, scale: validScale() });
+    const scaleId = repository.createDraft({
+      logicalScaleId: 'scale-1',
+      version: 1,
+      scale: validScale(),
+    });
 
     repository.replaceDraft(scaleId, { ...validScale(), name: 'Révisé' }, fixedAt);
 
@@ -361,8 +389,16 @@ describe('grading-policy repositories (roadmap §9.7-§9.10)', () => {
 
   it('finds the latest published scale only', () => {
     const repository = createAppreciationRepository(db, tenant());
-    const v1 = repository.createDraft({ logicalScaleId: 'scale-1', version: 1, scale: validScale() });
-    const v2 = repository.createDraft({ logicalScaleId: 'scale-1', version: 2, scale: validScale() });
+    const v1 = repository.createDraft({
+      logicalScaleId: 'scale-1',
+      version: 1,
+      scale: validScale(),
+    });
+    const v2 = repository.createDraft({
+      logicalScaleId: 'scale-1',
+      version: 2,
+      scale: validScale(),
+    });
 
     repository.publish(v1, fixedAt);
     expect(repository.findLatestPublished()?.id).toBe(v1);

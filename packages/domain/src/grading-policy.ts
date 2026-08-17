@@ -212,9 +212,7 @@ export function validateAssessmentType(definition: AssessmentTypeInput): PolicyV
  * the calculation graph is acyclic, scales are compatible and the pass
  * threshold sits inside the scale. Returns an empty array when publishable.
  */
-export function validatePolicyForPublication(
-  config: GradingPolicyConfig
-): PolicyValidationIssue[] {
+export function validatePolicyForPublication(config: GradingPolicyConfig): PolicyValidationIssue[] {
   const issues: PolicyValidationIssue[] = [];
 
   if (config.assessmentTypes.length === 0) {
@@ -395,9 +393,7 @@ export function evaluatePolicy(
     // the mean of the provided occurrences (the sandbox samples one per
     // occurrence). Marks are already hundredths.
     const effective =
-      marks.length === 0
-        ? 0
-        : derivedMean(marks, config.decimalPrecision, config.roundingMode);
+      marks.length === 0 ? 0 : derivedMean(marks, config.decimalPrecision, config.roundingMode);
     if (definition.id) {
       nodeValues.set(definition.id, effective);
     }
@@ -407,9 +403,7 @@ export function evaluatePolicy(
   // publish validation guarantees acyclicity).
   const derivedById = new Map(
     config.derivedResults
-      .filter(
-        (derived): derived is DerivedResultInput & { id: string } => derived.id !== undefined
-      )
+      .filter((derived): derived is DerivedResultInput & { id: string } => derived.id !== undefined)
       .map((derived) => [derived.id, derived])
   );
 
@@ -431,10 +425,7 @@ export function evaluatePolicy(
         continue; // not ready yet
       }
 
-      nodeValues.set(
-        id,
-        derivedMean(sources, derived.precision, derived.roundingMode)
-      );
+      nodeValues.set(id, derivedMean(sources, derived.precision, derived.roundingMode));
       progress.push(id);
     }
 
@@ -534,9 +525,7 @@ export function resolvePolicyScope(
  * Validates an appreciation scale: bands must be non-overlapping, contiguous
  * (no gaps between 0 and scaleMax) and inside the scale. Returns issues.
  */
-export function validateAppreciationScale(
-  input: AppreciationScaleInput
-): PolicyValidationIssue[] {
+export function validateAppreciationScale(input: AppreciationScaleInput): PolicyValidationIssue[] {
   const issues: PolicyValidationIssue[] = [];
   const bands = [...input.bands].sort((a, b) => b.lowerBound - a.lowerBound);
 
@@ -616,9 +605,11 @@ export function appreciationForAverage(
 ): AppreciationBandInput | null {
   const sorted = [...bands].sort((a, b) => b.lowerBound - a.lowerBound);
 
-  return sorted.find(
-    (band) => averageHundredths >= band.lowerBound && averageHundredths <= band.upperBound
-  ) ?? null;
+  return (
+    sorted.find(
+      (band) => averageHundredths >= band.lowerBound && averageHundredths <= band.upperBound
+    ) ?? null
+  );
 }
 
 function formatHundredths(value: number): string {

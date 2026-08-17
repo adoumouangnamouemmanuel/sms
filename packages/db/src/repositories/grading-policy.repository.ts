@@ -130,11 +130,7 @@ export class GradingPolicyRepository extends TenantScopedRepository {
    * Called inside the service transaction - published documents are
    * immutable and must never reach this method.
    */
-  replaceDraftConfig(
-    policyId: string,
-    config: GradingPolicyConfig,
-    updatedAt: string
-  ): void {
+  replaceDraftConfig(policyId: string, config: GradingPolicyConfig, updatedAt: string): void {
     this.deleteChildren(policyId, updatedAt);
     this.insertPolicyChildren(policyId, config);
     this.db
@@ -516,7 +512,11 @@ export class GradingPolicyRepository extends TenantScopedRepository {
   }
 
   private deleteChildren(policyId: string, updatedAt: string): void {
-    for (const table of [assessmentTypeDefinition, derivedResultDefinition, subjectResultDefinition]) {
+    for (const table of [
+      assessmentTypeDefinition,
+      derivedResultDefinition,
+      subjectResultDefinition,
+    ]) {
       this.db
         .update(table)
         .set({
@@ -524,9 +524,7 @@ export class GradingPolicyRepository extends TenantScopedRepository {
           updatedAt,
           recordVersion: sql`${table.recordVersion} + 1`,
         })
-        .where(
-          and(eq(table.schoolId, this.schoolId), eq(table.gradingPolicyId, policyId))
-        )
+        .where(and(eq(table.schoolId, this.schoolId), eq(table.gradingPolicyId, policyId)))
         .run();
     }
 

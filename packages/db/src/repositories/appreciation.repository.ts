@@ -77,7 +77,9 @@ export class AppreciationRepository extends TenantScopedRepository {
     return this.db
       .select()
       .from(appreciationScale)
-      .where(and(eq(appreciationScale.schoolId, this.schoolId), isNull(appreciationScale.deletedAt)))
+      .where(
+        and(eq(appreciationScale.schoolId, this.schoolId), isNull(appreciationScale.deletedAt))
+      )
       .orderBy(asc(appreciationScale.createdAt))
       .all()
       .map((row) => ({ ...mapScale(row), bands: this.listBands(row.id) }));
