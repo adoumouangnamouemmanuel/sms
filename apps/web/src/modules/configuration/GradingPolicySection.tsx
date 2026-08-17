@@ -212,7 +212,7 @@ export function GradingPolicySection({
           ) : null}
         </div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
+        <div className="grid gap-6 xl:grid-cols-[300px_1fr]">
           <PolicyList
             onOpen={(policyId) => void openPolicy(policyId)}
             policies={summaries}
