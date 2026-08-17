@@ -224,12 +224,17 @@ export function SubjectGroupsView({
     });
   };
 
+  const [isSavingMembers, setIsSavingMembers] = useState(false);
+  const [saveMembersSuccess, setSaveMembersSuccess] = useState(false);
+
   const handleSaveMembers = async () => {
     if (!selectedGroupId) {
       return;
     }
 
     setErrorKey(null);
+    setIsSavingMembers(true);
+    setSaveMembersSuccess(false);
 
     try {
       if (client?.setSubjectGroupMembers) {
@@ -250,6 +255,8 @@ export function SubjectGroupsView({
       }
 
       await refreshGroups();
+      setSaveMembersSuccess(true);
+      setTimeout(() => setSaveMembersSuccess(false), 2500);
     } catch (error) {
       if (isInvalidAccessToken(error)) {
         onSessionExpired?.();
@@ -257,6 +264,8 @@ export function SubjectGroupsView({
       }
 
       setErrorKey(resolveClassesErrorMessageKey(error));
+    } finally {
+      setIsSavingMembers(false);
     }
   };
 
@@ -534,13 +543,22 @@ export function SubjectGroupsView({
 
                   <div className="mt-5 flex justify-end">
                     <button
-                      className="cursor-pointer rounded-2xl bg-teal-500 px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_20px_-5px_rgba(20,184,166,0.5)] transition-all hover:scale-105 hover:bg-teal-400"
+                      className={`cursor-pointer rounded-2xl px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 disabled:cursor-not-allowed ${
+                        saveMembersSuccess
+                          ? 'bg-emerald-500 hover:bg-emerald-400'
+                          : 'bg-teal-500 shadow-[0_0_20px_-5px_rgba(20,184,166,0.5)] hover:scale-105 hover:bg-teal-400'
+                      }`}
+                      disabled={isSavingMembers}
                       onClick={() => {
                         void handleSaveMembers();
                       }}
                       type="button"
                     >
-                      {t('classes.save')}
+                      {saveMembersSuccess
+                        ? `✓ ${t('classes.saved', 'Enregistré')}`
+                        : isSavingMembers
+                        ? t('classes.saving')
+                        : t('classes.save')}
                     </button>
                   </div>
                 </>
@@ -623,13 +641,13 @@ function GroupFormModal({
 
   const handleSubmit = async () => {
     if (name.trim().length < 2) {
-      setErrorKey('classes.groups.validation');
+      setErrorKey('classes.groups.errors.nameRequired');
       return;
     }
 
     const order = Number.parseInt(displayOrder, 10);
     if (Number.isNaN(order) || order < 1) {
-      setErrorKey('classes.groups.validation');
+      setErrorKey('classes.groups.errors.orderInvalid');
       return;
     }
 
@@ -760,7 +778,7 @@ function GroupFormModal({
           <ModalCancelButton label={t('classes.cancel')} onClose={onClose} />
           <button
             className="cursor-pointer rounded-xl bg-teal-500 px-4 py-2 text-[13px] font-bold text-white transition-colors hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={isSubmitting}
+            disabled={isSubmitting || name.trim().length < 2}
             type="submit"
           >
             {isSubmitting ? t('classes.saving') : t('classes.save')}
