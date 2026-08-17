@@ -125,7 +125,13 @@ export const levelCurriculumEntrySchema = z.object({
 
 export const saveLevelCurriculumRequestSchema = z.object({
   levelId: z.uuid(),
-  entries: z.array(levelCurriculumEntrySchema).max(100),
+  entries: z
+    .array(levelCurriculumEntrySchema)
+    .max(100)
+    .refine((entries) => new Set(entries.map((entry) => entry.subjectId)).size === entries.length, {
+      message:
+        'Un même sujet ne peut apparaître qu\u2019une seule fois dans le programme du niveau.',
+    }),
 });
 
 export const levelCurriculumEntryViewSchema = levelCurriculumEntrySchema.extend({
@@ -181,7 +187,12 @@ export const subjectGroupsResponseSchema = z.object({
 
 export const setSubjectGroupMembersRequestSchema = z.object({
   // Order in the array becomes the membership display order.
-  subjectIds: z.array(z.uuid()).max(200),
+  subjectIds: z
+    .array(z.uuid())
+    .max(200)
+    .refine((ids) => new Set(ids).size === ids.length, {
+      message: 'Un même sujet ne peut apparaître qu\u2019une seule fois dans le groupe.',
+    }),
 });
 
 export const subjectGroupMemberViewSchema = z.object({

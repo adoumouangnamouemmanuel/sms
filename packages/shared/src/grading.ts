@@ -98,11 +98,29 @@ export const gradingPolicyConfigSchema = z.object({
 // Scope assignment (roadmap §9.9 - school default -> level -> level + subject)
 // ---------------------------------------------------------------------------
 
-export const policyScopeAssignmentSchema = z.object({
-  scopeType: z.enum(POLICY_SCOPE_TYPES),
-  levelId: z.string().nullable(),
-  subjectId: z.string().nullable(),
-});
+/**
+ * Discriminated on scopeType: SCHOOL_DEFAULT requires both ids null,
+ * LEVEL requires a level, LEVEL_SUBJECT requires both. A malformed
+ * combination is rejected at the API boundary instead of persisting
+ * ambiguous rows (NULLs are distinct inside SQLite partial unique indexes).
+ */
+export const policyScopeAssignmentSchema = z.discriminatedUnion('scopeType', [
+  z.object({
+    scopeType: z.literal('SCHOOL_DEFAULT'),
+    levelId: z.null(),
+    subjectId: z.null(),
+  }),
+  z.object({
+    scopeType: z.literal('LEVEL'),
+    levelId: z.uuid(),
+    subjectId: z.null(),
+  }),
+  z.object({
+    scopeType: z.literal('LEVEL_SUBJECT'),
+    levelId: z.uuid(),
+    subjectId: z.uuid(),
+  }),
+]);
 
 export const assignPolicyScopesRequestSchema = z.object({
   /** Replaces the policy's whole scope set atomically. */
@@ -174,6 +192,12 @@ export const gradingPoliciesResponseSchema = z.object({
 export const gradingPolicyDetailResponseSchema = z.object({
   policy: gradingPolicyDetailSchema,
   scopes: z.array(policyScopeViewSchema),
+});
+
+/** Query parameters for GET /grading-policies/resolved (validated at the API boundary). */
+export const resolveGradingPolicyQuerySchema = z.object({
+  levelId: z.uuid(),
+  subjectId: z.uuid().nullish(),
 });
 
 export const resolvedPolicySchema = z.object({
