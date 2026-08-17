@@ -91,6 +91,8 @@ const CAPABILITY_ORDER: SchoolCapability[] = [
   'PDF_GENERATION',
 ];
 
+type ConfigTab = 'OVERVIEW' | 'PROFILE' | 'YEARS' | 'GRADING' | 'APPRECIATION';
+
 export function ConfigurationModule({
   apiBaseUrl,
   capabilityToken,
@@ -101,6 +103,7 @@ export function ConfigurationModule({
   onSetupStateChange,
 }: ConfigurationModuleProps) {
   const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<ConfigTab>('OVERVIEW');
   const [readiness, setReadiness] = useState<ConfigurationReadinessResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorKey, setErrorKey] = useState<string | null>(null);
@@ -158,74 +161,116 @@ export function ConfigurationModule({
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 p-8 text-white shadow-2xl lg:p-10">
+      <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 p-8 text-white shadow-2xl ring-1 ring-white/10 lg:p-12">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-teal-500/20 blur-[80px]"
+          className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-teal-500/30 blur-[100px]"
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -bottom-32 -left-16 h-72 w-72 rounded-full bg-indigo-500/20 blur-[80px]"
+          className="pointer-events-none absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-indigo-500/20 blur-[100px]"
         />
-        <div className="relative flex flex-wrap items-center justify-between gap-6">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay"
+        />
+        <div className="relative flex flex-col justify-between gap-8 md:flex-row md:items-center">
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-teal-300/80">
+            <div className="inline-flex items-center rounded-full border border-teal-400/20 bg-teal-400/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-teal-300">
               {t('configuration.hero.eyebrow')}
-            </p>
-            <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">
+            </div>
+            <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl lg:text-6xl text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-300 drop-shadow-sm">
               {t('configuration.title')}
             </h1>
-            <p className="mt-2 max-w-xl text-sm font-semibold leading-relaxed text-slate-300">
+            <p className="mt-4 max-w-xl text-base font-medium leading-relaxed text-slate-300/90">
               {t('configuration.hero.subtitle')}
             </p>
           </div>
-          <div className="flex flex-col items-end gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-teal-400/30 bg-teal-500/15 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-teal-200 backdrop-blur-md">
-              {t('configuration.hero.readiness', {
-                ready: String(readyAreas),
-                total: String(readiness?.areas.length ?? 0),
-              })}
-            </span>
-            <p className="text-[11px] font-bold text-slate-400">
-              {t('configuration.hero.liveNote')}
-            </p>
+          <div className="flex flex-col items-start gap-4 md:items-end">
+            <div className="flex flex-col items-start md:items-end rounded-2xl bg-slate-800/50 border border-slate-700/50 p-4 backdrop-blur-md">
+              <span className="inline-flex items-center gap-2 rounded-full bg-teal-500/20 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-teal-200">
+                <div className="h-2 w-2 rounded-full bg-teal-400 animate-pulse shadow-[0_0_8px_rgba(45,212,191,0.8)]" />
+                {t('configuration.hero.readiness', {
+                  ready: String(readyAreas),
+                  total: String(readiness?.areas.length ?? 0),
+                })}
+              </span>
+              <p className="mt-2 text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+                {t('configuration.hero.liveNote')}
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── Status ───────────────────────────────────────────────────────── */}
-      {isLoading ? (
-        <div
-          aria-live="polite"
-          className="flex h-40 w-full items-center justify-center"
-          role="status"
-        >
-          <div className="flex flex-col items-center gap-3">
-            <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-teal-200 border-t-teal-600" />
-            <p className="text-xs font-bold text-slate-400">{t('configuration.loading')}</p>
-          </div>
+      {/* ── Tabs Navigation ────────────────────────────────────────────── */}
+      <nav
+        aria-label="Configuration tabs"
+        className="sticky top-0 z-10 -mx-2 flex w-[calc(100%+16px)] overflow-x-auto rounded-2xl bg-white/70 p-1.5 shadow-sm ring-1 ring-slate-200 backdrop-blur-xl md:mx-0 md:w-full"
+      >
+        <div className="flex min-w-max flex-1 items-center justify-between space-x-1 sm:justify-start sm:space-x-2">
+          {[
+            { id: 'OVERVIEW', label: t('configuration.tabs.overview') },
+            { id: 'PROFILE', label: t('configuration.tabs.profile') },
+            { id: 'YEARS', label: t('configuration.tabs.years') },
+            { id: 'GRADING', label: t('configuration.tabs.grading') },
+            { id: 'APPRECIATION', label: t('configuration.tabs.appreciation') },
+          ].map((tab) => (
+            <button
+              className={`relative flex cursor-pointer items-center justify-center whitespace-nowrap rounded-xl px-5 py-3 text-sm font-bold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 sm:flex-1 ${
+                activeTab === tab.id
+                  ? 'bg-slate-800 text-white shadow-lg shadow-slate-900/20'
+                  : 'bg-transparent text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+              }`}
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as ConfigTab)}
+              type="button"
+            >
+              {tab.label}
+              {activeTab === tab.id && (
+                <span className="absolute -bottom-1.5 left-1/2 h-1 w-6 -translate-x-1/2 rounded-full bg-teal-400 shadow-[0_0_8px_rgba(45,212,191,0.6)]" />
+              )}
+            </button>
+          ))}
         </div>
-      ) : errorKey ? (
-        <section
-          aria-live="polite"
-          className="flex items-center justify-between gap-4 rounded-2xl border border-red-200 bg-red-50 p-4"
-          role="alert"
-        >
-          <p className="text-sm font-bold text-red-700">{t(errorKey)}</p>
-          <button
-            className="cursor-pointer rounded-xl bg-red-600 px-4 py-2 text-xs font-black text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-            onClick={() => {
-              window.location.reload();
-            }}
-            type="button"
+      </nav>
+
+      {/* ── Status ───────────────────────────────────────────────────────── */}
+      <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both">
+        {isLoading ? (
+          <div
+            aria-live="polite"
+            className="flex h-40 w-full items-center justify-center"
+            role="status"
           >
-            {t('configuration.retry')}
-          </button>
-        </section>
-      ) : readiness ? (
-        <>
-          {/* ── Areas ─────────────────────────────────────────────────────── */}
-          <section className="space-y-3" aria-labelledby="configuration-areas-title">
+            <div className="flex flex-col items-center gap-3">
+              <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-teal-200 border-t-teal-600" />
+              <p className="text-xs font-bold text-slate-400">{t('configuration.loading')}</p>
+            </div>
+          </div>
+        ) : errorKey ? (
+          <section
+            aria-live="polite"
+            className="flex items-center justify-between gap-4 rounded-2xl border border-red-200 bg-red-50 p-4"
+            role="alert"
+          >
+            <p className="text-sm font-bold text-red-700">{t(errorKey)}</p>
+            <button
+              className="cursor-pointer rounded-xl bg-red-600 px-4 py-2 text-xs font-black text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+              onClick={() => {
+                window.location.reload();
+              }}
+              type="button"
+            >
+              {t('configuration.retry')}
+            </button>
+          </section>
+        ) : readiness ? (
+          <div className="space-y-6">
+            {activeTab === 'OVERVIEW' ? (
+              <div className="space-y-6 animate-in fade-in duration-500">
+                {/* ── Areas ─────────────────────────────────────────────────────── */}
+                <section className="space-y-3" aria-labelledby="configuration-areas-title">
             <div className="flex items-center gap-2">
               <h2
                 className="text-sm font-black uppercase tracking-wider text-slate-500"
@@ -340,79 +385,6 @@ export function ConfigurationModule({
             </div>
           </section>
 
-          {/* ── School profile ────────────────────────────────────────────── */}
-          {setupState ? (
-            <SchoolProfileSection
-              apiBaseUrl={apiBaseUrl}
-              {...(capabilityToken ? { capabilityToken } : {})}
-              {...(client?.saveProfile ? { client: { saveProfile: client.saveProfile } } : {})}
-              {...(onSetupStateChange ? { onSetupStateChange } : {})}
-              {...(onSessionExpired ? { onSessionExpired } : {})}
-              setupState={setupState}
-            />
-          ) : null}
-
-          {/* ── Academic years ────────────────────────────────────────────── */}
-          <AcademicYearsSection
-            apiBaseUrl={apiBaseUrl}
-            {...(capabilityToken ? { capabilityToken } : {})}
-            {...(client ? { client } : {})}
-            {...(onSessionExpired ? { onSessionExpired } : {})}
-          />
-
-          {/* ── Grading policy ────────────────────────────────────────────── */}
-          <GradingPolicySection
-            apiBaseUrl={apiBaseUrl}
-            {...(capabilityToken ? { capabilityToken } : {})}
-            {...(client
-              ? {
-                  client: {
-                    ...(client.listGradingPolicies ? { list: client.listGradingPolicies } : {}),
-                    ...(client.createGradingPolicy ? { create: client.createGradingPolicy } : {}),
-                    ...(client.updateGradingPolicy ? { update: client.updateGradingPolicy } : {}),
-                    ...(client.publishGradingPolicy
-                      ? { publish: client.publishGradingPolicy }
-                      : {}),
-                    ...(client.duplicateGradingPolicy
-                      ? { duplicate: client.duplicateGradingPolicy }
-                      : {}),
-                    ...(client.assignPolicyScopes
-                      ? { assignScopes: client.assignPolicyScopes }
-                      : {}),
-                  },
-                }
-              : {})}
-            {...(onSessionExpired ? { onSessionExpired } : {})}
-          />
-
-          {/* ── Appreciation ──────────────────────────────────────────────── */}
-          <AppreciationSection
-            apiBaseUrl={apiBaseUrl}
-            {...(capabilityToken ? { capabilityToken } : {})}
-            {...(client
-              ? {
-                  client: {
-                    ...(client.listAppreciationScales
-                      ? { list: client.listAppreciationScales }
-                      : {}),
-                    ...(client.createAppreciationScale
-                      ? { create: client.createAppreciationScale }
-                      : {}),
-                    ...(client.updateAppreciationScale
-                      ? { update: client.updateAppreciationScale }
-                      : {}),
-                    ...(client.publishAppreciationScale
-                      ? { publish: client.publishAppreciationScale }
-                      : {}),
-                    ...(client.duplicateAppreciationScale
-                      ? { duplicate: client.duplicateAppreciationScale }
-                      : {}),
-                  },
-                }
-              : {})}
-            {...(onSessionExpired ? { onSessionExpired } : {})}
-          />
-
           {/* ── Quick links ───────────────────────────────────────────────── */}
           <section className="space-y-3" aria-labelledby="configuration-links-title">
             <div className="flex items-center gap-2">
@@ -440,8 +412,90 @@ export function ConfigurationModule({
               </button>
             </div>
           </section>
-        </>
+        </div>
       ) : null}
+
+          {/* ── School profile ────────────────────────────────────────────── */}
+          {activeTab === 'PROFILE' && setupState ? (
+            <SchoolProfileSection
+              apiBaseUrl={apiBaseUrl}
+              {...(capabilityToken ? { capabilityToken } : {})}
+              {...(client?.saveProfile ? { client: { saveProfile: client.saveProfile } } : {})}
+              {...(onSetupStateChange ? { onSetupStateChange } : {})}
+              {...(onSessionExpired ? { onSessionExpired } : {})}
+              setupState={setupState}
+            />
+          ) : null}
+
+          {/* ── Academic years ────────────────────────────────────────────── */}
+          {activeTab === 'YEARS' ? (
+            <AcademicYearsSection
+              apiBaseUrl={apiBaseUrl}
+              {...(capabilityToken ? { capabilityToken } : {})}
+              {...(client ? { client } : {})}
+              {...(onSessionExpired ? { onSessionExpired } : {})}
+            />
+          ) : null}
+
+          {/* ── Grading policy ────────────────────────────────────────────── */}
+          {activeTab === 'GRADING' ? (
+            <GradingPolicySection
+              apiBaseUrl={apiBaseUrl}
+              {...(capabilityToken ? { capabilityToken } : {})}
+              {...(client
+                ? {
+                    client: {
+                      ...(client.listGradingPolicies ? { list: client.listGradingPolicies } : {}),
+                      ...(client.createGradingPolicy ? { create: client.createGradingPolicy } : {}),
+                      ...(client.updateGradingPolicy ? { update: client.updateGradingPolicy } : {}),
+                      ...(client.publishGradingPolicy
+                        ? { publish: client.publishGradingPolicy }
+                        : {}),
+                      ...(client.duplicateGradingPolicy
+                        ? { duplicate: client.duplicateGradingPolicy }
+                        : {}),
+                      ...(client.assignPolicyScopes
+                        ? { assignScopes: client.assignPolicyScopes }
+                        : {}),
+                    },
+                  }
+                : {})}
+              {...(onSessionExpired ? { onSessionExpired } : {})}
+            />
+          ) : null}
+
+          {/* ── Appreciation ──────────────────────────────────────────────── */}
+          {activeTab === 'APPRECIATION' ? (
+            <AppreciationSection
+              apiBaseUrl={apiBaseUrl}
+              {...(capabilityToken ? { capabilityToken } : {})}
+              {...(client
+                ? {
+                    client: {
+                      ...(client.listAppreciationScales
+                        ? { list: client.listAppreciationScales }
+                        : {}),
+                      ...(client.createAppreciationScale
+                        ? { create: client.createAppreciationScale }
+                        : {}),
+                      ...(client.updateAppreciationScale
+                        ? { update: client.updateAppreciationScale }
+                        : {}),
+                      ...(client.publishAppreciationScale
+                        ? { publish: client.publishAppreciationScale }
+                        : {}),
+                      ...(client.duplicateAppreciationScale
+                        ? { duplicate: client.duplicateAppreciationScale }
+                        : {}),
+                    },
+                  }
+                : {})}
+              {...(onSessionExpired ? { onSessionExpired } : {})}
+            />
+          ) : null}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
