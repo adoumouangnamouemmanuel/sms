@@ -405,7 +405,7 @@ function SubjectFormModal({
           <ModalCancelButton label={t('classes.cancel')} onClose={onClose} />
           <button
             className="cursor-pointer rounded-xl bg-teal-500 px-4 py-2 text-[13px] font-bold text-white shadow-sm hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={isSaving}
+            disabled={isSaving || name.trim().length < 2 || code.trim().length < 2}
             type="submit"
           >
             {isSaving ? t('classes.saving') : t('classes.save')}
