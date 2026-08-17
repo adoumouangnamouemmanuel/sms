@@ -187,6 +187,26 @@ describe('academic configuration repositories (roadmap §9.3/§9.5/§9.6)', () =
     expect(withCounts[0]?.subjectCount).toBe(1);
   });
 
+  it('reorders retained members without colliding with the unique display-order index', () => {
+    const { math, french } = seedLevelAndSubject();
+    const repository = createSubjectGroupRepository(db, tenant());
+    const group = repository.create(
+      { name: 'Matières mixtes', nameEn: null, nameAr: null, displayOrder: 1 },
+      fixedAt
+    );
+
+    repository.replaceMembers(group.id, [french.id, math.id], fixedAt);
+
+    // Swapping the order must not trip the (school_id, subject_group_id,
+    // display_order) unique index while the final orders are written.
+    const reordered = repository.replaceMembers(group.id, [math.id, french.id], fixedAt);
+    expect(reordered).toHaveLength(2);
+    expect(reordered[0]?.subjectId).toBe(math.id);
+    expect(reordered[0]?.displayOrder).toBe(1);
+    expect(reordered[1]?.subjectId).toBe(french.id);
+    expect(reordered[1]?.displayOrder).toBe(2);
+  });
+
   it('keeps subject groups and members tenant-scoped', () => {
     const repository = createSubjectGroupRepository(db, tenant());
     repository.create(

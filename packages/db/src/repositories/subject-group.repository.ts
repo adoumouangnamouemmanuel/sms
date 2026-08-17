@@ -32,6 +32,13 @@ export interface SubjectGroupMemberEntry {
 }
 
 /**
+ * Temporary display order used while reordering retained members. Must stay
+ * above any real order so the (school_id, subject_group_id, display_order)
+ * unique index is never violated mid-write (see replaceMembers).
+ */
+const TEMP_DISPLAY_ORDER_PARK = 1_000_000;
+
+/**
  * School-defined subject groups / sections (roadmap §9.6). Groups carry a
  * stable display order and an editable membership; membership is replaced
  * atomically (array order becomes display order).
@@ -189,6 +196,29 @@ export class SubjectGroupRepository extends TenantScopedRepository {
           .run();
       }
     }
+
+    // Retained members keep their rows; the desired order is the array order.
+    // Writing the final display orders one by one would collide with the
+    // (school_id, subject_group_id, display_order) unique index whenever two
+    // retained members swap positions, so first park every retained row on a
+    // temporary out-of-range display order, then write the final orders.
+    const retained = existingMembers.filter((item) => activeSubjectIds.has(item.subjectId));
+    retained.forEach((existing, index) => {
+      this.db
+        .update(subjectGroupMember)
+        .set({
+          displayOrder: TEMP_DISPLAY_ORDER_PARK + index,
+          updatedAt,
+          recordVersion: sql`${subjectGroupMember.recordVersion} + 1`,
+        })
+        .where(
+          and(
+            eq(subjectGroupMember.schoolId, this.schoolId),
+            eq(subjectGroupMember.id, existing.id)
+          )
+        )
+        .run();
+    });
 
     subjectIds.forEach((subjectId, index) => {
       const existing = existingMembers.find((item) => item.subjectId === subjectId);

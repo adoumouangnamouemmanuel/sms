@@ -121,6 +121,13 @@ for entry in "${TARGETS[@]}"; do
   if [[ -f "$path" ]]; then
     backup_path="$path.backup-$(date +%Y%m%d-%H%M%S)"
     cp "$path" "$backup_path"
+    # SQLite WAL mode keeps committed pages in <db>-wal until checkpoint;
+    # copy the sidecars too so the backup does not silently drop recent data.
+    for sidecar in -wal -shm; do
+      if [[ -f "$path$sidecar" ]]; then
+        cp "$path$sidecar" "$backup_path$sidecar"
+      fi
+    done
     print_info "Backup created: $backup_path"
   fi
 done
