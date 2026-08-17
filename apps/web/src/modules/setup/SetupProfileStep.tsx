@@ -235,16 +235,19 @@ export function WizardPrimaryButton({
   disabled,
   isSaving,
   label,
+  onClick,
 }: {
   disabled?: boolean;
   isSaving: boolean;
   label: string;
+  onClick?: () => void;
 }) {
   return (
     <button
       className="inline-flex h-[50px] min-w-[200px] cursor-pointer items-center justify-center rounded-2xl bg-gradient-to-r from-teal-700 to-teal-600 px-6 text-sm font-bold text-white shadow-[0_4px_14px_rgba(15,118,110,0.35)] transition-all hover:from-teal-800 hover:to-teal-700 hover:shadow-[0_6px_20px_rgba(15,118,110,0.45)] focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
       disabled={isSaving || disabled}
-      type="submit"
+      onClick={onClick}
+      type={onClick ? 'button' : 'submit'}
     >
       {isSaving ? (
         <svg
